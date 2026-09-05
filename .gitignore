@@ -1,0 +1,36 @@
+# ---- Dữ liệu: KHÔNG BAO GIỜ commit ----
+data/raw/**
+!data/raw/README.md
+!data/raw/**/about.md
+!data/raw/**/explain.md
+data/interim/**
+data/processed/**
+!data/**/.gitkeep
+
+# ---- Kết quả sinh ra ----
+runs/**
+!runs/.gitkeep
+research-log/scratch/**
+!research-log/scratch/.gitkeep
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+*.egg-info/
+
+# ---- LaTeX ----
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+
+# ---- Hệ điều hành / IDE ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,17 @@
+# Tien xu ly. Xem docs/protocol.md muc 5 va 6.
+grid_seconds: 300
+aggregate: mean
+interpolate: false
+clip: [0, 100]
+
+filter:
+  min_length: 2000
+  max_nan_ratio: 0.20
+  min_mean: 1.0
+  min_unique: 3
+
+fillna:
+  method: ffill
+  limit: 3
+
+window_days: 8    # cua so chung, xem muc 7

@@ -1,0 +1,13 @@
+# Chia du lieu. Xem docs/protocol.md muc 9 va 10.
+shuffle: false               # TUYET DOI KHONG DOI
+train: 0.70
+val: 0.15
+test: 0.15
+cv:
+  method: rolling_origin
+  n_splits: 5
+horizons: [1, 6, 12]
+strategy: direct
+
+normalize_modes: [N0, N1, N2]   # thi nghiem B, xem muc 14
+fit_stats_on: train_only        # chong ro ri

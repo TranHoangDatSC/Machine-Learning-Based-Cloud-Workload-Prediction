@@ -1,0 +1,45 @@
+# Khai báo ba môi trường. Xem docs/protocol.md muc 3.
+
+E1:
+  name: Bitbrains-fastStorage
+  path: data/raw/Bitbrains-fastStorage/08-2013
+  glob: "*.csv"
+  sep: ";\t"
+  header: true
+  target: "CPU usage [%]"
+  time_col: "Timestamp [ms]"
+  time_unit: s          # header ghi [ms] nhung thuc te la giay
+  entity: vm
+  use_all: true
+
+E2:
+  name: Bitbrains-Rnd
+  path: data/raw/Bitbrains-Rnd/2013-8   # chi 2013-8, xem QD-003
+  glob: "*.csv"
+  sep: ";\t"
+  header: true
+  target: "CPU usage [%]"
+  time_col: "Timestamp [ms]"
+  time_unit: s
+  entity: vm
+  id_key: [month, vm_id]   # BAT BUOC: ten file lap giua 3 thang
+
+E3:
+  name: Alibaba-v2018
+  path: data/raw/Alibaba-Cluster-Trace/machine_usage.csv
+  sep: ","
+  header: false            # KHONG co header
+  columns: [machine_id, time_stamp, cpu_util_percent, mem_util_percent, mem_gps, mkpi, net_in, net_out, disk_io_percent]
+  usecols: [0, 1, 2]
+  target: cpu_util_percent
+  time_col: time_stamp
+  time_unit: s
+  entity: machine
+  sample:
+    method: stratified
+    n: 500
+    strata: 5
+    by: mean_cpu
+  drop_cols: [mem_gps, mkpi]
+  sentinel:
+    disk_io_percent: [-1, 101]

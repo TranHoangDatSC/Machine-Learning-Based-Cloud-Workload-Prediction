@@ -1,0 +1,7 @@
+# Dac trung. Xem docs/protocol.md muc 8.
+lags: [1, 2, 3, 6, 12, 24]
+rolling_windows: [6, 12]
+rolling_stats: [mean, std, min, max]
+diff: true
+calendar: [hour_sin, hour_cos, dow_sin, dow_cos]
+shift_before_rolling: true   # chi dung qua khu
