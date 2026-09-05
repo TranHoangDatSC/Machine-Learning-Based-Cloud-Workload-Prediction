@@ -252,8 +252,20 @@ Không cần đọc toàn bộ repository ngay từ đầu.
 | Bạn là                   | Đọc theo thứ tự                                                         |
 | ------------------------ | ----------------------------------------------------------------------- |
 | **Người mới vào dự án**  | `README.md` → `docs/research-plan.md` → `docs/protocol.md`              |
-| **Người triển khai (B)** | `docs/protocol.md` → `data/raw/*/explain.md` → `research-log/README.md` |
+| **Đã quen ML từ đề tài khác** | `docs/tu-bai-cu-den-bai-nay.md` → `docs/protocol.md`               |
+| **Người triển khai (B)** | `docs/tu-bai-cu-den-bai-nay.md` → `docs/protocol.md` → `docs/giai-thich-chuan-hoa.md` → `data/raw/*/explain.md` → `research-log/README.md` |
 | **Người review**         | `docs/decisions.md` → `research-log/INDEX.md`                           |
+
+Danh mục tài liệu trong `docs/`:
+
+| Tệp | Nội dung |
+| --- | --- |
+| `protocol.md` | Giao thức đã chốt. Luật chơi của toàn bộ thí nghiệm |
+| `research-plan.md` | Kế hoạch 6 giai đoạn, phân vai A/B, checklist |
+| `data-card.md` | Nguồn, schema, số liệu đã kiểm chứng, giới hạn |
+| `decisions.md` | Nhật ký quyết định. Mọi thay đổi giao thức đi qua đây |
+| `giai-thich-chuan-hoa.md` | Giải thích mục 14 kèm số liệu chứng minh |
+| `tu-bai-cu-den-bai-nay.md` | Nối kiến thức ML sẵn có sang bài toán này, và chỉ ra chỗ phép loại suy gãy |
 
 > **`docs/protocol.md` đã chốt.**
 >

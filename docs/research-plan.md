@@ -77,6 +77,7 @@ hay không.
 - [ ] Giao protocol cho B, giảng mục 14 bằng tài liệu trên
 
 **B:**
+- [ ] Đọc `docs/tu-bai-cu-den-bai-nay.md` — nối từ kiến thức ML đã có sang bài này
 - [ ] Đọc toàn bộ `protocol.md`
 - [ ] Cài môi trường theo `requirements.txt`, xác nhận chạy được
 - [ ] Đọc `data/raw/*/explain.md` của cả ba môi trường

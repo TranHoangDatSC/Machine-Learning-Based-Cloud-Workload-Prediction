@@ -154,6 +154,25 @@ B trả lời được cả bốn câu mà không mở lại tài liệu thì qu
 
 ---
 
+## 6b. Cái bẫy này bạn đã gặp một lần rồi
+
+Bảng 6 của bài HJS so AUC 0,9160 của nhóm với 0,830 / 0,845 / 0,784 của Gillespie và
+kết luận "vượt trội đáng kể". Nhưng con số của nhóm đo **trên toàn bộ giao dịch**,
+còn ba con số kia đo **trên 1000 giao dịch bất thường nhất** — hai tập đánh giá khác
+nhau, tức hai bài toán khác nhau.
+
+Đó chính xác là cái bẫy ở đây, chỉ mặc áo khác:
+
+| | Bảng 6 bài HJS | Mục 14 bài này |
+|---|---|---|
+| Trông như | Model của ta tốt hơn | Transfer thất bại |
+| Thực chất đang đo | Hai tập đánh giá khác nhau | Hai mức tải khác nhau |
+| Câu hỏi cứu được | Hai số này có đo cùng một thứ không? | Con số 28,64 này đo cái gì? |
+
+Phân tích đầy đủ: `tu-bai-cu-den-bai-nay.md` mục 3.
+
+---
+
 ## 7. Tóm tắt một câu để nhớ
 
 > Transfer thô đo **chênh lệch mức tải**, thứ biết trước được mà không cần model.
