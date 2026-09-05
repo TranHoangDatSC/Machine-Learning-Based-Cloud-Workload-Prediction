@@ -105,6 +105,11 @@ Vì vậy `protocol.md` mục 12 lấy **MASE** làm chỉ số chính khi so s�
 trường: MASE chia MAE của model cho MAE của naive, nên nó trả lời thẳng câu
 *"model có hơn được cái không học gì không"*.
 
+Cũng có thể hiểu MASE sinh ra để loại bỏ "ảo tưởng" của MAE:
+- Nếu $\text{MASE} < 1$: Mô hình ML tốt hơn mô hình ngây thơ (chủ động học được tri thức).
+- Nếu $\text{MASE} = 1$: Mô hình ML chỉ bằng cái "không học gì" (Naive).
+- Nếu $\text{MASE} > 1$: Mô hình ML tệ hơn cả cái "không học gì".
+
 Và cũng vì vậy mục 11 bắt **chạy baseline trước tiên**, trước mọi model ML.
 
 ---
