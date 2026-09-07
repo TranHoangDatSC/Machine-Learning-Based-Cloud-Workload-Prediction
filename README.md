@@ -323,9 +323,86 @@ ML-CWP-Cloud/
 
 ## 9. Cài đặt môi trường
 
-Python environment nên được tách riêng để bảo đảm các thí nghiệm có thể tái lập.
+Phiên bản thư viện **đã ghim** trong `requirements.txt`. Không nâng cấp gói khi chưa
+qua `docs/decisions.md` (QĐ-007) — vì `protocol.md` mục 16 lấy phiên bản ghim làm
+một phần của cam kết tái lập.
 
-### Cách 1 — Conda trên Linux
+**Python yêu cầu: 3.10 đến 3.12.**
+Trần 3.12 vì scikit-learn 1.5.2 và matplotlib 3.9.2 chưa có wheel cho 3.13.
+Sàn 3.10 vì scipy 1.14.1 đã bỏ Python 3.9.
+
+### Cách 1 — Linux Mint (dùng cho máy của B)
+
+Mint 21.x có sẵn Python 3.10, Mint 22.x có sẵn 3.12. Cả hai đều hợp lệ, không cần
+cài thêm Python.
+
+```bash
+# 0. Xem máy đang có Python nào
+python3 --version
+
+# 1. Gói hệ thống. Mint không cài sẵn python3-venv.
+#    libgomp1 là OpenMP runtime, XGBoost và LightGBM cần nó.
+sudo apt update
+sudo apt install -y python3-venv python3-pip libgomp1
+
+# 2. Vào thư mục repo
+cd ~/ML-CWP-Cloud
+
+# 3. Tạo môi trường ảo ngay trong repo
+python3 -m venv .venv
+
+# 4. Kích hoạt. Dấu hiệu thành công: dòng nhắc lệnh có tiền tố (.venv)
+source .venv/bin/activate
+
+# 5. Nâng pip trước khi cài
+python -m pip install --upgrade pip
+
+# 6. Cài đúng phiên bản đã ghim
+pip install -r requirements.txt
+
+# 7. Xác minh. Phải ra "Khớp: 12/12" và "ĐẠT"
+python tests/test_env.py
+```
+
+Bước 7 là bắt buộc. Chưa ra 12/12 thì chưa được bắt đầu GĐ1.
+
+**Mỗi lần mở terminal mới đều phải kích hoạt lại:**
+
+```bash
+cd ~/ML-CWP-Cloud
+source .venv/bin/activate
+```
+
+Thoát môi trường: `deactivate`.
+
+#### Nếu `python3 --version` không nằm trong 3.10–3.12
+
+Chỉ khi rơi vào trường hợp này mới cần cài thêm Python:
+
+```bash
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv
+
+# Tạo venv bằng đúng bản 3.12, không dùng python3 mặc định nữa
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python tests/test_env.py
+```
+
+#### Lỗi hay gặp
+
+| Hiện tượng | Nguyên nhân | Xử lý |
+|---|---|---|
+| `ensurepip is not available` | Thiếu `python3-venv` | `sudo apt install python3-venv` |
+| `libgomp.so.1: cannot open shared object file` | Thiếu OpenMP runtime | `sudo apt install libgomp1` |
+| `test_env.py` báo "chưa kích hoạt venv" | Quên `source` | `source .venv/bin/activate` |
+| Cài xong vẫn lệch phiên bản | Cài nhầm vào Python toàn cục | Kích hoạt venv rồi `pip install -r requirements.txt` lại |
+| `externally-managed-environment` | pip bị chặn cài ngoài venv | Đúng như thiết kế — phải cài trong venv |
+
+### Cách 2 — Conda trên Linux
 
 Khuyến nghị nếu chạy trên Linux workstation/server hoặc thường xuyên làm việc với môi trường nghiên cứu ML.
 
@@ -333,7 +410,7 @@ Khuyến nghị nếu chạy trên Linux workstation/server hoặc thường xuy
 git clone <repository-url>
 cd ML-CWP-Cloud
 
-conda create -n ml-cwp-cloud python=3.11 -y
+conda create -n ml-cwp-cloud python=3.11 -y   # 3.11 nằm trong khoảng cho phép
 conda activate ml-cwp-cloud
 
 pip install -r requirements.txt
@@ -352,7 +429,7 @@ python --version
 which python
 ```
 
-### Cách 2 — Python venv trên Linux/macOS
+### Cách 3 — Python venv trên Linux/macOS
 
 ```bash
 python3 -m venv .venv
@@ -362,7 +439,7 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### Cách 3 — Python venv trên Windows
+### Cách 4 — Python venv trên Windows
 
 PowerShell:
 

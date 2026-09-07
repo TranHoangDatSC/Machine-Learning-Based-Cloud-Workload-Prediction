@@ -151,3 +151,43 @@ nghĩa và không so được giữa các môi trường.
 
 **Hệ quả.** MASE là chỉ số chính khi so sánh giữa các môi trường, vì đã chuẩn hoá
 theo độ khó nội tại của từng chuỗi.
+
+---
+
+## QĐ-007 — Ghim đúng phiên bản thư viện, ràng buộc Python 3.10–3.12
+**Ngày:** 2026-09-07 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** Review cổng GĐ0 phát hiện môi trường của B lệch hoàn toàn so với
+`requirements.txt`: 0/12 gói khớp, thiếu hẳn `pyarrow`, `xgboost`, `lightgbm`,
+`tqdm`. Thiếu `pyarrow` là chặn cứng, vì sản phẩm chính của GĐ1 là parquet.
+
+Có hai hướng: ghim đúng phiên bản đã khai, hoặc cập nhật `requirements.txt` theo
+phiên bản mới hơn đang có sẵn trên máy.
+
+**Quyết định.** Ghim đúng phiên bản đã khai. Không sửa `requirements.txt` theo máy.
+Bổ sung ràng buộc **Python 3.10 đến 3.12**.
+
+**Lý do.**
+
+`protocol.md` mục 16 lấy "phiên bản thư viện ghim trong requirements.txt" làm một
+trong bốn điều kiện tái lập. Chạy trên phiên bản khác thì cam kết đó rỗng: ba tháng
+sau không ai dựng lại được đúng môi trường đã cho ra các con số trong paper.
+
+Ràng buộc Python có trần và sàn cụ thể:
+- **Trần 3.12** — scikit-learn 1.5.2 và matplotlib 3.9.2 chưa có wheel cho 3.13.
+- **Sàn 3.10** — scipy 1.14.1 đã bỏ Python 3.9.
+
+Linux Mint 21.x có sẵn Python 3.10, Mint 22.x có sẵn 3.12. B không cần cài thêm
+Python.
+
+**Hệ quả.**
+
+1. B phải tạo venv riêng, không dùng Python toàn cục. Hướng dẫn đầy đủ cho Mint ở
+   README mục 9 Cách 1.
+2. Thêm `tests/test_env.py` làm cổng kiểm tra. Phải ra **12/12 khớp** thì cổng GĐ0
+   phần môi trường mới đóng.
+3. **Máy của A cũng không đạt** — Windows, Python 3.13.13, 0/12 gói khớp. A không
+   chạy thí nghiệm nên không chặn, nhưng nếu A cần chạy lại để đối chiếu số của B
+   thì phải dựng venv với Python 3.10–3.12 y như vậy.
+4. Muốn nâng cấp bất kỳ gói nào về sau: mở một mục QĐ mới, nêu lý do, rồi chạy lại
+   toàn bộ thí nghiệm đã có. Không nâng cấp giữa chừng.

@@ -58,6 +58,11 @@ vững.
 
 ---
 
+> **Quy ước đánh số.** Các giai đoạn đánh từ **GĐ0** đến **GĐ5**, tổng cộng sáu
+> giai đoạn. "GĐ1" là giai đoạn **thứ hai**, không phải giai đoạn đầu tiên. Khi báo
+> cáo tiến độ, luôn dùng mã `GĐ<n>` kèm tên giai đoạn, không nói "giai đoạn một" hay
+> "giai đoạn đầu" — cách nói đó đã một lần gây hiểu nhầm giữa A và B.
+
 ## Giai đoạn 0 — Chốt nền tảng
 **Tuần 1 · Chủ trì: A**
 
@@ -77,16 +82,21 @@ hay không.
 - [ ] Giao protocol cho B, giảng mục 14 bằng tài liệu trên
 
 **B:**
-- [ ] Đọc `docs/tu-bai-cu-den-bai-nay.md` — nối từ kiến thức ML đã có sang bài này
-- [ ] Đọc toàn bộ `protocol.md`
-- [ ] Cài môi trường theo `requirements.txt`, xác nhận chạy được
-- [ ] Đọc `data/raw/*/explain.md` của cả ba môi trường
-- [ ] Viết một log tóm tắt lại giao thức **bằng lời của mình**, đặc biệt là mục 14
-- [ ] Trả lời 4 câu hỏi kiểm tra ở `docs/giai-thich-chuan-hoa.md` mục 6
+- [x] Đọc `docs/tu-bai-cu-den-bai-nay.md` — nối từ kiến thức ML đã có sang bài này
+- [x] Đọc toàn bộ `protocol.md`
+- [ ] **Cài môi trường theo `requirements.txt`, xác nhận chạy được** — A kiểm ngày
+      2026-09-07: 0/12 gói khớp, thiếu hẳn `pyarrow`, `xgboost`, `lightgbm`, `tqdm`
+- [x] Đọc `data/raw/*/explain.md` của cả ba môi trường
+- [x] Viết một log tóm tắt lại giao thức **bằng lời của mình**, đặc biệt là mục 14
+- [x] Trả lời 4 câu hỏi kiểm tra ở `docs/giai-thich-chuan-hoa.md` mục 6 — **đạt**
 
 **Điều kiện qua cổng:** B giải thích được vì sao cần ba chế độ chuẩn hoá mà không
 cần mở lại tài liệu. Nếu chưa thì A giảng lại — đây là phần dễ hiểu sai nhất và
 cũng là phần quyết định giá trị bài.
+
+> **Kết quả cổng — A duyệt 2026-09-07: ĐẠT phần hiểu bài, CHƯA ĐẠT phần môi trường.**
+> Bốn câu trả lời của B đều đúng bản chất, số học kiểm lại khớp. Riêng ô môi trường
+> chưa xong nên GĐ0 **chưa đóng**. Chi tiết: `research-log/2026-09-07-review-cong-gd0.md`.
 
 ---
 

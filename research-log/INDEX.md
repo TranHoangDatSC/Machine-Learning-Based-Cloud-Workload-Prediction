@@ -4,6 +4,8 @@ Cập nhật thủ công mỗi khi thêm log mới. Mới nhất ở trên.
 
 | Ngày | Phiên | Người | GĐ | Kết quả chính |
 |---|---|---|---|---|
+| 2026-09-07 | [Chốt ghim môi trường](2026-09-07-ghim-moi-truong.md) | A | GĐ0 | QĐ-007 ghim phiên bản + Python 3.10–3.12; thêm `tests/test_env.py` làm cổng |
+| 2026-09-07 | [A review cổng GĐ0](2026-09-07-review-cong-gd0.md) | A | GĐ0 | B xong GĐ0 không phải GĐ1; hiểu bài đạt, môi trường chưa cài (0/12 gói) |
 | 2026-09-06 | [B hoàn thành Giai đoạn 0](2026-09-06-hoan-thanh-gd0.md) | B | GĐ0 | Nắm vững mục 14, trả lời 4 câu hỏi sát hạch, chốt checklist sẵn sàng cho GĐ1 |
 | 2026-09-05 | [Đối chiếu hai nghiên cứu cũ](2026-09-05-doi-chieu-bai-cu.md) | A | GĐ0 | Bảng 6 bài HJS chứa đúng cái bẫy protocol mục 14 đang chặn |
 | 2026-09-05 | [Soạn tài liệu giảng mục 14](2026-09-05-giang-muc-14.md) | A | GĐ0 | Đo được: hằng số cho MAE 28,64 trên E3 — "thảm hoạ transfer" không cần model |

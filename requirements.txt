@@ -1,3 +1,13 @@
+# Môi trường đã GHIM. Không nâng cấp gói khi chưa qua docs/decisions.md (QĐ-007).
+#
+# Python yêu cầu: >= 3.10 và <= 3.12
+#   Vì sao có trần: scikit-learn 1.5.2 và matplotlib 3.9.2 chưa có wheel cho 3.13.
+#   Vì sao có sàn: scipy 1.14.1 đã bỏ Python 3.9.
+#   Linux Mint 21.x dùng Python 3.10, Mint 22.x dùng 3.12 — cả hai đều hợp lệ,
+#   không cần cài thêm Python.
+#
+# Xác minh sau khi cài:  python tests/test_env.py
+
 # Nhân
 pandas==2.2.3
 numpy==2.1.3
