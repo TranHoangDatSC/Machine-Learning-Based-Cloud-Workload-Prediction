@@ -79,13 +79,13 @@ hay không.
 - [x] Đối chiếu nguồn và trích dẫn, xác nhận đúng
 - [x] Chốt QĐ-004: chấp nhận lệch đơn vị quan sát, thu hẹp phạm vi
 - [x] Soạn tài liệu giảng mục 14: `docs/giai-thich-chuan-hoa.md`
-- [ ] Giao protocol cho B, giảng mục 14 bằng tài liệu trên
+- [x] Giao protocol cho B, giảng mục 14 bằng tài liệu trên
 
 **B:**
 - [x] Đọc `docs/tu-bai-cu-den-bai-nay.md` — nối từ kiến thức ML đã có sang bài này
 - [x] Đọc toàn bộ `protocol.md`
-- [ ] **Cài môi trường theo `requirements.txt`, xác nhận chạy được** — A kiểm ngày
-      2026-09-07: 0/12 gói khớp, thiếu hẳn `pyarrow`, `xgboost`, `lightgbm`, `tqdm`
+- [x] **Cài môi trường theo `requirements.txt`, xác nhận chạy được** — B báo
+      12/12 khớp ngày 2026-09-07
 - [x] Đọc `data/raw/*/explain.md` của cả ba môi trường
 - [x] Viết một log tóm tắt lại giao thức **bằng lời của mình**, đặc biệt là mục 14
 - [x] Trả lời 4 câu hỏi kiểm tra ở `docs/giai-thich-chuan-hoa.md` mục 6 — **đạt**
@@ -94,9 +94,9 @@ hay không.
 cần mở lại tài liệu. Nếu chưa thì A giảng lại — đây là phần dễ hiểu sai nhất và
 cũng là phần quyết định giá trị bài.
 
-> **Kết quả cổng — A duyệt 2026-09-07: ĐẠT phần hiểu bài, CHƯA ĐẠT phần môi trường.**
-> Bốn câu trả lời của B đều đúng bản chất, số học kiểm lại khớp. Riêng ô môi trường
-> chưa xong nên GĐ0 **chưa đóng**. Chi tiết: `research-log/2026-09-07-review-cong-gd0.md`.
+> **Kết quả cổng — ĐẠT. GĐ0 ĐÓNG ngày 2026-09-07.**
+> Bốn câu trả lời của B đều đúng bản chất, số học kiểm lại khớp. Môi trường đã đạt
+> 12/12 sau khi áp QĐ-007. Chi tiết: `research-log/2026-09-07-review-cong-gd0.md`.
 
 ---
 
@@ -121,9 +121,27 @@ Tốn thời gian nhất, ít được ghi nhận nhất. Làm chắc ở đây 
 - `sep=';'` thay vì `sep=';\t'` sẽ để tab lẫn vào tên cột, im lặng và khó phát hiện.
 - Alibaba không có header. Quên `names=[...]` sẽ nuốt mất dòng dữ liệu đầu tiên.
 
-**Điều kiện qua cổng:** A đối chiếu bảng thống kê của B với số liệu trong
-`research-log/2026-08-30-tham-dinh-du-lieu.md`. Lệch quá 5% thì tìm nguyên nhân
-trước khi đi tiếp.
+**A — làm trước khi B nộp, không đợi:**
+- [x] Dựng thước đo tham chiếu độc lập: `scripts/reference_gd1.py`
+- [x] Lập hồ sơ cổng `docs/gate-gd1.md` — danh sách kiểm, ngưỡng, lệnh nghiệm thu
+- [x] Phát hiện khuyết tật protocol mục 6 bước 6, ghi QĐ-008
+- [ ] **Duyệt hoặc bác QĐ-008** — đang chặn, B không nên viết `filter.py` trước khi chốt
+- [ ] Chốt hai điểm mơ hồ ở `gate-gd1.md` mục 4 (mốc cửa sổ 8 ngày, ngưỡng 2.000)
+- [ ] Sinh lại tham chiếu sau khi QĐ-008 có hiệu lực
+- [ ] Dựng venv ghim trên máy A, để tham chiếu và kết quả của B cùng môi trường
+
+**A — khi B nộp:**
+- [ ] Chạy toàn bộ danh sách `docs/gate-gd1.md` mục 5, theo thứ tự
+- [ ] Ghi kết quả vào `gate-gd1.md` mục 7
+
+**Điều kiện qua cổng:** A đối chiếu bảng của B với `scripts/reference_gd1.py`, theo
+danh sách đầy đủ ở `docs/gate-gd1.md`. Ngưỡng: số chuỗi vào phải khớp tuyệt đối,
+các chỉ số còn lại lệch không quá 5%.
+
+> Điều kiện cũ ghi "đối chiếu với `2026-08-30-tham-dinh-du-lieu.md`" đã **bị thay**.
+> Số liệu ngày 30-08 đo trên mẫu ngẫu nhiên chưa lọc, chưa cắt cửa sổ 8 ngày, nên
+> không so trực tiếp được với sản phẩm đã áp đủ quy tắc protocol. Xem `gate-gd1.md`
+> mục 1.
 
 ---
 

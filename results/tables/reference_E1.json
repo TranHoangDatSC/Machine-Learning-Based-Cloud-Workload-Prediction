@@ -1,0 +1,20 @@
+[
+  {
+    "env": "E1",
+    "chuoi_vao": 1250,
+    "loai_do_dai": 32,
+    "loai_nan": 0,
+    "loai_gan_chet": 473,
+    "loai_hang": 0,
+    "chuoi_con_lai": 745,
+    "ti_le_giu": 59.6,
+    "diem_du_lieu": 1714454,
+    "do_dai_trung_vi": 2304,
+    "mau_bi_clip_duoi": 0,
+    "mau_bi_clip_tren": 319082,
+    "ti_le_clip_tren_pct": 2.8434,
+    "target_mean": 13.8813,
+    "target_p50": 1.7833,
+    "target_std": 28.2783
+  }
+]

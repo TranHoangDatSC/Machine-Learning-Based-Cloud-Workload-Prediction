@@ -191,3 +191,61 @@ Python.
    thì phải dựng venv với Python 3.10–3.12 y như vậy.
 4. Muốn nâng cấp bất kỳ gói nào về sau: mở một mục QĐ mới, nêu lý do, rồi chạy lại
    toàn bộ thí nghiệm đã có. Không nâng cấp giữa chừng.
+
+---
+
+## QĐ-008 — Bỏ quy tắc cắt chuỗi tại lỗ hổng, chuyển sang lọc theo dòng
+**Ngày đề xuất:** 2026-09-07 · **Người đề xuất:** A · **Trạng thái:** ⏳ **ĐỀ XUẤT — CHỜ A DUYỆT**
+
+> `protocol.md` **chưa sửa**. Chỉ sửa sau khi mục này chuyển sang "Có hiệu lực".
+
+**Bối cảnh.** A viết `scripts/reference_gd1.py` làm bản hiện thực độc lập của
+protocol mục 5–7 để dựng thước đo cho cổng GĐ1. Khi chạy, phát hiện quy tắc ở mục 6
+bước 6 — *"còn thiếu thì cắt chuỗi tại đó"* — phá huỷ phần lớn dữ liệu.
+
+**Cơ chế.** Mục 6 xếp lọc chuỗi ở bước 5, điền khuyết ở bước 6. Bộ lọc độ dài vì thế
+chạy *trước* khi cắt, không thể bắt được chuỗi bị cắt cụt sau đó.
+
+**Bằng chứng đo được.**
+
+| Môi trường | Tỉ lệ NaN | Luật hiện tại giữ | Phương án đề xuất giữ |
+|---|---|---|---|
+| E1 | 0,00% | 100% | 98,4% |
+| E2 | 0,43% | **20,9%** | **94,5%** |
+| E3 | 12,11% | **1,1%** | **34,9%** |
+
+E2 chỉ có 0,43% NaN nhưng mất 79% dữ liệu, vì lỗ hổng đi thành cụm 8–12 điểm liên
+tiếp; 37/40 chuỗi mẫu có ít nhất một cụm, xuất hiện lần đầu quanh vị trí 480.
+
+Nguy hiểm nhất là **bảng tổng kết không lộ ra vấn đề**: E3 báo giữ 99,6% số chuỗi,
+trong khi độ dài trung vị chỉ còn 26 trên tối đa 2.304.
+
+**Đề xuất.** Thay bước 6 của mục 6 bằng:
+
+1. **Không cắt chuỗi.** Giữ nguyên chuỗi kể cả khi còn NaN.
+2. **Bỏ ffill hoàn toàn.** Forward-fill 8–12 điểm là bịa ra một giờ dữ liệu phẳng,
+   làm autocorrelation tăng giả tạo — trong khi autocorrelation chính là đại lượng
+   trung tâm của RQ3.
+3. **Lọc ở mức dòng, không ở mức chuỗi.** Khi dựng ma trận huấn luyện, loại dòng nào
+   có cửa sổ đặc trưng `[t−24, t]` hoặc target `t+h` chạm NaN.
+4. **Đổi ngưỡng lọc chuỗi** từ "độ dài ≥ 2.000 điểm" sang "**số dòng huấn luyện hợp
+   lệ ≥ 500 ở h = 12**". Ngưỡng cũ mất nghĩa sau khi cắt cửa sổ còn 8 ngày (tối đa
+   2.304 điểm), và không phản ánh lượng dữ liệu thực sự dùng được.
+
+**Lý do chọn phương án này thay vì nới ffill.** Nới `ffill(limit=12)` cũng cứu được
+số lượng, nhưng bịa dữ liệu. Với một nghiên cứu mà kết luận trung tâm nằm ở việc so
+sánh động lực học giữa các môi trường, bịa ra các đoạn phẳng là tự phá hỏng biến phụ
+thuộc. Lọc theo dòng không bịa gì cả, chỉ bỏ đi những dòng không đủ thông tin.
+
+**Hệ quả nếu duyệt.**
+1. Sửa `protocol.md` mục 6 bước 5 và 6, mục 8 nói rõ quy tắc loại dòng.
+2. Sinh lại toàn bộ số liệu tham chiếu; bảng trong `gate-gd1.md` mục 3 bị thay thế.
+3. E3 còn khoảng 35% số dòng, tương đương ~800 dòng mỗi máy × 498 máy. Đủ để huấn
+   luyện, nhưng **phải khai trong Limitations** rằng E3 thưa hơn hai môi trường kia.
+4. Số dòng huấn luyện chênh lệch giữa các môi trường phải ghi vào bảng dữ liệu của
+   paper, vì nó ảnh hưởng đến cách đọc kết quả RQ2.
+
+**Hai điểm mơ hồ cần chốt cùng lúc.** Chi tiết ở `gate-gd1.md` mục 4:
+- Cửa sổ 8 ngày tính từ điểm đầu của **từng chuỗi** hay từ mốc sớm nhất của **toàn
+  môi trường**? A tạm dùng từng chuỗi.
+- Ngưỡng 2.000 điểm phải diễn giải lại theo đề xuất số 4 ở trên.

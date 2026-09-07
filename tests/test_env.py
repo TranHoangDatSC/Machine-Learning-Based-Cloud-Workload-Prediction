@@ -10,6 +10,7 @@ Cổng GĐ0 chỉ đóng khi lệnh thứ nhất báo 12/12 khớp.
 import sys
 from pathlib import Path
 
+import importlib
 import importlib.metadata as md
 
 try:
@@ -22,6 +23,12 @@ PY_MAX = (3, 12)
 
 ROOT = Path(__file__).resolve().parents[1]
 REQ = ROOT / "requirements.txt"
+
+# Tên trên PyPI khác tên khi import
+IMPORT_NAME = {
+    "pyyaml": "yaml",
+    "scikit-learn": "sklearn",
+}
 
 
 def parse_requirements():
@@ -42,6 +49,25 @@ def installed_version(name):
         return md.version(name)
     except md.PackageNotFoundError:
         return None
+
+
+def can_import(name):
+    """Import thật gói đó. Trả về None nếu ổn, chuỗi lỗi nếu hỏng.
+
+    Bắt buộc phải có bước này: đọc metadata thôi là chưa đủ. Nếu venv bị tạo đè lên
+    một venv cũ của Python khác, metadata vẫn đúng nhưng tệp .pyd lại biên dịch cho
+    phiên bản khác, và mọi thứ chỉ vỡ khi chạy thật.
+    """
+    mod = IMPORT_NAME.get(name, name.replace("-", "_"))
+    try:
+        m = importlib.import_module(mod)
+    except Exception as e:
+        return f"{type(e).__name__}: {str(e).splitlines()[0][:90]}"
+    want = parse_requirements().get(name)
+    got = getattr(m, "__version__", None)
+    if want and got and got != want:
+        return f"metadata ghi {want} nhưng module báo {got}"
+    return None
 
 
 def in_venv():
@@ -75,7 +101,12 @@ def audit():
             status = "LỆCH"
             problems.append(f"{name}: đang là {have}, cần {want}")
         else:
-            status = "khớp"
+            err = can_import(name)
+            if err:
+                status = "IMPORT LỖI"
+                problems.append(f"{name}: metadata đúng nhưng import hỏng — {err}")
+            else:
+                status = "khớp"
         rows.append((name, want, have or "—", status))
 
     return rows, problems
@@ -105,8 +136,18 @@ def main():
         for p in problems:
             print(f"  - {p}")
         print()
-        print("Cài lại đúng phiên bản:")
-        print("  pip install -r requirements.txt")
+        if any(r[3] == "IMPORT LỖI" for r in rows):
+            print("Có gói lỗi import — gần như chắc chắn .venv bị tạo đè lên một")
+            print("venv cũ của Python khác. pip báo 'already satisfied' nhưng tệp")
+            print("nhị phân lại biên dịch cho phiên bản khác. Phải xoá hẳn rồi tạo lại:")
+            print()
+            print("  Linux/macOS:  deactivate; rm -rf .venv")
+            print("  Windows:      deactivate; Remove-Item -Recurse -Force .venv")
+            print()
+            print("rồi tạo lại venv và cài lại từ đầu.")
+        else:
+            print("Cài lại đúng phiên bản:")
+            print("  pip install -r requirements.txt")
         print()
         return 1
 
@@ -127,6 +168,12 @@ def test_python_version():
 
 def test_running_in_venv():
     assert in_venv(), "Chưa kích hoạt venv — chạy: source .venv/bin/activate"
+
+
+def test_all_packages_import():
+    problems = [f"{n}: {e}" for n in parse_requirements()
+                if (e := can_import(n)) is not None]
+    assert not problems, "Gói không import được:\n" + "\n".join(problems)
 
 
 def test_all_packages_pinned():
