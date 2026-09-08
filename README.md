@@ -521,19 +521,47 @@ Không commit `.venv/`, Conda environment hoặc dữ liệu thô vào repositor
 
 ## 10. Chuẩn bị dữ liệu
 
-Dữ liệu thô **không đi kèm repository** do kích thước lớn và điều kiện phân phối của từng dataset.
+Dữ liệu thô **không đi kèm repository** do kích thước lớn và điều kiện phân phối của
+từng dataset. Tổng cộng **11 GB, 2.751 tệp**. Clone repo về là chưa có dữ liệu.
 
-Tải dữ liệu theo hướng dẫn tại:
-
-```text
-data/raw/*/about.md
-```
-
-sau đó đặt dữ liệu vào đúng đường dẫn được mô tả trong:
+### Cấu trúc bắt buộc
 
 ```text
-docs/data-card.md
+data/raw/
+├── Bitbrains-fastStorage/08-2013/     1.250 tệp .csv   1,25 GB
+├── Bitbrains-Rnd/2013-7/                500 tệp .csv   0,46 GB
+├── Bitbrains-Rnd/2013-8/                500 tệp .csv   0,51 GB
+├── Bitbrains-Rnd/2013-9/                500 tệp .csv   0,50 GB
+└── Alibaba-Cluster-Trace/
+    └── machine_usage.csv              8.996.532.344 bytes
 ```
+
+### Cách 1 — chép trực tiếp giữa hai máy (khuyến nghị)
+
+Nhanh và chắc chắn hơn tải lại. Chép nguyên thư mục `data/raw/` qua ổ cứng ngoài
+hoặc mạng nội bộ, giữ đúng cấu trúc trên.
+
+### Cách 2 — tải lại từ nguồn
+
+| Môi trường | Nguồn |
+| --- | --- |
+| Alibaba | https://github.com/alibaba/clusterdata/tree/master/cluster-trace-v2018 — bảng `machine_usage` |
+| Bitbrains | Grid Workloads Archive, bộ **GWA-T-12 Bitbrains**, hai trace `fastStorage` và `Rnd` |
+
+Chi tiết schema và trích dẫn bắt buộc: `data/raw/*/about.md` và `docs/data-card.md`.
+
+### Xác minh sau khi có dữ liệu — bắt buộc
+
+```bash
+python scripts/check_data.py
+```
+
+Đối chiếu số tệp, dung lượng và md5 vài tệp mẫu với vân tay ở
+`results/tables/data_fingerprint.json`. **Phải ra KHỚP trước khi bắt đầu GĐ1** — nếu
+hai máy chạy trên hai bộ dữ liệu khác nhau thì mọi con số đối chiếu ở cổng đều vô
+nghĩa.
+
+Alibaba lệch dung lượng gần như luôn là tải chưa xong.
 
 Nguyên tắc quan trọng:
 

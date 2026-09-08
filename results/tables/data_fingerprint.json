@@ -1,0 +1,31 @@
+{
+  "dirs": {
+    "Bitbrains-fastStorage/08-2013": {
+      "n_files": 1250,
+      "total_bytes": 1246581540
+    },
+    "Bitbrains-Rnd/2013-7": {
+      "n_files": 500,
+      "total_bytes": 455268745
+    },
+    "Bitbrains-Rnd/2013-8": {
+      "n_files": 500,
+      "total_bytes": 512809689
+    },
+    "Bitbrains-Rnd/2013-9": {
+      "n_files": 500,
+      "total_bytes": 498977308
+    }
+  },
+  "alibaba": {
+    "bytes": 8996532344,
+    "rows": 246934820,
+    "md5_head_1mb": "c3fd9a1d8f5cc92b0cdc8df576fb07f0",
+    "md5_tail_1mb": "813a66f788f04967b273b2d5adc447ef"
+  },
+  "samples": {
+    "Bitbrains-fastStorage/08-2013/1.csv": "2332f1faebe89cb451832a732754b08d",
+    "Bitbrains-Rnd/2013-8/1.csv": "0c3041d02266827a73b27e6759d36130",
+    "Bitbrains-Rnd/2013-7/1.csv": "6b3b65bbb5577da0cb731868a6064b38"
+  }
+}

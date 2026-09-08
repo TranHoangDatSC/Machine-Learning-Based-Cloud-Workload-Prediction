@@ -1,8 +1,12 @@
 # ---- Dữ liệu: KHÔNG BAO GIỜ commit ----
-data/raw/**
-!data/raw/README.md
-!data/raw/**/about.md
-!data/raw/**/explain.md
+# Chi bo qua TEP DU LIEU, giu lai tai lieu .md mo ta nguon.
+# Khong dung "data/raw/**" vi no loai ca THU MUC, khien moi dong "!" phia sau
+# vo tac dung — git khong the dua lai mot tep khi thu muc cha da bi loai.
+data/raw/**/*.csv
+data/raw/**/*.zip
+data/raw/**/*.gz
+data/raw/**/*.tar
+data/raw/**/*.parquet
 data/interim/**
 data/processed/**
 !data/**/.gitkeep

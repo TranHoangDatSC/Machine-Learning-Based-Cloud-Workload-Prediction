@@ -46,6 +46,35 @@ TIẾN ĐỘ GĐ1: 0/11 sản phẩm
 
 ---
 
+## Bước 0b — Dữ liệu thô (không cần agent)
+
+**`data/raw/` không nằm trong Git.** Clone repo về là chưa có 11 GB dữ liệu. Không
+có nó thì không làm được bước nào phía dưới.
+
+```bash
+python scripts/check_data.py
+```
+
+**Phải thấy**
+
+```
+Bitbrains-fastStorage/08-2013          1250   1250     1,246,581,540  ok
+Bitbrains-Rnd/2013-7                    500    500       455,268,745  ok
+Bitbrains-Rnd/2013-8                    500    500       512,809,689  ok
+Bitbrains-Rnd/2013-9                    500    500       498,977,308  ok
+machine_usage.csv  8,996,532,344 bytes  ok
+...
+KHỚP — dữ liệu thô giống hệt bản của A. Chạy được GĐ1.
+```
+
+Chưa khớp thì xem README mục 10. Cách nhanh nhất là chép thẳng thư mục `data/raw/`
+từ máy A qua ổ cứng ngoài, giữ nguyên cấu trúc.
+
+Bước này phải KHỚP trước khi làm tiếp — hai máy chạy trên hai bộ dữ liệu khác nhau
+thì mọi con số đối chiếu ở cổng đều vô nghĩa.
+
+---
+
 ## Bước 1 — `src/cwp/io/bitbrains.py`
 
 ### Prompt
