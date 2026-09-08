@@ -4,6 +4,7 @@ Cập nhật thủ công mỗi khi thêm log mới. Mới nhất ở trên.
 
 | Ngày | Phiên | Người | GĐ | Kết quả chính |
 |---|---|---|---|---|
+| 2026-09-08 | [Schema và kiểm cổng tự động](2026-09-08-schema-va-checker.md) | A | GĐ1 | Đặc tả 13 cột catalog; `check_gd1.py` + test cho chính nó, 4 tình huống xanh |
 | 2026-09-08 | [Chốt QĐ-008, mở khoá GĐ1](2026-09-08-chot-qd008.md) | A | GĐ1 | Khảo sát 4 phương án; chọn nội suy ≤2 + lọc theo dòng. K=0 cho cùng số chuỗi |
 | 2026-09-08 | [Conda env và chốt GĐ0](2026-09-08-conda-va-chot-gd0.md) | A | GĐ0 | Công cụ không nhận conda env — đã sửa. **GĐ0 ĐÓNG.** QĐ-008 vẫn chặn GĐ1 |
 | 2026-09-07 | [Sửa `test_env.py`](2026-09-07-sua-test-env.md) | A | GĐ0 | Công cụ cũ báo 12/12 trên venv hỏng hoàn toàn — chỉ đọc metadata, không import |

@@ -115,21 +115,36 @@ Chuỗi vào mà lệch thì không phải sai số — là đọc sót tệp ho
 
 ---
 
-## 4. Lệnh A chạy khi nghiệm thu
+## 4. Lệnh nghiệm thu
+
+Toàn bộ mục 3 đã được tự động hoá. **B chạy trước khi báo xong, A chạy khi nghiệm
+thu — cùng một lệnh, cùng một kết quả.**
 
 ```bash
-# 1. Sinh lại tham chiếu
-python scripts/reference_gd1.py --env all --out results/tables/reference_gd1.json
-
-# 2. Chạy test của B
-pytest tests/ -v
-
-# 3. Bảng tổng hợp của B
-python -c "import pandas as pd; d=pd.read_parquet('data/catalog.parquet'); print(d.groupby('env').agg(n=('series_id','count'), rows=('valid_rows_h12','sum'), mean=('mean','median')))"
-
-# 4. Bẫy Rnd trùng tên
-python -c "import pandas as pd; d=pd.read_parquet('data/catalog.parquet'); e2=d[d.env=='E2']; print('E2 dinh danh duy nhat:', e2.series_id.nunique(), '/', len(e2))"
+python scripts/check_gd1.py
 ```
+
+Script kiểm schema `catalog.parquet` theo protocol mục 6b, đối chiếu số với
+`results/tables/reference_E*.json` theo ngưỡng ở mục 3.3, và kiểm bốn cái bẫy. Thoát
+0 nếu ĐẠT, 1 nếu chưa. Chỉ đọc, không sửa gì.
+
+Ba lệnh phụ khi cần:
+
+```bash
+# Sinh lại tham chiếu (chỉ khi protocol đổi)
+python scripts/reference_gd1.py --env all
+
+# Kiểm tra độ vững, không nội suy
+python scripts/reference_gd1.py --env all --interp 0
+
+# Toàn bộ test, gồm cả test của chính công cụ kiểm
+pytest tests/ -v
+```
+
+> **Công cụ kiểm có test riêng.** `tests/test_check_gd1.py` sinh catalog giả lập và
+> xác nhận `check_gd1.py` phân biệt được đạt với trượt ở bốn tình huống. Lý do:
+> trong dự án này `test_env.py` đã hai lần báo đạt trên môi trường hỏng. Công cụ
+> cổng nào cũng phải tự chứng minh nó bắt được lỗi.
 
 ---
 

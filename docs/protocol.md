@@ -110,6 +110,74 @@ không so sánh được giữa các môi trường, làm RQ3 vô nghĩa.
 
 Bảng này vào phần Dữ liệu của paper.
 
+## 6b. Sản phẩm của bước tiền xử lý
+
+> Bổ sung 2026-09-08. Trước đó chỉ ghi "sinh `catalog.parquet`, một dòng mỗi chuỗi"
+> mà không nói cột nào — không đủ để A và B ra cùng con số.
+
+### `data/processed/` — chuỗi đã xử lý
+
+Định dạng **parquet**, một tệp mỗi môi trường: `E1.parquet`, `E2.parquet`,
+`E3.parquet`. Dạng bảng dài, mỗi dòng là một điểm thời gian của một chuỗi.
+
+| Cột | Kiểu | Ý nghĩa |
+|---|---|---|
+| `env` | string | `E1`, `E2` hoặc `E3` |
+| `series_id` | string | Định danh chuỗi, **duy nhất trong toàn dự án** |
+| `bucket` | int64 | Số hiệu bucket 5 phút tuyệt đối, `floor(t / 300)` |
+| `y` | float64 | CPU%, thang 0–100, đã clip và đã nội suy lỗ hổng ngắn |
+| `is_interp` | bool | `True` nếu điểm này do nội suy sinh ra, không phải quan sát thật |
+
+`y` được phép là `NaN` — đó là lỗ hổng dài không nội suy. Không xoá dòng đó.
+
+**`is_interp` là cột bắt buộc.** Không có nó thì không tính được tỉ lệ nội suy để
+báo cáo, và không chạy được kiểm tra độ vững K=0.
+
+### Quy tắc đặt `series_id`
+
+| Môi trường | Dạng | Ví dụ |
+|---|---|---|
+| E1 | `E1_<tên tệp>` | `E1_137` |
+| E2 | `E2_<tháng>_<tên tệp>` | `E2_2013-8_137` |
+| E3 | `E3_<machine_id>` | `E3_m_1932` |
+
+E2 **bắt buộc** có phần tháng. Tên tệp Rnd trùng nhau giữa ba tháng; thiếu phần này
+là rò rỉ định danh.
+
+### `data/catalog.parquet` — một dòng mỗi chuỗi
+
+Gồm **mọi** chuỗi đã xét, kể cả chuỗi bị loại. Đây là bảng A dùng để nghiệm thu.
+
+| Cột | Kiểu | Ý nghĩa |
+|---|---|---|
+| `env` | string | `E1`, `E2`, `E3` |
+| `series_id` | string | Như trên |
+| `kept` | bool | `True` nếu chuỗi được giữ |
+| `reject_reason` | string | `ngoai_cua_so`, `gan_chet`, `hang`, `it_dong`, hoặc `""` nếu giữ |
+| `n_points` | int64 | Số điểm không NaN trong cửa sổ, sau nội suy |
+| `n_interp` | int64 | Số điểm do nội suy sinh ra |
+| `valid_rows_h1` | int64 | Số dòng huấn luyện hợp lệ ở h=1 |
+| `valid_rows_h6` | int64 | Số dòng huấn luyện hợp lệ ở h=6 |
+| `valid_rows_h12` | int64 | Số dòng huấn luyện hợp lệ ở h=12 |
+| `mean` | float64 | CPU% trung bình của chuỗi, tính trên điểm quan sát thật |
+| `p50` | float64 | Trung vị |
+| `std` | float64 | Độ lệch chuẩn |
+| `n_clipped` | int64 | Số mẫu thô bị clip về 100 trước khi căn lưới |
+
+Chuỗi bị loại vẫn phải có đủ các cột thống kê, điền giá trị tính được đến thời điểm
+bị loại. Chỉ `reject_reason` phân biệt giữ hay loại — **không xoá dòng**.
+
+### Kiểm tra trước khi báo xong
+
+B chạy lệnh sau và phải ra ĐẠT trước khi báo hoàn thành GĐ1:
+
+```bash
+python scripts/check_gd1.py
+```
+
+Script đối chiếu `catalog.parquet` với số liệu tham chiếu ở
+`results/tables/reference_E*.json` theo ngưỡng ghi trong `docs/gate-gd1.md` mục 3.3.
+
 ## 7. Cửa sổ thời gian chung
 
 E3 chỉ có 8 ngày. Thí nghiệm chính dùng **8 ngày đầu** của cả ba môi trường.

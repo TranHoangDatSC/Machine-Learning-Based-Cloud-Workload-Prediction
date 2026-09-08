@@ -351,9 +351,6 @@ cd ~/ML-CWP-Cloud
 # 3. Tạo môi trường ảo ngay trong repo
 python3 -m venv .venv
 
-# 3.1. Tạo môi trường ảo trong repo (đối với Linux)
-conda activate ml-cwp
-
 # 4. Kích hoạt. Dấu hiệu thành công: dòng nhắc lệnh có tiền tố (.venv)
 source .venv/bin/activate
 
@@ -368,6 +365,21 @@ python tests/test_env.py
 ```
 
 Bước 7 là bắt buộc. Chưa ra 12/12 thì chưa được bắt đầu GĐ1.
+
+#### Dùng conda thay cho venv
+
+Máy đã có sẵn conda thì dùng conda cũng được, `tests/test_env.py` chấp nhận cả hai.
+**Thay** bước 3 và 4 ở trên bằng hai lệnh sau, các bước còn lại giữ nguyên:
+
+```bash
+conda create -n ml-cwp python=3.11 -y
+conda activate ml-cwp
+```
+
+Không chạy cả hai. Kích hoạt conda env rồi lại `source .venv/bin/activate` là chồng
+hai môi trường lên nhau, gói sẽ cài lẫn lộn và `test_env.py` sẽ báo lỗi import.
+
+Không dùng conda `base` — đó là môi trường dùng chung, `test_env.py` từ chối.
 
 **Mỗi lần mở terminal mới đều phải kích hoạt lại:**
 

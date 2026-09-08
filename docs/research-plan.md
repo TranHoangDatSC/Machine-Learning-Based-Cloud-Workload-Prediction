@@ -121,6 +121,7 @@ Tốn thời gian nhất, ít được ghi nhận nhất. Làm chắc ở đây 
 - [ ] Sinh `data/processed/` dạng parquet
 - [ ] Sinh `data/catalog.parquet` — một dòng mỗi chuỗi
 - [ ] `tests/test_io.py`, `tests/test_resample.py`
+- [ ] **Chạy `python scripts/check_gd1.py` cho tới khi ra ĐẠT** — không báo xong trước khi đạt
 - [ ] Log: bảng số chuỗi vào, bị loại theo từng điều kiện, còn lại
 
 **Bẫy đã biết** — kiểm tra kỹ bốn chỗ này:
@@ -139,10 +140,14 @@ Tốn thời gian nhất, ít được ghi nhận nhất. Làm chắc ở đây 
 - [x] Sửa `protocol.md` mục 5, 6, 7, 8 và `config/preprocess.yaml`
 - [x] Sinh lại tham chiếu trên toàn bộ dữ liệu, ghi vào `gate-gd1.md` mục 2
 - [x] Dựng venv ghim trên máy A — tham chiếu sinh trong môi trường QĐ-007
+- [x] Đặc tả schema `catalog.parquet` và `data/processed/` — protocol mục 6b
+- [x] Tự động hoá kiểm cổng: `scripts/check_gd1.py` + `tests/test_check_gd1.py`
 
 **A — khi B nộp:**
-- [ ] Chạy toàn bộ danh sách `docs/gate-gd1.md` mục 5, theo thứ tự
-- [ ] Ghi kết quả vào `gate-gd1.md` mục 7
+- [ ] Chạy `python scripts/check_gd1.py` — phải ra ĐẠT
+- [ ] Kiểm mắt hai thứ script không tự làm được: đọc `src/cwp/preprocess/filter.py`
+      xem có `.shift(1)` ở rolling chưa, và xem log của B có bảng lọc đủ cột chưa
+- [ ] Ghi kết quả vào `gate-gd1.md` mục 5
 
 **Điều kiện qua cổng:** A đối chiếu bảng của B với `scripts/reference_gd1.py`, theo
 danh sách đầy đủ ở `docs/gate-gd1.md`. Ngưỡng: số chuỗi vào phải khớp tuyệt đối,
