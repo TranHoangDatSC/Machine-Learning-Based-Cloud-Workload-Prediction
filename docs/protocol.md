@@ -63,32 +63,65 @@ không so sánh được giữa các môi trường, làm RQ3 vô nghĩa.
 
 **300 giây (5 phút) cho cả ba môi trường.**
 
-- E1, E2: đã sẵn 300 s. Chỉ căn lại về lưới tuyệt đối `floor(t / 300)`.
-- E3: hạ tần từ khoảng 10 s. Giá trị mỗi bucket bằng **trung bình** các mẫu trong bucket.
-- Bucket không có mẫu nào thì để `NaN`. **Không nội suy.**
+- Căn về lưới tuyệt đối `floor(t / 300)`. E1, E2 vốn đã 300 s; E3 hạ tần từ khoảng
+  10 s.
+- Giá trị mỗi bucket bằng **trung bình** các mẫu rơi vào bucket đó.
+- Bucket không có mẫu nào thì để `NaN`. Cách xử lý `NaN` nằm ở mục 6, không làm ở
+  bước này.
 
-## 6. Làm sạch
+## 6. Làm sạch và xử lý lỗ hổng
+
+> Sửa theo QĐ-008 ngày 2026-09-08. Quy tắc cũ *"ffill 3 bước rồi cắt chuỗi"* đã bị
+> bãi bỏ vì phá huỷ 74% dữ liệu E2 và 99% dữ liệu E3. Lý do đầy đủ và bằng chứng
+> định lượng ở `decisions.md` QĐ-008.
 
 Áp dụng theo đúng thứ tự này:
 
 1. **Clip** CPU% về `[0, 100]`. Ghi lại tỉ lệ bị clip mỗi môi trường.
-2. **Mask** giá trị bất thường của E3: `disk_io_percent` bằng `-1` hoặc `101` thì cho về `NaN`.
+2. **Mask** giá trị bất thường của E3: `disk_io_percent` bằng `-1` hoặc `101` thì
+   cho về `NaN`.
 3. **Bỏ cột** `mem_gps` và `mkpi` của E3 (rỗng 79%).
 4. **Căn lưới** 5 phút như mục 5.
-5. **Lọc chuỗi** — loại nếu vi phạm bất kỳ điều kiện nào:
-   - Độ dài dưới 2.000 điểm sau khi căn lưới
-   - Tỉ lệ `NaN` trên 20%
-   - CPU% trung bình dưới 1,0 (chuỗi gần chết)
-   - Số giá trị phân biệt từ 2 trở xuống (chuỗi hằng)
-6. **Điền khuyết** phần `NaN` còn lại: forward-fill tối đa 3 bước; còn thiếu thì
-   cắt chuỗi tại đó.
+5. **Cắt cửa sổ 8 ngày** như mục 7.
+6. **Nội suy lỗ hổng ngắn.** Nội suy tuyến tính những cụm `NaN` dài **≤ K = 2 điểm**
+   (tối đa 10 phút). Cụm dài hơn giữ nguyên `NaN`.
+   - **Không dùng forward-fill.** ffill tạo ra đoạn phẳng, làm autocorrelation tăng
+     giả tạo — mà autocorrelation là đại lượng trung tâm của RQ3.
+   - `K` là tham số cấu hình trong `config/preprocess.yaml`, không chôn trong code.
+7. **Lọc chuỗi** — loại nếu vi phạm bất kỳ điều kiện nào:
+   - Không có mẫu nào nằm trong cửa sổ 8 ngày (`ngoai_cua_so`)
+   - CPU% trung bình dưới 1,0 — chuỗi gần chết (`gan_chet`)
+   - Số giá trị phân biệt từ 2 trở xuống — chuỗi hằng (`hang`)
+   - Dưới **500 dòng huấn luyện hợp lệ ở h = 12** (`it_dong`), theo định nghĩa ở
+     mục 8
+8. **Không cắt chuỗi tại lỗ hổng.** Chuỗi giữ nguyên độ dài, kể cả khi còn `NaN`.
+   Việc loại bỏ diễn ra ở mức **dòng huấn luyện**, xem mục 8.
 
-**Bắt buộc báo cáo:** số chuỗi vào, số chuỗi bị loại theo từng điều kiện, số chuỗi
-còn lại. Con số này vào bảng đầu tiên của phần Dữ liệu trong paper.
+**Bắt buộc báo cáo cho từng môi trường:**
+
+| Cột | Vì sao bắt buộc |
+|---|---|
+| Số chuỗi vào | Mốc gốc |
+| Số bị loại theo **từng** lý do, bốn cột tách riêng | Gộp lại thì không truy được nguyên nhân |
+| Số chuỗi còn lại | |
+| Số dòng huấn luyện hợp lệ ở mỗi horizon | Con số thực sự dùng để train |
+| **Tỉ lệ điểm được nội suy** | Đây là can thiệp vào dữ liệu, phải khai báo |
+| Tỉ lệ mẫu bị clip | Kiểm chứng bước làm sạch có chạy |
+
+Bảng này vào phần Dữ liệu của paper.
 
 ## 7. Cửa sổ thời gian chung
 
 E3 chỉ có 8 ngày. Thí nghiệm chính dùng **8 ngày đầu** của cả ba môi trường.
+
+**Cửa sổ là toàn cục theo từng môi trường**, tính từ mốc thời gian sớm nhất của môi
+trường đó — không phải từ điểm đầu của mỗi chuỗi. Cụ thể: `b0 = min` bucket trên
+toàn bộ chuỗi của môi trường, cửa sổ là `[b0, b0 + 2304)`.
+
+Lý do: giữ mọi chuỗi cùng phủ một khoảng lịch, nên đặc trưng giờ-trong-ngày và
+thứ-trong-tuần so sánh được giữa các chuỗi, và phát biểu "8 ngày đầu của trace" đúng
+theo nghĩa đen. 92% chuỗi E1 và 99% chuỗi E2 vốn đã bắt đầu cùng một mốc; số bắt đầu
+muộn bị loại với lý do `ngoai_cua_so` và phải được báo cáo.
 
 Chuỗi dài hơn của E1 và E2 chỉ dùng cho phân tích bổ sung về chu kỳ tuần, và phải
 ghi rõ là phân tích bổ sung.
@@ -106,6 +139,22 @@ dùng thông tin tương lai.
 | Lịch | giờ trong ngày, thứ trong tuần, mã hoá sin/cos |
 
 Mọi thống kê rolling tính **chỉ trên quá khứ**, không bao gồm điểm hiện tại.
+
+### Dòng huấn luyện hợp lệ
+
+> Bổ sung theo QĐ-008.
+
+Cửa sổ đặc trưng sâu nhất là **24 bước** (lag `t-24`). Một dòng huấn luyện tại thời
+điểm `t` với horizon `h` là **hợp lệ** khi và chỉ khi:
+
+- mọi điểm trong `[t − 24, t]` đều không `NaN`, **và**
+- target tại `t + h` không `NaN`
+
+Dòng không hợp lệ thì **bỏ dòng đó**, không cắt chuỗi và không lấp thêm.
+
+Hệ quả cần nhớ: **một điểm `NaN` đơn lẻ làm hỏng 25 dòng.** Đó là lý do bước nội suy
+lỗ hổng ngắn ở mục 6 tồn tại — nó thu hồi phần lớn số dòng mà không bịa ra động lực
+học.
 
 ## 9. Chia dữ liệu
 

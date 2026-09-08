@@ -7,6 +7,7 @@ Chạy hai cách:
 Cổng GĐ0 chỉ đóng khi lệnh thứ nhất báo 12/12 khớp.
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -70,8 +71,29 @@ def can_import(name):
     return None
 
 
+def env_kind():
+    """Môi trường có được tách riêng không? Trả về (có/không, mô tả).
+
+    Chấp nhận cả venv lẫn conda env. README mục 9 cho phép cả hai, nên công cụ
+    không được chỉ nhận venv: `sys.prefix != sys.base_prefix` đúng với venv nhưng
+    luôn sai với conda env, vì conda env là một bản cài Python đầy đủ chứ không
+    phải lớp phủ lên bản gốc.
+    """
+    if sys.prefix != sys.base_prefix:
+        return True, "venv"
+
+    conda = os.environ.get("CONDA_PREFIX")
+    name = os.environ.get("CONDA_DEFAULT_ENV", "")
+    if conda and Path(conda) == Path(sys.prefix):
+        if name and name != "base":
+            return True, f"conda env '{name}'"
+        return False, "conda base — cần tạo env riêng, không dùng base"
+
+    return False, "Python toàn cục"
+
+
 def in_venv():
-    return sys.prefix != sys.base_prefix
+    return env_kind()[0]
 
 
 def audit():
@@ -86,10 +108,11 @@ def audit():
             )
         )
 
-    if not in_venv():
+    isolated, kind = env_kind()
+    if not isolated:
         problems.append(
-            "Đang chạy Python toàn cục, chưa kích hoạt venv. "
-            "Chạy: source .venv/bin/activate"
+            f"Môi trường chưa tách riêng ({kind}). "
+            "Dùng venv hoặc conda env, xem README mục 9."
         )
 
     for name, want in parse_requirements().items():
@@ -118,7 +141,8 @@ def main():
 
     print()
     print(f"Python      : {py}   (cần {PY_MIN[0]}.{PY_MIN[1]}–{PY_MAX[0]}.{PY_MAX[1]})")
-    print(f"venv        : {'có' if in_venv() else 'KHÔNG — đang dùng Python toàn cục'}")
+    isolated, kind = env_kind()
+    print(f"Môi trường  : {kind}{'' if isolated else '  <- CHƯA TÁCH RIÊNG'}")
     print(f"Thư mục     : {sys.prefix}")
     print()
     print(f"{'gói':<16}{'cần':<12}{'đang có':<12}trạng thái")
@@ -166,8 +190,9 @@ def test_python_version():
     )
 
 
-def test_running_in_venv():
-    assert in_venv(), "Chưa kích hoạt venv — chạy: source .venv/bin/activate"
+def test_isolated_environment():
+    isolated, kind = env_kind()
+    assert isolated, f"Môi trường chưa tách riêng ({kind}) — xem README mục 9"
 
 
 def test_all_packages_import():
@@ -178,7 +203,8 @@ def test_all_packages_import():
 
 def test_all_packages_pinned():
     _, problems = audit()
-    pkg_problems = [p for p in problems if "Python" not in p and "venv" not in p]
+    env_prefixes = ("Python ", "Môi trường ")
+    pkg_problems = [p for p in problems if not p.startswith(env_prefixes)]
     assert not pkg_problems, "Gói lệch phiên bản:\n" + "\n".join(pkg_problems)
 
 

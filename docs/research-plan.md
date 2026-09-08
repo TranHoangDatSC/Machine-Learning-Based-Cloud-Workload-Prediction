@@ -95,8 +95,15 @@ cần mở lại tài liệu. Nếu chưa thì A giảng lại — đây là ph�
 cũng là phần quyết định giá trị bài.
 
 > **Kết quả cổng — ĐẠT. GĐ0 ĐÓNG ngày 2026-09-07.**
-> Bốn câu trả lời của B đều đúng bản chất, số học kiểm lại khớp. Môi trường đã đạt
-> 12/12 sau khi áp QĐ-007. Chi tiết: `research-log/2026-09-07-review-cong-gd0.md`.
+>
+> - Bốn câu trả lời sát hạch đều đúng bản chất, số học kiểm lại khớp.
+> - Môi trường B: Python 3.11.16, conda env `ml-cwp`, **12/12 gói khớp và import
+>   thật thành công** trên bản `test_env.py` có kiểm import.
+> - Hai lỗi trong công cụ cổng của A đã sửa: bản đầu chỉ đọc metadata nên báo đạt
+>   trên môi trường hỏng; bản thứ hai không nhận conda env là môi trường tách riêng.
+>
+> Chi tiết: `research-log/2026-09-07-review-cong-gd0.md`,
+> `2026-09-07-sua-test-env.md`, `2026-09-08-conda-va-chot-gd0.md`.
 
 ---
 
@@ -116,19 +123,22 @@ Tốn thời gian nhất, ít được ghi nhận nhất. Làm chắc ở đây 
 - [ ] `tests/test_io.py`, `tests/test_resample.py`
 - [ ] Log: bảng số chuỗi vào, bị loại theo từng điều kiện, còn lại
 
-**Bẫy đã biết** — kiểm tra kỹ ba chỗ này:
+**Bẫy đã biết** — kiểm tra kỹ bốn chỗ này:
 - Tên file Rnd trùng nhau giữa ba tháng. Phải khoá `(month, vm_id)`.
 - `sep=';'` thay vì `sep=';\t'` sẽ để tab lẫn vào tên cột, im lặng và khó phát hiện.
 - Alibaba không có header. Quên `names=[...]` sẽ nuốt mất dòng dữ liệu đầu tiên.
+- **Cửa sổ 8 ngày là toàn cục, không phải per-series.** Làm sai thì E1 sẽ có 0 chuỗi
+  bị loại vì `ngoai_cua_so` thay vì 55.
 
 **A — làm trước khi B nộp, không đợi:**
 - [x] Dựng thước đo tham chiếu độc lập: `scripts/reference_gd1.py`
 - [x] Lập hồ sơ cổng `docs/gate-gd1.md` — danh sách kiểm, ngưỡng, lệnh nghiệm thu
 - [x] Phát hiện khuyết tật protocol mục 6 bước 6, ghi QĐ-008
-- [ ] **Duyệt hoặc bác QĐ-008** — đang chặn, B không nên viết `filter.py` trước khi chốt
-- [ ] Chốt hai điểm mơ hồ ở `gate-gd1.md` mục 4 (mốc cửa sổ 8 ngày, ngưỡng 2.000)
-- [ ] Sinh lại tham chiếu sau khi QĐ-008 có hiệu lực
-- [ ] Dựng venv ghim trên máy A, để tham chiếu và kết quả của B cùng môi trường
+- [x] **QĐ-008 CÓ HIỆU LỰC** — khảo sát 4 phương án, chọn P4 (nội suy ≤2 rồi lọc dòng)
+- [x] Chốt hai điểm mơ hồ: cửa sổ 8 ngày **toàn cục**, ngưỡng đổi sang **≥500 dòng h=12**
+- [x] Sửa `protocol.md` mục 5, 6, 7, 8 và `config/preprocess.yaml`
+- [x] Sinh lại tham chiếu trên toàn bộ dữ liệu, ghi vào `gate-gd1.md` mục 2
+- [x] Dựng venv ghim trên máy A — tham chiếu sinh trong môi trường QĐ-007
 
 **A — khi B nộp:**
 - [ ] Chạy toàn bộ danh sách `docs/gate-gd1.md` mục 5, theo thứ tự

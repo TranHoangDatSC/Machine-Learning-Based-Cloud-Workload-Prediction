@@ -194,58 +194,143 @@ Python.
 
 ---
 
-## QĐ-008 — Bỏ quy tắc cắt chuỗi tại lỗ hổng, chuyển sang lọc theo dòng
-**Ngày đề xuất:** 2026-09-07 · **Người đề xuất:** A · **Trạng thái:** ⏳ **ĐỀ XUẤT — CHỜ A DUYỆT**
+## QĐ-008 — Chính sách xử lý lỗ hổng dữ liệu cho toàn bộ dự án
+**Ngày:** 2026-09-08 · **Người quyết:** A · **Trạng thái:** ✅ **CÓ HIỆU LỰC**
 
-> `protocol.md` **chưa sửa**. Chỉ sửa sau khi mục này chuyển sang "Có hiệu lực".
+Thay thế bản nháp cùng số ngày 2026-09-07. Bản nháp đề xuất "che theo dòng"; khảo
+sát định lượng sau đó cho thấy phương án đó chưa tối ưu. Nội dung dưới đây là bản
+chốt, đã sửa vào `protocol.md` mục 5, 6, 7, 8.
 
-**Bối cảnh.** A viết `scripts/reference_gd1.py` làm bản hiện thực độc lập của
-protocol mục 5–7 để dựng thước đo cho cổng GĐ1. Khi chạy, phát hiện quy tắc ở mục 6
-bước 6 — *"còn thiếu thì cắt chuỗi tại đó"* — phá huỷ phần lớn dữ liệu.
+### Bối cảnh
 
-**Cơ chế.** Mục 6 xếp lọc chuỗi ở bước 5, điền khuyết ở bước 6. Bộ lọc độ dài vì thế
-chạy *trước* khi cắt, không thể bắt được chuỗi bị cắt cụt sau đó.
+Bản hiện thực độc lập của protocol phát hiện quy tắc cũ ở mục 6 bước 6 —
+*"ffill tối đa 3 bước, còn thiếu thì cắt chuỗi tại đó"* — phá huỷ dữ liệu:
 
-**Bằng chứng đo được.**
+| Môi trường | Dòng huấn luyện h=12 giữ được |
+|---|---|
+| E1 | 100% |
+| E2 | **26%** |
+| E3 | **1%** |
 
-| Môi trường | Tỉ lệ NaN | Luật hiện tại giữ | Phương án đề xuất giữ |
+Nguyên nhân: mục 6 xếp lọc chuỗi ở bước 5, điền khuyết ở bước 6, nên bộ lọc độ dài
+chạy *trước* khi cắt và không bắt được chuỗi bị cắt cụt sau đó. Nguy hiểm hơn là
+bảng tổng kết không lộ ra: E3 báo giữ 99,6% số chuỗi trong khi độ dài trung vị chỉ
+còn 26 trên tối đa 2.304.
+
+### Bốn phương án đã cân nhắc
+
+Đo trên mẫu cả ba môi trường, số dòng huấn luyện hợp lệ ở h=12, lấy P1 làm mốc 100%:
+
+| Phương án | E1 | E2 | E3 |
 |---|---|---|---|
-| E1 | 0,00% | 100% | 98,4% |
-| E2 | 0,43% | **20,9%** | **94,5%** |
-| E3 | 12,11% | **1,1%** | **34,9%** |
+| P0 — ffill(3) rồi cắt chuỗi *(quy tắc cũ)* | 100% | 26% | **1%** |
+| P1 — giữ nguyên chuỗi, bỏ dòng chạm NaN | 100% | 100% | 100% |
+| P2 — cắt thành đoạn liên tục ≥ 1 ngày | 99% | 96% | **0%** |
+| **P4 — nội suy lỗ hổng ≤ 2 điểm rồi bỏ dòng chạm NaN** | **100%** | **102%** | **226%** |
 
-E2 chỉ có 0,43% NaN nhưng mất 79% dữ liệu, vì lỗ hổng đi thành cụm 8–12 điểm liên
-tiếp; 37/40 chuỗi mẫu có ít nhất một cụm, xuất hiện lần đầu quanh vị trí 480.
+P2 sập trên E3 vì lỗ hổng rải rác khắp nơi, gần như không có đoạn nào liên tục đủ
+một ngày — chỉ 8 đoạn sống sót. Cắt đoạn là cách làm chuẩn trong nhiều thư viện dự
+báo, nhưng sai với dạng thưa rải rác.
 
-Nguy hiểm nhất là **bảng tổng kết không lộ ra vấn đề**: E3 báo giữ 99,6% số chuỗi,
-trong khi độ dài trung vị chỉ còn 26 trên tối đa 2.304.
+P4 thắng vì với cửa sổ đặc trưng sâu 24 bước, **một điểm NaN đơn lẻ làm hỏng 25
+dòng**. Lấp các lỗ hổng một–hai điểm trước rồi mới lọc dòng sẽ thu hồi phần lớn.
 
-**Đề xuất.** Thay bước 6 của mục 6 bằng:
+### Quyết định
 
-1. **Không cắt chuỗi.** Giữ nguyên chuỗi kể cả khi còn NaN.
-2. **Bỏ ffill hoàn toàn.** Forward-fill 8–12 điểm là bịa ra một giờ dữ liệu phẳng,
-   làm autocorrelation tăng giả tạo — trong khi autocorrelation chính là đại lượng
-   trung tâm của RQ3.
-3. **Lọc ở mức dòng, không ở mức chuỗi.** Khi dựng ma trận huấn luyện, loại dòng nào
-   có cửa sổ đặc trưng `[t−24, t]` hoặc target `t+h` chạm NaN.
-4. **Đổi ngưỡng lọc chuỗi** từ "độ dài ≥ 2.000 điểm" sang "**số dòng huấn luyện hợp
-   lệ ≥ 500 ở h = 12**". Ngưỡng cũ mất nghĩa sau khi cắt cửa sổ còn 8 ngày (tối đa
-   2.304 điểm), và không phản ánh lượng dữ liệu thực sự dùng được.
+Chính sách gồm bốn phần, áp dụng **thống nhất cho cả ba môi trường**:
 
-**Lý do chọn phương án này thay vì nới ffill.** Nới `ffill(limit=12)` cũng cứu được
-số lượng, nhưng bịa dữ liệu. Với một nghiên cứu mà kết luận trung tâm nằm ở việc so
-sánh động lực học giữa các môi trường, bịa ra các đoạn phẳng là tự phá hỏng biến phụ
-thuộc. Lọc theo dòng không bịa gì cả, chỉ bỏ đi những dòng không đủ thông tin.
+1. **Cửa sổ 8 ngày là cửa sổ toàn cục** của từng môi trường, tính từ mốc thời gian
+   sớm nhất của môi trường đó — không phải từ điểm đầu của mỗi chuỗi.
+2. **Nội suy tuyến tính lỗ hổng dài ≤ K = 2 điểm** (tối đa 10 phút). Lỗ hổng dài
+   hơn giữ nguyên NaN. **Không dùng ffill.**
+3. **Lọc ở mức dòng, không cắt chuỗi.** Một dòng huấn luyện tại `t` với horizon `h`
+   là hợp lệ khi cửa sổ `[t−24, t]` và target `t+h` đều không NaN.
+4. **Ngưỡng giữ chuỗi đổi từ "độ dài ≥ 2.000 điểm" sang "≥ 500 dòng hợp lệ ở
+   h = 12"**. Ngưỡng cũ mất nghĩa sau khi cắt cửa sổ còn 8 ngày, vì tối đa chỉ còn
+   2.304 điểm nên nó thực chất là yêu cầu độ phủ 86,8%, không phải yêu cầu độ dài.
 
-**Hệ quả nếu duyệt.**
-1. Sửa `protocol.md` mục 6 bước 5 và 6, mục 8 nói rõ quy tắc loại dòng.
-2. Sinh lại toàn bộ số liệu tham chiếu; bảng trong `gate-gd1.md` mục 3 bị thay thế.
-3. E3 còn khoảng 35% số dòng, tương đương ~800 dòng mỗi máy × 498 máy. Đủ để huấn
-   luyện, nhưng **phải khai trong Limitations** rằng E3 thưa hơn hai môi trường kia.
-4. Số dòng huấn luyện chênh lệch giữa các môi trường phải ghi vào bảng dữ liệu của
-   paper, vì nó ảnh hưởng đến cách đọc kết quả RQ2.
+`K` là tham số cấu hình, không phải hằng số chôn trong code.
 
-**Hai điểm mơ hồ cần chốt cùng lúc.** Chi tiết ở `gate-gd1.md` mục 4:
-- Cửa sổ 8 ngày tính từ điểm đầu của **từng chuỗi** hay từ mốc sớm nhất của **toàn
-  môi trường**? A tạm dùng từng chuỗi.
-- Ngưỡng 2.000 điểm phải diễn giải lại theo đề xuất số 4 ở trên.
+### Ba lý do chọn phương án này
+
+**Một — không bịa ra động lực học.** ffill 8–12 điểm tạo ra một giờ dữ liệu phẳng,
+làm autocorrelation tăng giả tạo. Mà autocorrelation chính là đại lượng trung tâm
+của RQ3, nên bịa nó là tự phá hỏng biến phụ thuộc. Nội suy tuyến tính hai điểm giữa
+hai giá trị thật thì khác hẳn về mức độ.
+
+Đã đo, không suy đoán. So autocorr tính **chỉ trên các cặp quan sát thật** với
+autocorr sau khi nội suy:
+
+| Môi trường | acf lag-1 quan sát | sau nội suy ≤2 | lệch |
+|---|---|---|---|
+| E1 | 0,6941 | 0,6941 | +0,0000 |
+| E2 | 0,6417 | 0,6428 | +0,0011 |
+| E3 | 0,7869 | 0,7956 | **+0,0087** |
+
+Trường hợp xấu nhất lệch +0,0087, trong khi khoảng cách autocorr *giữa các môi
+trường* — thứ RQ3 cần phân biệt — là 0,64 đến 0,79. Nhiễu do xử lý nhỏ hơn tín hiệu
+cần đo khoảng một bậc.
+
+**Hai — thống nhất giữa ba môi trường.** Mọi tham số giống hệt nhau ở E1, E2, E3.
+Nếu mỗi môi trường một quy tắc thì chênh lệch hiệu năng ở RQ2 và RQ3 không còn quy
+được cho môi trường nữa — đúng loại lỗi mà `tu-bai-cu-den-bai-nay.md` mục 3 mô tả.
+
+**Ba — có đường kiểm chứng độ vững.** Vì `K` là tham số, chạy lại toàn bộ với `K=0`
+cho ra kết quả không nội suy chút nào. Kết quả chính báo cáo ở `K=2`, kèm bảng đối
+chiếu `K=0` trong phần Limitations. Phản biện hỏi "nội suy có làm đẹp số không" thì
+đã có sẵn câu trả lời bằng số.
+
+### Số liệu tham chiếu sau khi áp dụng
+
+Chạy trên toàn bộ dữ liệu, `scripts/reference_gd1.py`, K=2:
+
+| Chỉ số | E1 | E2 | E3 |
+|---|---|---|---|
+| Chuỗi vào | 1.250 | 500 | 500 |
+| Loại — ngoài cửa sổ | 55 | 1 | 0 |
+| Loại — gần chết | 454 | 197 | 1 |
+| Loại — hằng | 0 | 0 | 0 |
+| Loại — ít dòng | 6 | 0 | 0 |
+| **Chuỗi còn lại** | **735** (58,8%) | **302** (60,4%) | **499** (99,8%) |
+| Dòng hợp lệ h=1 | 1.650.896 | 678.486 | 941.439 |
+| Dòng hợp lệ h=12 | 1.642.811 | 673.322 | 919.907 |
+| Điểm được nội suy | 272 (0,016%) | 641 (0,092%) | 1.910 (0,183%) |
+| Mẫu bị clip trên 100 | 319.082 (2,84%) | 95.137 (2,19%) | 0 |
+| Target mean | 13,64 | 9,22 | 38,05 |
+| Target p50 | 1,78 | 1,77 | 37,83 |
+
+Tỉ lệ nội suy thực tế **dưới 0,2% ở cả ba môi trường** — thấp hơn nhiều so với ước
+lượng ban đầu, vì khảo sát sơ bộ chỉ đọc 6 triệu dòng đầu của Alibaba nên mọi máy
+đều bị cắt cụt một cách giả tạo. Trên dữ liệu đầy đủ, E3 lành lặn hơn hẳn.
+
+### Hệ quả
+
+1. `protocol.md` mục 5, 6, 7, 8 đã sửa theo chính sách này.
+2. Ba môi trường có 673 nghìn đến 1,64 triệu dòng huấn luyện — thừa sức cho global
+   model, và không môi trường nào bị thiệt hại bất thường.
+3. **Bảng dữ liệu của paper phải có cột "tỉ lệ điểm được nội suy" cho từng môi
+   trường.** Đây là thao tác can thiệp vào dữ liệu, phải khai báo.
+4. Bảng lọc phải tách riêng bốn lý do loại, không gộp.
+5. Ở GĐ4, chạy thêm một lượt `K=0` cho các cặp transfer chính làm kiểm tra độ vững.
+6. E1 mất 55 chuỗi vì "ngoài cửa sổ" — đó là các VM bắt đầu ghi muộn hơn mốc chung
+   tới 400 giờ. Đây là hệ quả trực tiếp của việc chọn cửa sổ toàn cục, và là cái giá
+   chấp nhận được để mọi chuỗi cùng phủ một khoảng lịch.
+
+### Kiểm tra độ vững — đã chạy, K=0 so với K=2
+
+Chạy lại toàn bộ với `--interp 0`, tức không nội suy điểm nào:
+
+| Môi trường | Chuỗi giữ K=2 | Chuỗi giữ K=0 | Dòng h=12 K=2 | Dòng h=12 K=0 | Chênh |
+|---|---:|---:|---:|---:|---:|
+| E1 | 735 | **735** | 1.642.811 | 1.636.326 | −0,39% |
+| E2 | 302 | **302** | 673.322 | 660.555 | −1,90% |
+| E3 | 499 | **499** | 919.907 | 907.772 | −1,32% |
+
+**Số chuỗi được giữ giống hệt nhau ở cả ba môi trường.** Số dòng huấn luyện chênh
+dưới 2%. Nghĩa là quyết định nội suy **không** thay đổi tập chuỗi đưa vào nghiên
+cứu, và gần như không đổi lượng dữ liệu.
+
+Đây là kết quả mạnh hơn mong đợi: nó cho phép phát biểu trong paper rằng kết luận
+không phụ thuộc vào tham số `K`. Bảng này đưa vào phần Limitations.
+
+Tệp: `results/tables/reference_gd1_K0.json`.

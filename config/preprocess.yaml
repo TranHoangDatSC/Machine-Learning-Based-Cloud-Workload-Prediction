@@ -1,17 +1,33 @@
-# Tien xu ly. Xem docs/protocol.md muc 5 va 6.
+# Tien xu ly. Xem docs/protocol.md muc 5, 6, 7 va decisions.md QD-008.
+
 grid_seconds: 300
 aggregate: mean
-interpolate: false
+
+# Cua so 8 ngay, TOAN CUC theo tung moi truong (protocol muc 7)
+window:
+  days: 8
+  origin: env_global      # env_global | per_series  -> QD-008 chon env_global
+
+# Xu ly lo hong (protocol muc 6 buoc 6) -- QD-008
+gap:
+  method: linear_interp   # KHONG dung ffill
+  max_len: 2              # K: chi noi suy cum NaN dai <= 2 diem (10 phut)
+  # K = 0 -> khong noi suy, dung cho kiem tra do vung o GD4
+
 clip: [0, 100]
 
+sentinel:
+  disk_io_percent: [-1, 101]
+
+drop_cols: [mem_gps, mkpi]
+
+# Loc chuoi (protocol muc 6 buoc 7)
 filter:
-  min_length: 2000
-  max_nan_ratio: 0.20
+  min_valid_rows_h12: 500   # thay cho min_length: 2000 truoc day
   min_mean: 1.0
   min_unique: 3
 
-fillna:
-  method: ffill
-  limit: 3
-
-window_days: 8    # cua so chung, xem muc 7
+# Dong huan luyen hop le (protocol muc 8)
+row_validity:
+  max_lag: 24               # cua so dac trung sau nhat
+  require_full_window: true # [t-24, t] va t+h deu khong NaN

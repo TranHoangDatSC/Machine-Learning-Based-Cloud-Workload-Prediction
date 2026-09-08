@@ -4,6 +4,8 @@ Cập nhật thủ công mỗi khi thêm log mới. Mới nhất ở trên.
 
 | Ngày | Phiên | Người | GĐ | Kết quả chính |
 |---|---|---|---|---|
+| 2026-09-08 | [Chốt QĐ-008, mở khoá GĐ1](2026-09-08-chot-qd008.md) | A | GĐ1 | Khảo sát 4 phương án; chọn nội suy ≤2 + lọc theo dòng. K=0 cho cùng số chuỗi |
+| 2026-09-08 | [Conda env và chốt GĐ0](2026-09-08-conda-va-chot-gd0.md) | A | GĐ0 | Công cụ không nhận conda env — đã sửa. **GĐ0 ĐÓNG.** QĐ-008 vẫn chặn GĐ1 |
 | 2026-09-07 | [Sửa `test_env.py`](2026-09-07-sua-test-env.md) | A | GĐ0 | Công cụ cũ báo 12/12 trên venv hỏng hoàn toàn — chỉ đọc metadata, không import |
 | 2026-09-07 | [Dựng thước đo cổng GĐ1](2026-09-07-thuoc-do-cong-gd1.md) | A | GĐ1 | Protocol mục 6 bước 6 phá huỷ 79% E2 và 99% E3 — QĐ-008 chờ duyệt |
 | 2026-09-07 | [Chốt ghim môi trường](2026-09-07-ghim-moi-truong.md) | A | GĐ0 | QĐ-007 ghim phiên bản + Python 3.10–3.12; thêm `tests/test_env.py` làm cổng |
