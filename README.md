@@ -360,6 +360,10 @@ python -m pip install --upgrade pip
 # 6. Cài đúng phiên bản đã ghim
 pip install -r requirements.txt
 
+# 6.1. Cài package của dự án ở chế độ editable, để `import cwp` chạy được
+#      từ script, test và notebook. Chỉ cần làm một lần sau khi clone.
+pip install -e .
+
 # 7. Xác minh. Phải ra "Khớp: 12/12" và "ĐẠT"
 python tests/test_env.py
 ```

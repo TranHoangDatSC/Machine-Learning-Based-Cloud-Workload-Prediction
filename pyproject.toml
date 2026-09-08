@@ -1,0 +1,22 @@
+# Đóng gói tối thiểu để `import cwp` chạy được từ notebook, script và test.
+#
+# Phụ thuộc KHÔNG khai ở đây — chúng đã ghim trong requirements.txt theo QĐ-007.
+# Một nguồn sự thật duy nhất; khai hai nơi sẽ lệch nhau lúc nào không biết.
+#
+# Cài một lần sau khi clone:  pip install -e .
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cwp"
+version = "0.1.0"
+description = "Cloud Workload Prediction - ML-CWP-Cloud"
+requires-python = ">=3.10,<3.13"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
