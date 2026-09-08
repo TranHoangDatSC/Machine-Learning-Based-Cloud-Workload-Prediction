@@ -107,6 +107,16 @@ Chuỗi vào mà lệch thì không phải sai số — là đọc sót tệp ho
 - [ ] **Cửa sổ toàn cục, không phải per-series.** E1 phải có đúng 55 chuỗi bị loại
       vì `ngoai_cua_so`. Nếu con số đó bằng 0 thì B đã dùng cửa sổ per-series.
 
+### 3.4b Nguồn gốc catalog
+
+- [ ] `catalog.parquet` có cột `built_on` và `built_at`
+- [ ] Toàn bộ dòng sinh trên **một máy** — nhiều máy là TRƯỢT
+- [ ] Bản nộp cuối sinh từ **một lệnh `--env all`**, không phải ghép từng env
+
+`catalog.parquet` vào Git nhưng `data/processed/` thì không, nên bảng tổng hợp đi
+được giữa hai máy trong khi dữ liệu thì không. Đã xảy ra thật ngày 2026-09-08:
+catalog có E1 do B tính, E2 do A tính. Chi tiết ở protocol mục 6b.
+
 ### 3.5 Kiểm rò rỉ
 
 - [ ] `data/processed/` không chứa cột nào tính từ tương lai

@@ -38,7 +38,9 @@ def load_refs():
     return refs
 
 
-def build_catalog(refs, scale=1.0, break_e2_id=False, drop_col=None):
+def build_catalog(refs, scale=1.0, break_e2_id=False, drop_col=None,
+                  hosts=None, stamps=None):
+    """hosts/stamps: dict env -> giá trị, để giả lập catalog khảm nhiều máy."""
     rows = []
     for env, r in refs.items():
         n_keep = r["chuoi_con_lai"]
@@ -55,7 +57,9 @@ def build_catalog(refs, scale=1.0, break_e2_id=False, drop_col=None):
                 n_interp=(n_int_tot // n_keep) + (1 if k < n_int_tot % n_keep else 0),
                 valid_rows_h1=per, valid_rows_h6=per, valid_rows_h12=per,
                 mean=r["target_mean"], p50=r["target_p50"], std=r["target_std"],
-                n_clipped=0))
+                n_clipped=0,
+                built_on=(hosts or {}).get(env, "may-A"),
+                built_at=(stamps or {}).get(env, "2026-09-08T22:00:00")))
             i += 1
         rej = {
             "ngoai_cua_so": r["loai_ngoai_cua_so"], "gan_chet": r["loai_gan_chet"],
@@ -68,7 +72,9 @@ def build_catalog(refs, scale=1.0, break_e2_id=False, drop_col=None):
                     env=env, series_id=f"{pre}_rej{i}", kept=False,
                     reject_reason=reason, n_points=0, n_interp=0,
                     valid_rows_h1=0, valid_rows_h6=0, valid_rows_h12=0,
-                    mean=0.0, p50=0.0, std=0.0, n_clipped=0))
+                    mean=0.0, p50=0.0, std=0.0, n_clipped=0,
+                    built_on=(hosts or {}).get(env, "may-A"),
+                    built_at=(stamps or {}).get(env, "2026-09-08T22:00:00")))
                 i += 1
     df = pd.DataFrame(rows)
     return df.drop(columns=[drop_col]) if drop_col else df
@@ -133,6 +139,31 @@ def test_thieu_cot_bat_buoc(env):
     rc, out = run_checker(p, proc)
     assert rc == 1, "thiếu cột bắt buộc mà checker vẫn cho qua"
     assert "n_interp" in out
+
+
+def test_catalog_kham_nhieu_may_thi_truot(env):
+    """Dòng E1 do máy B tính, dòng E2 do máy A tính -> phải TRƯỢT.
+
+    Tình huống này đã xảy ra thật ngày 2026-09-08 và không có gì phát hiện được.
+    """
+    refs, tmp, proc = env
+    p = tmp / "catalog.parquet"
+    build_catalog(refs, hosts={"E1": "may-B", "E2": "may-A", "E3": "may-A"}).to_parquet(p)
+    rc, out = run_checker(p, proc)
+    assert rc == 1, "catalog khảm từ hai máy mà checker vẫn cho qua"
+    assert "khảm" in out
+
+
+def test_cung_may_khac_thoi_diem_chi_canh_bao(env):
+    """Cùng một máy, chạy từng env vào các lúc khác nhau -> CẢNH BÁO, không trượt."""
+    refs, tmp, proc = env
+    p = tmp / "catalog.parquet"
+    build_catalog(refs, stamps={"E1": "2026-09-08T10:00:00",
+                                "E2": "2026-09-08T14:00:00",
+                                "E3": "2026-09-08T18:00:00"}).to_parquet(p)
+    rc, out = run_checker(p, proc)
+    assert rc == 0, f"cùng máy khác thời điểm không nên đánh trượt:\n{out}"
+    assert "một lần chạy" in out.lower()
 
 
 def test_luong_cua_A_khong_co_processed(env):

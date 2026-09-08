@@ -163,9 +163,34 @@ Gồm **mọi** chuỗi đã xét, kể cả chuỗi bị loại. Đây là bả
 | `p50` | float64 | Trung vị |
 | `std` | float64 | Độ lệch chuẩn |
 | `n_clipped` | int64 | Số mẫu thô bị clip về 100 trước khi căn lưới |
+| `built_on` | string | Tên máy sinh ra dòng này, lấy bằng `platform.node()` |
+| `built_at` | string | Thời điểm sinh, ISO 8601 tới giây: `datetime.now().isoformat(timespec="seconds")` |
 
 Chuỗi bị loại vẫn phải có đủ các cột thống kê, điền giá trị tính được đến thời điểm
 bị loại. Chỉ `reject_reason` phân biệt giữ hay loại — **không xoá dòng**.
+
+### Vì sao cần `built_on` và `built_at`
+
+> Bổ sung 2026-09-08.
+
+`catalog.parquet` **được commit** vào Git, còn `data/processed/*.parquet` thì
+**không** (quá lớn). Hệ quả: bảng tổng hợp đi được giữa hai máy nhưng dữ liệu thì
+không. Nếu A chạy `--env E2` trên máy mình trong khi dòng E1 trong catalog đến từ
+máy B, thì catalog trở thành **khảm từ nhiều lần chạy** mà không ai nhận ra.
+
+Chuyện này đã xảy ra thật ngày 2026-09-08: catalog có E1 do B tính, E2 do A tính.
+Cả hai đều khớp tham chiếu nên không lộ ra, nhưng về nguyên tắc tái lập thì đó là
+một bảng không có nguồn gốc rõ ràng.
+
+Hai cột này khiến tình trạng đó **hiện ra thay vì im lặng**:
+
+| Tình huống | `check_gd1.py` xử lý |
+|---|---|
+| Một lần chạy `--env all`, một máy | ĐẠT |
+| Cùng một máy, chạy từng env vào các thời điểm khác nhau | CẢNH BÁO — bình thường khi đang làm, nhưng bản nộp cuối phải là một lần chạy |
+| **Nhiều máy khác nhau** | **TRƯỢT** — không xác định được kết quả sinh ra trong môi trường nào |
+
+Bản nộp cuối của GĐ1 phải sinh bằng **một lệnh `--env all` trên một máy**.
 
 ### Kiểm tra trước khi báo xong
 

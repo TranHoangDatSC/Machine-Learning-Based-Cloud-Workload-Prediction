@@ -40,6 +40,8 @@ CATALOG_COLS = {
     "p50": "float",
     "std": "float",
     "n_clipped": "int",
+    "built_on": "object",
+    "built_at": "object",
 }
 REASONS = {"", "ngoai_cua_so", "gan_chet", "hang", "it_dong"}
 ENVS = ["E1", "E2", "E3"]
@@ -158,6 +160,39 @@ def summarize(cat, env):
         "ti_le_noi_suy_pct": round(n_int / n_pts * 100, 3) if n_pts else 0.0,
         "target_mean": round(mean, 4) if mean is not None else None,
     }
+
+
+def check_provenance(cat, rep):
+    """Catalog có phải sinh từ một lần chạy trên một máy không.
+
+    catalog.parquet vào Git nhưng data/processed/ thì không, nên bảng tổng hợp đi
+    được giữa hai máy trong khi dữ liệu thì không. Không kiểm thì catalog thành
+    khảm từ nhiều lần chạy mà không ai biết.
+    """
+    g = "1b. Nguồn gốc catalog"
+    if "built_on" not in cat.columns or "built_at" not in cat.columns:
+        rep.add(g, "Có cột built_on và built_at", FAIL,
+                "thiếu — xem protocol.md mục 6b")
+        return
+
+    combos = (cat.groupby(["env", "built_on", "built_at"])
+                 .size().reset_index(name="n"))
+    hosts = sorted(cat["built_on"].dropna().unique())
+
+    for _, r in combos.iterrows():
+        rep.add(g, f"{r['env']}: {r['n']:,} dòng — {r['built_on']} @ {r['built_at']}", OK)
+
+    if len(hosts) > 1:
+        rep.add(g, "Sinh trên một máy duy nhất", FAIL,
+                f"catalog là khảm từ {len(hosts)} máy: {', '.join(hosts)}. "
+                "Chạy lại `--env all` trên một máy.")
+    elif cat["built_at"].nunique() > 1:
+        rep.add(g, "Sinh từ một lần chạy duy nhất", WARN,
+                f"{cat['built_at'].nunique()} thời điểm khác nhau trên cùng máy "
+                f"{hosts[0]}. Bình thường khi đang làm; bản nộp cuối phải là một "
+                "lệnh `--env all`.")
+    else:
+        rep.add(g, "Một lần chạy, một máy", OK)
 
 
 def check_numbers(cat, refs, rep):
@@ -299,6 +334,7 @@ def main():
     rep.add(g0, f"Đọc được catalog ({len(cat):,} dòng)", OK)
 
     if check_schema(cat, rep):
+        check_provenance(cat, rep)
         check_numbers(cat, refs, rep)
     check_processed(ROOT / a.processed, rep)
     return rep.show()

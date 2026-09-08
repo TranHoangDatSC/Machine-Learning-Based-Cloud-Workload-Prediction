@@ -331,7 +331,10 @@ Luồng cho mỗi môi trường:
 
 Xuất đúng schema ở protocol.md mục 6b:
   - data/processed/<ENV>.parquet  (5 cột)
-  - data/catalog.parquet          (13 cột, GỒM CẢ chuỗi bị loại)
+  - data/catalog.parquet          (15 cột, GỒM CẢ chuỗi bị loại)
+    Hai cột cuối là nguồn gốc, mọi dòng của một lần chạy mang cùng giá trị:
+      built_on = platform.node()
+      built_at = datetime.now().isoformat(timespec="seconds")
     Chạy --env all thì catalog gộp cả ba môi trường.
     Chạy từng env thì phải giữ lại phần của env khác đã có, không ghi đè mất.
 
