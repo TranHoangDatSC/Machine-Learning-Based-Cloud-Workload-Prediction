@@ -351,6 +351,9 @@ cd ~/ML-CWP-Cloud
 # 3. Tạo môi trường ảo ngay trong repo
 python3 -m venv .venv
 
+# 3.1. Tạo môi trường ảo trong repo (đối với Linux)
+conda activate ml-cwp
+
 # 4. Kích hoạt. Dấu hiệu thành công: dòng nhắc lệnh có tiền tố (.venv)
 source .venv/bin/activate
 
