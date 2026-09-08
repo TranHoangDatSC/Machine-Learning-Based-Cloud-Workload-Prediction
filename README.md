@@ -359,7 +359,7 @@ source .venv/bin/activate
 
 # 5. Nâng pip trước khi cài
 python -m pip install --upgrade pip
-z
+
 # 6. Cài đúng phiên bản đã ghim
 pip install -r requirements.txt
 
