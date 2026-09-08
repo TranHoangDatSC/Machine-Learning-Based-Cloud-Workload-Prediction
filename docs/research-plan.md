@@ -124,6 +124,9 @@ Tốn thời gian nhất, ít được ghi nhận nhất. Làm chắc ở đây 
 - [ ] **Chạy `python scripts/check_gd1.py` cho tới khi ra ĐẠT** — không báo xong trước khi đạt
 - [ ] Log: bảng số chuỗi vào, bị loại theo từng điều kiện, còn lại
 
+> **Phiếu giao việc chi tiết:** `docs/brief-gd1-b.md` — chín bước, mỗi bước có
+> prompt cho agent, lệnh chạy và kết quả phải thấy để đối chiếu.
+
 **Bẫy đã biết** — kiểm tra kỹ bốn chỗ này:
 - Tên file Rnd trùng nhau giữa ba tháng. Phải khoá `(month, vm_id)`.
 - `sep=';'` thay vì `sep=';\t'` sẽ để tab lẫn vào tên cột, im lặng và khó phát hiện.

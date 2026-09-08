@@ -265,6 +265,7 @@ Danh mục tài liệu trong `docs/`:
 | `data-card.md` | Nguồn, schema, số liệu đã kiểm chứng, giới hạn |
 | `decisions.md` | Nhật ký quyết định. Mọi thay đổi giao thức đi qua đây |
 | `giai-thich-chuan-hoa.md` | Giải thích mục 14 kèm số liệu chứng minh |
+| `brief-gd1-b.md` | Phiếu giao việc GĐ1 cho B: prompt, lệnh, kết quả phải thấy |
 | `tu-bai-cu-den-bai-nay.md` | Nối kiến thức ML sẵn có sang bài toán này, và chỉ ra chỗ phép loại suy gãy |
 
 > **`docs/protocol.md` đã chốt.**
