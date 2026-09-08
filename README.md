@@ -362,7 +362,12 @@ pip install -r requirements.txt
 
 # 6.1. Cài package của dự án ở chế độ editable, để `import cwp` chạy được
 #      từ script, test và notebook. Chỉ cần làm một lần sau khi clone.
-pip install -e .
+#      Dùng `python -m pip` chứ không phải `pip` trần, để chắc chắn cài đúng
+#      vào interpreter đang kích hoạt.
+python -m pip install -e .
+
+# 6.2. Xác nhận cài được. Không in ra gì là hỏng.
+python -c "import cwp; print('cwp', cwp.__version__)"
 
 # 7. Xác minh. Phải ra "Khớp: 12/12" và "ĐẠT"
 python tests/test_env.py
@@ -410,6 +415,35 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 python tests/test_env.py
 ```
+
+#### Nếu `import cwp` báo ModuleNotFoundError
+
+Chạy lại bước cài và **đọc kỹ output**, đừng để nó trôi:
+
+```bash
+python -m pip install -e . 2>&1 | tail -20
+python -c "import sys; print(sys.executable)"
+python -m pip -V
+```
+
+Ba nguyên nhân theo thứ tự hay gặp:
+
+1. `python -m pip install -e .` thất bại nhưng lỗi bị trôi mất. Chạy lại, đọc output.
+2. Chạy `pip` trần thay vì `python -m pip`, nên cài vào interpreter khác. So
+   `sys.executable` với đường dẫn trong `python -m pip -V`.
+3. Đứng sai thư mục lúc cài. `pwd` phải là gốc repo, nơi có `pyproject.toml`.
+
+**Đường thoát nếu vẫn không được.** Không cần cài, chỉ cần trỏ `PYTHONPATH`:
+
+```bash
+export PYTHONPATH="$PWD/src:$PYTHONPATH"
+python -c "import cwp; print('cwp', cwp.__version__)"
+```
+
+Cách này chỉ có hiệu lực trong phiên terminal hiện tại. Muốn vĩnh viễn thì thêm
+dòng `export` vào `~/.bashrc`, thay `$PWD` bằng đường dẫn tuyệt đối tới repo.
+
+`pytest` thì luôn chạy được nhờ `conftest.py` ở gốc repo, kể cả khi chưa cài.
 
 #### Lỗi hay gặp
 

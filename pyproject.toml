@@ -6,7 +6,7 @@
 # Cài một lần sau khi clone:  pip install -e .
 
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
