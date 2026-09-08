@@ -194,10 +194,22 @@ def check_numbers(cat, refs, rep):
 
 def check_processed(proc_dir, rep):
     g = "3. data/processed/"
+
+    # data/processed/ nằm trong .gitignore nên chỉ có trên máy đã chạy tiền xử lý.
+    # A pull về sẽ không có. Thiếu cả thư mục thì cảnh báo, không đánh trượt —
+    # nếu không A sẽ không bao giờ nghiệm thu được trên máy mình.
+    present = [e for e in ENVS if (proc_dir / f"{e}.parquet").exists()]
+    if not present:
+        rep.add(g, "Bỏ qua — không có tệp nào", WARN,
+                "data/processed/ nằm trong .gitignore, chỉ máy đã chạy tiền xử lý "
+                "mới có. B phải chạy mục này và báo kết quả.")
+        return
+
     for env in ENVS:
         f = proc_dir / f"{env}.parquet"
         if not f.exists():
-            rep.add(g, f"{env}.parquet tồn tại", FAIL, f"không thấy {f}")
+            rep.add(g, f"{env}.parquet tồn tại", FAIL,
+                    f"không thấy {f} (các môi trường khác thì có)")
             continue
         d = pd.read_parquet(f, columns=None)
         need = {"env", "series_id", "bucket", "y", "is_interp"}
@@ -211,6 +223,41 @@ def check_processed(proc_dir, rep):
         status = OK if share <= 5 else WARN
         rep.add(g, f"{env} tỉ lệ nội suy {share:.3f}%", status,
                 "" if status == OK else "cao bất thường, kiểm lại K trong config")
+
+
+def print_progress(root, a):
+    """Chưa có catalog thì in tiến độ GĐ1 thay vì chỉ báo lỗi.
+
+    Công cụ này B chạy nhiều lần trong lúc làm, nên khi chưa xong nó phải nói được
+    còn thiếu gì, chứ không chỉ nói hỏng.
+    """
+    items = [
+        ("src/cwp/io/bitbrains.py", "parser Bitbrains"),
+        ("src/cwp/io/alibaba.py", "parser Alibaba"),
+        ("src/cwp/preprocess/clean.py", "clip + mask sentinel"),
+        ("src/cwp/preprocess/resample.py", "căn lưới 5 phút + nội suy ≤2"),
+        ("src/cwp/preprocess/filter.py", "lọc chuỗi + đếm dòng hợp lệ"),
+        ("data/processed/E1.parquet", "chuỗi E1 đã xử lý"),
+        ("data/processed/E2.parquet", "chuỗi E2 đã xử lý"),
+        ("data/processed/E3.parquet", "chuỗi E3 đã xử lý"),
+        ("data/catalog.parquet", "bảng tổng hợp một dòng mỗi chuỗi"),
+        ("tests/test_io.py", "test parser"),
+        ("tests/test_resample.py", "test căn lưới"),
+    ]
+    done = [(p, d) for p, d in items if (root / p).exists()]
+    todo = [(p, d) for p, d in items if not (root / p).exists()]
+
+    print()
+    print("─" * 66)
+    print(f"TIẾN ĐỘ GĐ1: {len(done)}/{len(items)} sản phẩm")
+    print("─" * 66)
+    for p, d in done:
+        print(f"  [xong ] {p:<34} {d}")
+    for p, d in todo:
+        print(f"  [thiếu] {p:<34} {d}")
+    print()
+    print("Đặc tả: docs/protocol.md mục 6b (schema) và mục 5–8 (quy tắc xử lý).")
+    print("Số phải khớp: docs/gate-gd1.md mục 2.")
 
 
 def main():
@@ -227,13 +274,7 @@ def main():
     print(f"tham chiếu : {ROOT / a.ref}")
 
     rep = Report()
-
-    if not cat_path.exists():
-        rep.add("0. Tiền đề", "catalog.parquet tồn tại", FAIL,
-                f"không thấy {cat_path} — B chưa sinh, hoặc sai đường dẫn")
-        return rep.show()
-    cat = pd.read_parquet(cat_path)
-    rep.add("0. Tiền đề", f"Đọc được catalog ({len(cat):,} dòng)", OK)
+    g0 = "0. Tiền đề"
 
     refs = {}
     for env in ENVS:
@@ -241,6 +282,21 @@ def main():
         if f.exists():
             d = json.loads(f.read_text(encoding="utf-8"))
             refs[env] = d[0] if isinstance(d, list) else d
+    if len(refs) == len(ENVS):
+        rep.add(g0, "Có đủ 3 tệp tham chiếu của A", OK)
+    else:
+        rep.add(g0, "Có đủ 3 tệp tham chiếu của A", FAIL,
+                f"thiếu: {sorted(set(ENVS) - set(refs))} — chạy git pull, "
+                "hoặc scripts/reference_gd1.py")
+
+    if not cat_path.exists():
+        rep.add(g0, "catalog.parquet tồn tại", FAIL,
+                "chưa có — đây là trạng thái BÌNH THƯỜNG khi chưa triển khai xong")
+        print_progress(ROOT, a)
+        return rep.show()
+
+    cat = pd.read_parquet(cat_path)
+    rep.add(g0, f"Đọc được catalog ({len(cat):,} dòng)", OK)
 
     if check_schema(cat, rep):
         check_numbers(cat, refs, rep)

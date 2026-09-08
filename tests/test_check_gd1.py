@@ -4,11 +4,12 @@ Một công cụ kiểm phải chứng minh được nó phân biệt được �
 này `test_env.py` đã hai lần báo đạt trên môi trường hỏng, nên mọi công cụ cổng về
 sau đều phải có test kiểu này.
 
-Sinh catalog giả lập từ chính số liệu tham chiếu, rồi kiểm bốn tình huống:
-    A. khớp tham chiếu          -> phải ĐẠT
-    B. số dòng chỉ bằng 50%     -> phải TRƯỢT
-    C. E2 thiếu tháng trong id  -> phải TRƯỢT  (bẫy Rnd trùng tên)
-    D. thiếu cột bắt buộc       -> phải TRƯỢT
+Sinh catalog giả lập từ chính số liệu tham chiếu, rồi kiểm năm tình huống:
+    A. khớp tham chiếu               -> phải ĐẠT
+    B. số dòng chỉ bằng 50%          -> phải TRƯỢT
+    C. E2 thiếu tháng trong id       -> phải TRƯỢT  (bẫy Rnd trùng tên)
+    D. thiếu cột bắt buộc            -> phải TRƯỢT
+    E. không có data/processed/      -> phải ĐẠT   (luồng của A, thư mục bị gitignore)
 """
 
 import json
@@ -132,3 +133,19 @@ def test_thieu_cot_bat_buoc(env):
     rc, out = run_checker(p, proc)
     assert rc == 1, "thiếu cột bắt buộc mà checker vẫn cho qua"
     assert "n_interp" in out
+
+
+def test_luong_cua_A_khong_co_processed(env):
+    """A pull catalog của B về nhưng data/processed/ bị gitignore nên không có.
+
+    Trường hợp này phải vẫn ĐẠT — nếu không A không bao giờ nghiệm thu được trên
+    máy mình.
+    """
+    refs, tmp, _ = env
+    p = tmp / "catalog.parquet"
+    build_catalog(refs).to_parquet(p)
+    empty = tmp / "khong_co_processed"
+    empty.mkdir()
+    rc, out = run_checker(p, empty)
+    assert rc == 0, f"thiếu data/processed/ mà bị đánh trượt:\n{out}"
+    assert "gitignore" in out
