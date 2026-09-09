@@ -1,7 +1,13 @@
-"""Module đọc và xử lý dữ liệu Alibaba Cluster Trace (E3).
+"""Module đọc dữ liệu Alibaba Cluster Trace (E3).
 
-Xử lý tệp lớn theo khối (chunk), phân tầng lấy mẫu và lọc dữ liệu máy.
-Xem docs/protocol.md mục 3, 6b và config/datasets.yaml.
+Đọc tệp 9 GB theo khối (chunk), chỉ giữ các máy nằm trong danh sách đã đóng băng.
+
+**Không có hàm lấy mẫu ở đây, và đó là cố ý.** Danh sách 500 máy của E3 đã được
+đóng băng vào `config/e3_machines.txt` theo QĐ-009, vì phép lấy mẫu tại chỗ cho kết
+quả phụ thuộc thứ tự quét tệp — hai bản hiện thực đều đúng đặc tả vẫn ra hai tập máy
+khác nhau tới 89%.
+
+Xem docs/protocol.md mục 3, 6b và docs/decisions.md QĐ-009.
 """
 
 from pathlib import Path
@@ -57,7 +63,12 @@ def machine_means(
     chunksize: int = 2_000_000,
     cfg: dict | None = None,
 ) -> pd.Series:
-    """Lượt quét thứ nhất: tính CPU trung bình của từng máy.
+    """Tính CPU trung bình của từng máy. Một lượt quét toàn bộ tệp.
+
+    **KHÔNG dùng hàm này để chọn mẫu cho E3.** Tập máy của E3 đã đóng băng ở
+    `config/e3_machines.txt`, đọc bằng `load_machines_frozen()`. Hàm này chỉ còn
+    dùng cho phân tích mô tả toàn bộ 4.023 máy ở GĐ2.
+
 
     Đọc dữ liệu theo chunk, không nạp toàn bộ vào bộ nhớ.
     File không có header, gán đủ 9 tên cột theo config.
@@ -104,56 +115,53 @@ def machine_means(
     return means
 
 
-def sample_machines(
-    means: pd.Series,
-    n: int = 500,
-    strata: int = 5,
-    seed: int = 42,
-) -> list[str]:
-    """Chia các máy thành `strata` tầng bằng nhau theo CPU trung bình,
+DEFAULT_FROZEN_PATH = "config/e3_machines.txt"
 
-    lấy ngẫu nhiên n/strata máy mỗi tầng với random_state=seed.
-    Đúng như protocol.md mục 3.
+
+def load_machines_frozen(path: str | Path | None = None) -> list[str]:
+    """Đọc danh sách 500 máy E3 đã đóng băng.
+
+    Đây là cách DUY NHẤT hợp lệ để xác định tập máy của E3. Không lấy mẫu lại tại
+    chỗ: `.sample()` chọn theo vị trí, mà vị trí phụ thuộc thứ tự danh sách máy, nên
+    hai bản hiện thực đều đúng đặc tả vẫn ra hai tập khác nhau (đo được: trùng
+    56/500 và 146/500). Xem docs/decisions.md QĐ-009.
+
+    Dùng danh sách cố định cũng bỏ được lượt quét thứ nhất trên tệp 9 GB.
 
     Parameters
     ----------
-    means : pd.Series
-        CPU trung bình của các máy, index là machine_id.
-    n : int, default=500
-        Tổng số máy cần lấy mẫu.
-    strata : int, default=5
-        Số tầng phân chia theo ngũ phân vị.
-    seed : int, default=42
-        Hạt giống ngẫu nhiên để tái lập kết quả.
+    path : str hoặc Path, optional
+        Đường dẫn tệp danh sách. Mặc định `config/e3_machines.txt` ở gốc repo.
 
     Returns
     -------
     list[str]
-        Danh sách n machine_id được chọn ngẫu nhiên phân tầng.
+        500 machine_id, giữ nguyên thứ tự trong tệp.
+
+    Raises
+    ------
+    FileNotFoundError
+        Khi không tìm thấy tệp danh sách.
     """
-    if len(means) == 0:
-        return []
+    if path is not None:
+        p = Path(path)
+    else:
+        p = Path(DEFAULT_FROZEN_PATH)
+        if not p.exists():
+            p = Path(__file__).resolve().parents[3] / DEFAULT_FROZEN_PATH
 
-    strata_labels = pd.qcut(means, q=strata, labels=False)
-    n_per_stratum = n // strata
+    if not p.exists():
+        raise FileNotFoundError(
+            f"Không thấy danh sách máy đã đóng băng tại {p}. "
+            "Chạy `git pull`, hoặc `python scripts/freeze_e3_sample.py` để sinh lại."
+        )
 
-    sampled = means.groupby(strata_labels, group_keys=False).sample(
-        n=n_per_stratum, random_state=seed
-    )
-    res = sampled.index.tolist()
-
-    # Đảm bảo phân tầng có đúng 1 chuỗi gần chết theo ngưỡng kiểm cổng của protocol
-    low = [m for m in res if means[m] < 1.0]
-    if len(low) > 1:
-        candidates = [
-            m for m in means[strata_labels == 0].index
-            if m not in res and means[m] >= 1.0
-        ]
-        for i, bad_m in enumerate(low[1:]):
-            idx = res.index(bad_m)
-            res[idx] = candidates[i]
-
-    return res
+    out = []
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            out.append(line)
+    return out
 
 
 def load_machines(
@@ -209,3 +217,6 @@ def load_machines(
 
     df_result = pd.concat(chunks, ignore_index=True)
     return df_result
+
+
+__all__ = ["machine_means", "load_machines_frozen", "load_machines"]

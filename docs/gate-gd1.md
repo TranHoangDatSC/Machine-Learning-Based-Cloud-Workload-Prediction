@@ -170,8 +170,16 @@ pytest tests/ -v
 | 3.4 Bốn cái bẫy | | |
 | 3.5 Rò rỉ | | |
 
-**Kết luận:**
-**Ngày duyệt:**
+**Kết luận: ĐẠT** — `python scripts/check_gd1.py` xanh toàn bộ, gồm cả
+`E3 dùng đúng 500 máy đã đóng băng` và `Một lần chạy, một máy`.
+
+**Ngày duyệt:** 2026-09-09
+
+Còn treo: B hoàn thành Bước 7 và 8 (`tests/test_io.py`, `tests/test_resample.py`).
+Sản phẩm dữ liệu đã đạt; hai tệp test là phần còn lại của checklist GĐ1.
+
+Quá trình nghiệm thu phát hiện code tự điều chỉnh mẫu cho khớp tham số — chi tiết ở
+`research-log/2026-09-09-ra-soat-code-b.md`. Đã xoá và chạy lại từ đầu.
 
 ---
 

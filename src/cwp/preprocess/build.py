@@ -1,6 +1,8 @@
 """Driver tiền xử lý dữ liệu cho các môi trường E1, E2, E3 (protocol mục 5, 6, 6b, 7, 8)."""
 
 import argparse
+import platform
+from datetime import datetime
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -34,6 +36,21 @@ def get_config_paths() -> tuple[dict, dict]:
     return cfg_data, cfg_prep
 
 
+# Một lần chạy = một dấu thời gian. Mọi dòng sinh trong cùng tiến trình mang cùng
+# giá trị, nên `check_gd1.py` phát hiện được catalog ghép từ nhiều lần chạy hoặc
+# nhiều máy. Xem protocol.md mục 6b.
+_BUILT_ON = platform.node()
+_BUILT_AT = datetime.now().isoformat(timespec="seconds")
+
+
+def _stamp_provenance(df: pd.DataFrame) -> pd.DataFrame:
+    """Gắn nguồn gốc (máy nào, lúc nào) vào mọi dòng catalog."""
+    df = df.copy()
+    df["built_on"] = _BUILT_ON
+    df["built_at"] = _BUILT_AT
+    return df
+
+
 def process_env_bitbrains(
     env: str, cfg_data: dict, cfg_prep: dict
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -54,7 +71,9 @@ def process_env_bitbrains(
     k_gap = cfg_prep.get("gap", {}).get("max_len", 2)
     max_lag = cfg_prep.get("row_validity", {}).get("max_lag", 24)
 
-    month = "2013-8" if env == "E2" else None
+    # Tháng của E2 lấy từ tên thư mục trong config, không hardcode — nếu QĐ-003 đổi
+    # phạm vi E2 sang tháng khác thì chỉ cần sửa config/datasets.yaml.
+    month = data_path.name if env == "E2" else None
 
     # Lượt 1: Đọc raw, clip CPU, căn lưới và tìm min bucket toàn cục
     series_cache = []
@@ -64,7 +83,7 @@ def process_env_bitbrains(
 
     print(f"\n--- Đang xử lý môi trường {env} ---")
     for f in tqdm(files, desc=f"Lượt 1 ({env}) - Căn lưới"):
-        df = load_raw(f, cfg=cfg_data)
+        df = load_raw(f, cfg=cfg_data, env=env)
         total_raw_rows += len(df)
 
         s_clipped, hi, lo = clip_cpu(df["cpu_pct"], cfg=cfg_prep)
@@ -213,7 +232,7 @@ def process_env_bitbrains(
     print(f"Tỉ lệ nội suy   : {ti_le_noi_suy_pct:.3f}%")
     print(f"Tỉ lệ clip      : {ti_le_clip_pct:.4f}%\n")
 
-    cat_df = pd.DataFrame(catalog_rows).astype({
+    cat_df = _stamp_provenance(pd.DataFrame(catalog_rows)).astype({
         "env": "object",
         "series_id": "object",
         "kept": "bool",
@@ -227,6 +246,8 @@ def process_env_bitbrains(
         "p50": "float64",
         "std": "float64",
         "n_clipped": "int64",
+        "built_on": "object",
+        "built_at": "object",
     })
 
     if processed_records:
@@ -253,34 +274,22 @@ def process_env_alibaba(
     cfg_data: dict, cfg_prep: dict
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Xử lý tiền xử lý cho môi trường Alibaba (E3)."""
-    try:
-        from cwp.io.alibaba import (
-            load_machines,
-            machine_means,
-            sample_machines,
-        )
-    except ImportError:
-        raise NotImplementedError(
-            "src/cwp/io/alibaba.py chưa được cài đặt. Hãy hoàn thành Bước 6 trước."
-        )
+    from cwp.io.alibaba import load_machines, load_machines_frozen
 
     e_cfg = cfg_data["E3"]
     data_path = Path(e_cfg["path"])
-    sample_cfg = e_cfg.get("sample", {})
-    n_sample = sample_cfg.get("n", 500)
-    strata = sample_cfg.get("strata", 5)
-    seed = sample_cfg.get("seed", 42)
 
     print("\n--- Đang xử lý môi trường E3 (Alibaba) ---")
-    print("Lượt 1: Quét tính CPU trung bình từng máy...")
-    means = machine_means(data_path)
-    selected_machines = sample_machines(
-        means, n=n_sample, strata=strata, seed=seed
-    )
-    selected_set = set(selected_machines)
-    print(f"Đã chọn {len(selected_machines)} máy phân tầng.")
 
-    print("Lượt 2: Nạp dữ liệu các máy đã chọn...")
+    # Danh sách máy ĐÃ ĐÓNG BĂNG (QĐ-009). Không lấy mẫu lại tại chỗ: kết quả phụ
+    # thuộc thứ tự quét tệp nên hai bản hiện thực đều đúng đặc tả vẫn ra hai tập
+    # khác nhau. Nhờ vậy cũng bỏ được lượt quét thứ nhất trên tệp 9 GB.
+    selected_machines = load_machines_frozen()
+    selected_set = set(selected_machines)
+    print(f"Dùng danh sách đóng băng: {len(selected_machines)} máy "
+          f"(config/e3_machines.txt)")
+
+    print("Nạp dữ liệu các máy đã chọn...")
     df_raw = load_machines(data_path, selected_machines)
 
     grid_sec = cfg_prep.get("grid_seconds", 300)
@@ -426,7 +435,7 @@ def process_env_alibaba(
     print(f"Tỉ lệ nội suy   : {ti_le_noi_suy_pct:.3f}%")
     print(f"Tỉ lệ clip      : {ti_le_clip_pct:.4f}%\n")
 
-    cat_df = pd.DataFrame(catalog_rows).astype({
+    cat_df = _stamp_provenance(pd.DataFrame(catalog_rows)).astype({
         "env": "object",
         "series_id": "object",
         "kept": "bool",
@@ -440,6 +449,8 @@ def process_env_alibaba(
         "p50": "float64",
         "std": "float64",
         "n_clipped": "int64",
+        "built_on": "object",
+        "built_at": "object",
     })
 
     proc_df = pd.DataFrame(processed_records).astype({

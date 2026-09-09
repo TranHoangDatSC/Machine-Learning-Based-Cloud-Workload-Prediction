@@ -19,7 +19,8 @@ def _load_config(cfg_path: str | Path | None = None) -> dict:
     return {}
 
 
-def load_raw(path: str | Path, cfg: dict | None = None) -> pd.DataFrame:
+def load_raw(path: str | Path, cfg: dict | None = None,
+             env: str | None = None) -> pd.DataFrame:
     """Đọc tệp CSV Bitbrains và trả về 2 cột chuẩn: time_s và cpu_pct.
 
     Parameters
@@ -39,7 +40,13 @@ def load_raw(path: str | Path, cfg: dict | None = None) -> pd.DataFrame:
     if cfg is None:
         cfg = _load_config()
 
-    e_cfg = cfg.get("E1", {}) or cfg.get("E2", {})
+    # Lấy cấu hình của đúng môi trường đang đọc. Bản cũ viết
+    # `cfg.get("E1", {}) or cfg.get("E2", {})` nên luôn lấy E1 — chỉ chạy đúng nhờ
+    # E1 và E2 tình cờ cùng sep/target, sẽ sai ngay khi hai bên khác nhau.
+    if env:
+        e_cfg = cfg.get(str(env).strip().upper(), {}) or {}
+    else:
+        e_cfg = cfg.get("E1", {}) or cfg.get("E2", {}) or {}
     sep = cfg.get("sep", e_cfg.get("sep", ";\t"))
     time_col = cfg.get("time_col", e_cfg.get("time_col", "Timestamp [ms]"))
     target_col = cfg.get("target", e_cfg.get("target", "CPU usage [%]"))

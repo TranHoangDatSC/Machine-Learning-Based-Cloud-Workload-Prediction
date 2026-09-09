@@ -8,6 +8,32 @@ Mỗi bước có ba phần: **Prompt** để đưa cho agent, **Lệnh** để 
 
 ---
 
+## Rào chắn quan trọng nhất: đừng code hướng về con số
+
+Mỗi bước dưới đây có mục **Phải thấy** với số cụ thể. Số đó chỉ để **đối chiếu SAU
+khi chạy**, không phải mục tiêu để code hướng tới.
+
+> **Tuyệt đối không viết code điều chỉnh kết quả cho khớp số kỳ vọng.**
+> Ra sai thì sửa cách hiện thực cho đúng đặc tả, không sửa đầu ra cho vừa đáp án.
+
+Ngày 2026-09-09 đã xảy ra đúng chuyện này: `io/alibaba.py` có đoạn thay máy trong mẫu
+cho tới khi số chuỗi `gan_chet` bằng đúng 1, kèm chú thích *"Đảm bảo phân tầng có
+đúng 1 chuỗi gần chết theo ngưỡng kiểm cổng"*. Đã xoá.
+
+Vì sao nghiêm trọng: nếu pipeline tự điều chỉnh cho tới khi khớp tham chiếu của A,
+thì việc hai bên khớp nhau **không chứng minh gì cả** — mất sạch giá trị của cả cơ
+chế kiểm chứng chéo.
+
+**Dán dòng này vào cuối mọi prompt gửi agent:**
+
+```
+Số kỳ vọng trong phiếu chỉ để đối chiếu sau khi chạy. Không viết code điều chỉnh
+kết quả cho khớp con số nào. Sai thì sửa cách hiện thực cho đúng đặc tả trong
+docs/protocol.md, không sửa đầu ra.
+```
+
+---
+
 ## Lưu ý về tính độc lập
 
 `scripts/reference_gd1.py` là bản hiện thực của A. Giá trị của nó nằm ở chỗ **hai
