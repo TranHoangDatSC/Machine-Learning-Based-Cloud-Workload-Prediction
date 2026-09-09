@@ -2,19 +2,17 @@
 
 **Người thực hiện:** B (agent)
 **Giai đoạn:** GĐ2
-**Thời lượng:** ~4 giờ (Bước 1–5 của `research-log/brief-gd2-b.md`)
+**Thời lượng:** ~6 giờ (Bước 1–8 của `research-log/brief-gd2-b.md`, trọn giai đoạn)
 
-> **Trạng thái: đang làm dở.** Log này ghi Bước 1–5. Bước 6 và 7 chưa chạy lệnh
-> nào, nên không mục nào dưới đây nói "đã hoàn thành" cho chúng.
+> **Trạng thái: tám bước đã chạy hết, GĐ2 CHƯA qua cổng.**
 >
-> `check_gd2.py` nay báo **12/12 sản phẩm** — nhưng dòng `results/figures/` của nó chỉ
-> kiểm thư mục có tệp không rỗng, và thư mục đó mới có hình phân phối. **ACF/PACF và
-> burstiness vẫn chưa làm.** Đừng đọc 12/12 thành xong GĐ2.
+> `scripts/check_gd2.py` báo **ĐẠT**, 12/12 sản phẩm. Nhưng đó là phần cổng **tự động
+> hoá được** (mục 3.2, R2–R4, bẫy mốc thời gian, vân tay đặc trưng). Điều kiện qua
+> cổng thật ở `gate-gd2.md` mục 3.5 là **hình phân phối**, và **A duyệt bằng mắt**.
+> Hình đã có nhưng chưa ai duyệt, nên **chưa được đọc là xong GĐ2**.
 >
-> `scripts/check_gd2.py` báo **ĐẠT** — nhưng đó là phần cổng **tự động hoá được**
-> (mục 3.2, R2–R4, bẫy mốc thời gian, vân tay đặc trưng). Điều kiện qua cổng thật ở
-> `gate-gd2.md` mục 3.5 là **hình phân phối**, và A duyệt bằng mắt. Hình đã có
-> (Bước 5) nhưng **chưa ai duyệt**, nên GĐ2 chưa qua cổng.
+> Bốn việc đang chờ A quyết, ghi ở mục Vướng mắc — không việc nào chặn, nhưng V1
+> (cách phân tầng theo CV) nên chốt trước khi GĐ3 bắt đầu.
 >
 > Giữa Bước 3 và Bước 4 có một đợt rà soát toàn dự án trước khi viết paper, sinh ra
 > **QĐ-011**. Kết quả ở `research-log/2026-09-09-ra-soat-truoc-paper.md`; Bước 4 làm
@@ -39,6 +37,11 @@ xanh — rồi sinh chín ma trận đặc trưng và đối chiếu với neo G
 - **Bước 4.** `scripts/describe_gd2.py --env all` — 9 chỉ số neo lệch 0,0000%.
 - **Bước 5.** `scripts/fig_target_dist.py` — hình phân phối, hai bản: duyệt cổng và
   đưa vào paper. Đây là **điều kiện qua cổng GĐ2**, chờ A duyệt bằng mắt.
+- **Bước 6.** `scripts/fig_acf.py --env all` — ACF/PACF, 30/30 chỉ số khớp bản độc
+  lập của A. Xác nhận nhịp một giờ mà A ghi "chưa giải thích".
+- **Bước 7.** `scripts/fig_burstiness.py --env all` — CV, 12/12 chỉ số khớp A. Phát
+  hiện CV bị chặn cứng bởi thang đo.
+- **Bước 8.** Log này, `check_gd2.py` **ĐẠT**, `pytest tests/ -v` **141 passed**.
 - **Ngoài phiếu.** Sửa nhãn `dow` sai trong QĐ-010 và protocol mục 8 (mục Phát hiện 4),
   và thêm `data/features/**` vào `.gitignore` — 351 MB parquet suýt lọt vào Git.
 
@@ -149,6 +152,10 @@ Số chuỗi trong ma trận bằng đúng số chuỗi `kept` của GĐ1 ở c�
 ĐẠT — bộ đặc trưng GĐ2 khớp protocol mục 8, không phát hiện rò rỉ.
 TIẾN ĐỘ GĐ2: 11/12 sản phẩm
 ```
+
+*(Trích nguyên văn output **tại thời điểm Bước 3**. Lúc đó `results/figures/` còn
+rỗng nên là 11/12; sau Bước 5–7 thì thành 12/12. Giữ nguyên con số cũ ở đây vì đây là
+bản ghi của bước đó, không phải trạng thái hiện tại — trạng thái hiện tại ở đầu log.)*
 
 Không mục nào trượt. Một cảnh báo, và nó **đúng theo QĐ-010**: *"E3: mốc thời gian là
 tương đối, không phải epoch"*.
@@ -291,6 +298,233 @@ Validator kiểm màu, không kiểm bố cục. Mở ảnh xem mới thấy:
 Bản paper còn một lỗi thứ tư: tiêu đề panel (c) dài quá cột hẹp và bị cắt ở mép hình.
 Rút gọn còn "Bảng phân vị".
 
+## Bước 6 — ACF và PACF
+
+`python scripts/fig_acf.py --env all` → `results/figures/fig_acf.{png,pdf}` và
+`results/tables/acf_gd2.csv` (ACF, PACF, tỉ lệ cặp bị bỏ cho từng lag 0–300).
+
+### Xử lý NaN — trả lời câu phiếu hỏi
+
+Chuỗi đã căn lưới còn NaN: cụm dài hơn 2 điểm không được nội suy (QĐ-008), và E3
+thiếu 9,29% điểm. Cách làm: **tương quan tại lag `k` chỉ tính trên các cặp `(t, t+k)`
+mà cả hai đầu đều không NaN**, giữ nguyên khoảng cách thời gian thật. Không nén trục,
+không nội suy thêm, không lấp.
+
+Không dùng `statsmodels` — nó không nhận NaN, và nó cũng không nằm trong
+`requirements.txt` (QĐ-007). Tương quan tự viết bằng numpy dạng đã căn tâm; PACF suy
+từ ACF bằng đệ quy **Durbin–Levinson** tự viết.
+
+**Tỉ lệ cặp bị bỏ ở mỗi lag** — panel (d) vẽ đủ 300 lag, bảng CSV có đủ từng lag:
+
+| | lag 1 | lag 6 | lag 12 | lag 24 | lag 288 | cao nhất |
+|---|---:|---:|---:|---:|---:|---|
+| E1 | 1,43% | 1,43% | 1,43% | 1,44% | 1,63% | 1,63% |
+| E2 | 0,35% | 0,54% | 0,62% | 0,62% | 0,71% | 0,71% |
+| **E3** | **9,76%** | **11,70%** | **12,90%** | **13,96%** | **14,65%** | **15,33%** ở lag 65 |
+
+E3 bỏ nhiều gấp mười E1 và gấp hai mươi E2. **Mọi phát biểu về chu kỳ ngày của E3
+phải kèm con số 14,65%.**
+
+### "Đại diện" nghĩa là gì — và vì sao không gộp
+
+**Trung vị của ACF từng chuỗi tại mỗi lag.** Tính ACF riêng cho từng chuỗi theo luật
+cặp ở trên, rồi lấy trung vị trên toàn bộ chuỗi được giữ. Không chọn tay chuỗi nào.
+Panel (a) vẽ kèm dải p25–p75 để thấy độ tản — một đường trung vị đơn độc không nói
+được các chuỗi có giống nhau hay không.
+
+Đã thử cách gộp mọi điểm của mọi chuỗi vào một dãy rồi tính một tương quan. **Sai
+lệch rất lớn:**
+
+| ACF lag 1 | gộp toàn bộ | trung vị theo chuỗi |
+|---|---:|---:|
+| E1 | **0,9586** | 0,6674 |
+| E2 | **0,9597** | 0,6431 |
+| E3 | **0,9257** | 0,8634 |
+
+Gộp trộn phương sai **giữa** các chuỗi vào tương quan: một chuỗi quanh mức 80 và một
+chuỗi quanh mức 2 tự khắc tạo ra tương quan mạnh giữa `y_t` và `y_{t+1}` chỉ vì mỗi
+chuỗi bám quanh mức riêng của nó. Con số 0,96 đo sự khác nhau giữa các máy, không đo
+động lực học theo thời gian. Ghi lại vì nó là một cái bẫy rất dễ mắc mà không lộ ra.
+
+### Đối chiếu với bản độc lập của A — 30/30 khớp
+
+Script tự so với `reference_gd2.json` và thoát 1 nếu lệch. **15 giá trị ACF và 15 tỉ
+lệ cặp bị bỏ, tất cả lệch 0,0000.** Đây là lần thứ ba trong GĐ2 hai bản hiện thực độc
+lập cùng ra một con số (sau chín neo số dòng và vân tay 19 đặc trưng).
+
+Việc trung vị theo chuỗi tái lập đúng số của A cũng **xác nhận cách A định nghĩa
+"đại diện"** — trước đó `gate-gd2.md` không nói rõ, và ba cách gộp cho ba kết quả
+khác hẳn nhau.
+
+### Phát hiện 1 — nhịp một giờ có thật, ở cả ba môi trường
+
+`gate-gd2.md` mục 2.3 ghi: *"E1 có một chi tiết lạ: ACF lag 12 (0,4459) cao hơn lag 6
+(0,4074). Không đơn điệu — có thể là nhịp một giờ. Chưa giải thích; nếu B thấy lại
+thì đó là xác nhận, không phải trùng hợp."*
+
+**Xác nhận, và mạnh hơn dự đoán.** So ACF tại mỗi bội số của 12 với trung bình hai
+lag láng giềng, trên toàn dải lag 12–288:
+
+| | Số bội số của 12 cao hơn láng giềng | Mức trội, trung vị |
+|---|---|---:|
+| E1 | **24/24** | +0,0618 |
+| E2 | **24/24** | +0,0314 |
+| E3 | **24/24** | +0,0075 |
+
+Không phải một chỗ lạ ở lag 12 mà là **một dãy răng lược đều đặn suốt 24 giờ**, thấy
+rõ bằng mắt ở panel (c). Có ở cả ba môi trường, mạnh nhất ở E1, yếu nhất ở E3.
+
+### Phát hiện 2 — chỉ E3 có chu kỳ ngày thật; đỉnh 288 của E1/E2 là ảo
+
+Phiếu dặn *"đừng ép hình phải có đỉnh đó"*. Đo kỹ thì hai môi trường Bitbrains **không
+có** chu kỳ ngày, dù ACF tại lag 288 của chúng nhìn qua như có đỉnh.
+
+**E3 — sóng ngày đầy đủ.** ACF giảm, **cắt 0 tại lag 74** (≈6,2 giờ), xuống đáy
+**−0,4191 tại lag 139** (≈11,6 giờ, tức nửa ngày), quay lại dương từ lag 219, rồi lên
+**0,5956 tại lag 288**. Đó là dạng sóng của một chu kỳ ngày thật: đáy sâu ở nửa chu kỳ
+rồi đỉnh ở trọn chu kỳ.
+
+**E1 và E2 — không có sóng.** ACF của chúng không bao giờ xuống âm đáng kể (E1 nhỏ
+nhất 0,0028; E2 nhỏ nhất −0,0057). Còn "đỉnh" tại 288:
+
+| | ACF tại 288 | trung bình hai láng giềng | mức trội |
+|---|---:|---:|---:|
+| E1 | 0,1334 | 0,0653 | +0,068 |
+| E2 | 0,1271 | 0,0579 | +0,069 |
+
+Mức trội đó **xấp xỉ đúng mức trội của răng lược một giờ** (+0,0618 ở E1). Nghĩa là
+giá trị tại lag 288 của E1/E2 giải thích được **hoàn toàn bằng nhịp một giờ** —
+288 = 24 × 12 cũng là một bội số của 12 — mà không cần giả định thêm chu kỳ ngày nào.
+
+Kết luận phải phát biểu cẩn thận: **chu kỳ ngày là đặc tính riêng của E3.** Điều này
+củng cố lập luận giữ đặc trưng lịch cho E3 ở QĐ-010, và cũng nói rằng với E1/E2 thì
+`hour_sin`/`hour_cos` có thể mang rất ít tín hiệu — đáng theo dõi ở GĐ4.
+
+### Phát hiện 3 — PACF cắt sớm, bộ lag hiện tại là hợp lý
+
+Bậc còn `|PACF| > 0,05`:
+
+| E1 | E2 | E3 |
+|---|---|---|
+| 1–5 | 1, 3, 4 | 1–6, 8, 9 |
+
+Cả ba tắt rất nhanh sau vài bậc đầu — panel (b). Bộ lag của protocol mục 8
+(1, 2, 3, 6, 12, 24) phủ trọn vùng còn tín hiệu riêng phần, cộng thêm 12 và 24 để bắt
+răng lược một giờ và hai giờ. Không có cơ sở đòi thêm lag sâu hơn.
+
+### Ghi chú kỹ thuật
+
+Dãy ACF ước lượng theo cặp **không bảo đảm xác định dương**, nên đệ quy
+Durbin–Levinson có thể mất ổn định. Chuỗi nào không chạy hết bậc 48 thì bị loại khỏi
+trung vị PACF, và số bị loại được in ra chứ không giấu: **3/735 (E1), 1/302 (E2),
+2/498 (E3)** — dưới 0,5% ở cả ba.
+
+Kiểm tra tính nhất quán: PACF tại lag 1 phải bằng đúng ACF tại lag 1. Đo được
+0,6675 so với 0,6674 (E1) — lệch ở chữ số làm tròn.
+
+Một lỗi tự bắt khi mở hình ra nhìn: nhãn `%` ở panel (d) ghi giá trị tại lag 288
+nhưng lại đặt ở mép phải (lag 300), nên người đọc sẽ gán con số cho sai điểm. Đã dời
+về đúng lag 288.
+
+## Bước 7 — burstiness
+
+`python scripts/fig_burstiness.py --env all` → `results/figures/fig_burstiness.{png,pdf}`,
+`results/tables/cv_gd2.csv` (một dòng mỗi chuỗi, 1.535 dòng, dùng lại được để phân
+tầng ở GĐ3) và `cv_gd2_summary.csv`.
+
+`CV = std/mean` từng chuỗi, `ddof = 1` (QĐ-010), trên **mọi điểm không NaN**. Thử ba
+định nghĩa; chỉ định nghĩa này khớp A ở cả 12 chỉ số. Hai định nghĩa kia (bỏ điểm nội
+suy, hoặc lấy từ cột catalog) lệch ở chữ số thập phân thứ tư — vì `catalog.mean/std`
+tính **chỉ trên điểm quan sát thật** theo protocol mục 6b. Một chỗ không đồng nhất
+nhỏ trong dự án, đã ghi vào docstring để sau này không ai tưởng là lỗi.
+
+**Đối chiếu với A: 12/12 lệch 0,00000.**
+
+| | E1 | E2 | E3 |
+|---|---:|---:|---:|
+| Số chuỗi | 735 | 302 | 498 |
+| p25 | 0,1731 | 0,1877 | 0,2477 |
+| **Trung vị** | **0,4974** | **0,5369** | **0,2859** |
+| p75 | 1,0179 | 1,3421 | 0,3433 |
+| **IQR** | **0,8448** | **1,1543** | **0,0956** |
+| IQR / trung vị | 1,70 | 2,15 | **0,33** |
+| Trung bình | 0,7282 | 0,9449 | 0,3357 |
+| TB lệch trung vị | **+46%** | **+76%** | +17% |
+
+Phiếu dặn báo trung vị và IQR chứ không phải trung bình. Đo được lý do: trung bình
+cao hơn trung vị **+46% ở E1 và +76% ở E2**. Báo trung bình sẽ nói sai về mức độ
+bursty của E2 gần gấp đôi.
+
+### Môi trường nào bursty nhất — câu trả lời không đơn giản như bảng gợi ý
+
+Theo trung vị: **E2 (0,537) > E1 (0,497) > E3 (0,286)**. Nhưng con số đáng kể hơn là
+**độ tản**, và ở đó khoảng cách lớn hơn nhiều: IQR/trung vị là 2,15 (E2), 1,70 (E1),
+**0,33 (E3)**.
+
+Nghĩa là: **E3 không phải "ít bursty hơn" mà là ĐỒNG NHẤT hơn.** 498 máy vật lý của
+E3 hành xử gần như nhau; 735 VM của E1 thì mỗi cái một kiểu.
+
+Và phát biểu "E1/E2 bursty hơn E3" chỉ đúng một nửa. Đo chồng lấn với khoảng IQR của
+E3 `[0,2477; 0,3433]`:
+
+| | trong khoảng | **trên** | **dưới** |
+|---|---:|---:|---:|
+| E1 | 7,3% | 60,4% | **32,2%** |
+| E2 | 10,3% | 59,9% | **29,8%** |
+
+Khoảng một phần ba chuỗi E1/E2 **ít bursty hơn** máy E3 điển hình. Chúng không nằm
+lệch hẳn về một phía mà **trải ra hai bên** E3.
+
+### Phát hiện — CV bị chặn cứng bởi thang đo, và điều đó đảo ngược cách đọc
+
+Panel (b) lộ ra một rìa chéo rất sắc ở vùng tải cao. Kiểm thì đó **không phải dữ
+liệu mà là toán**: một biến nằm trong `[0, 100]` với trung bình `m` có phương sai tối
+đa `m(100 − m)`, đạt được bởi phân phối hai điểm ở 0 và 100. Suy ra
+
+> **CV ≤ √((100 − m) / m)**
+
+Chặn này siết rất chặt ở vùng tải cao: `m = 40` thì CV không thể vượt **1,22**, dù
+chuỗi có biến động thế nào. Kiểm trên dữ liệu: **0/1.535 chuỗi vi phạm**, và rìa chéo
+trùng khít đường chặn.
+
+Hệ quả đảo ngược cách đọc bảng trên:
+
+| | E1 | E2 | E3 |
+|---|---:|---:|---:|
+| Mức tải trung vị | 2,71 | 2,57 | 40,15 |
+| ⇒ chặn CV tại mức đó | 6,00 | 6,16 | **1,22** |
+| CV trung vị thực tế | 0,497 | 0,537 | 0,286 |
+| **CV / chặn, trung vị** | **0,094** | **0,104** | **0,233** |
+| % chuỗi sát chặn (≥ 0,8 lần) | 20,0% | 16,6% | **0,0%** |
+
+**So với mức biến động mà thang đo cho phép ở mức tải của chính nó, E3 dùng gấp hơn
+hai lần E1/E2.** CV thô của E3 thấp một phần vì E3 chạy ở mức tải cao, chỗ mà không
+gì có thể bursty được nữa.
+
+Đây là cùng họ với hiệu ứng trần ở QĐ-011 điểm 3, nhưng là một cơ chế khác: trần 100
+kiểm duyệt các *điểm*, còn chặn này giới hạn *thống kê*. Cả hai đều làm E1/E2 và E3
+không so trực tiếp được.
+
+### CV có dùng làm biến phân tầng ở GĐ3 được không
+
+**Trong cùng một môi trường: được, và nên.** E1 và E2 có độ tản rất rộng (IQR/trung
+vị 1,70 và 2,15), thừa chỗ để chia ba tầng có nghĩa. Ngưỡng tam phân vị đo được:
+E1 `0,256 / 0,849`, E2 `0,285 / 0,943`.
+
+**Xuyên môi trường: không, nếu dùng CV thô.** Hai lý do đều đo được:
+
+1. **CV vướng với mức tải, và vướng theo chiều ngược nhau.** Spearman ρ(CV, mức tải)
+   là **+0,375 (E1), +0,249 (E2), −0,692 (E3)**. Ở Bitbrains, VM tải cao hơn thì
+   bursty hơn; ở Alibaba thì ngược lại. Một ngưỡng CV chung sẽ chọn ra hai nhóm máy
+   *khác loại* ở hai môi trường.
+2. **Ngưỡng chung sẽ dồn gần hết E3 vào một tầng.** Tam phân vị của E3 là
+   `0,258 / 0,321` — một dải rộng 0,06, nằm gọn bên trong tầng thấp nhất của E1.
+
+Đề nghị cho GĐ3: phân tầng theo **phân vị CV trong từng môi trường** chứ không theo
+ngưỡng tuyệt đối chung, và báo cáo kèm `ti_le_cham_chan` để biết một chuỗi "ít bursty"
+là do bản chất hay do đã cụng trần thang đo. Cột đó đã có sẵn trong `cv_gd2.csv`.
+**Cần A duyệt** trước khi GĐ3 dùng.
+
 ## Phát hiện
 
 **1. Bộ test tự nó có một lỗ hổng, và chỉ lộ ra khi phá code.** Vòng phá đầu tiên,
@@ -326,7 +560,8 @@ Tức **0 là Chủ Nhật**, không phải thứ Hai. Đây chỉ là nhãn di�
 nào đổi**, `check_gd2.py` cũng hiện thực đúng công thức chứ không dựa vào nhãn. Nhưng
 E1 và E2 có mốc thời gian thật, nên nếu phần bàn về chu kỳ tuần trong paper đọc theo
 nhãn thì nó lệch đi một ngày. Đã giữ nguyên công thức (nó là cái chốt), ghi sự thật
-vào docstring test. **Cần A sửa một chữ trong QĐ-010.**
+vào docstring test. **Đã sửa** — `docs/decisions.md` QĐ-010 và `docs/protocol.md`
+mục 8 nay ghi "0 là Chủ Nhật", kèm đính chính có ngày và bảng ba mốc đo được.
 
 ## Số liệu thu được
 
@@ -343,10 +578,14 @@ vào docstring test. **Cần A sửa một chữ trong QĐ-010.**
 | Vân tay 19 đặc trưng vs A | khớp 3/3 môi trường | ngưỡng 1e-6, `check_gd2.py` mục 6 |
 | `y_t` lọt biên quá khứ | 78,85 / 78,18 / 66,14% | tham chiếu A: 78,9 / 78,2 / 66,1% |
 | Ma trận đặc trưng | 9 tệp, 351 MB, 61s | `data/features/` |
-| `check_gd2.py` | **ĐẠT**, 11/12 sản phẩm | còn thiếu `results/figures/` |
+| `check_gd2.py` | **ĐẠT**, 12/12 sản phẩm | nhưng 12/12 ≠ qua cổng, xem đầu log |
 | Thống kê mô tả | 9/9 chỉ số neo lệch **0,0000%** | `describe_gd2.py`, ngưỡng 2% |
 | Bảng màu hình | qua 6/6 phép kiểm | ΔE 9,2 deutan ở cặp xấu nhất |
-| Lỗi bố cục tự bắt | 4 | chỉ thấy khi mở ảnh ra nhìn |
+| Lỗi bố cục tự bắt | 5 | chỉ thấy khi mở ảnh ra nhìn |
+| ACF/PACF vs bản của A | **30/30 lệch 0,0000** | 15 ACF + 15 tỉ lệ cặp bỏ |
+| Nhịp một giờ | **24/24 bội số của 12** trội hơn láng giềng | ở cả ba môi trường |
+| CV vs bản của A | **12/12 lệch 0,00000** | p25/p50/p75/IQR |
+| Chuỗi vi phạm chặn CV | **0 / 1.535** | chặn √((100−m)/m) |
 
 ## Quyết định
 
@@ -368,7 +607,7 @@ vào docstring test. **Cần A sửa một chữ trong QĐ-010.**
 
 ## Vướng mắc
 
-**Cả ba đã xử lý trong phiên này. Không còn gì treo.**
+### Đã xử lý trong phiên này
 
 1. ~~QĐ-010 chú thích `dow` sai một chữ~~ → **xong**. `docs/decisions.md` QĐ-010 và
    `docs/protocol.md` mục 8 nay ghi "0 là Chủ Nhật", kèm bảng ba mốc đo được và ghi
@@ -377,8 +616,32 @@ vào docstring test. **Cần A sửa một chữ trong QĐ-010.**
    dưới đây.
 3. ~~`assert_contiguous_grid` nằm ở tầng nào~~ → **giữ ở tầng đặc trưng**, xem mục
    "Vì sao giữ ở tầng đặc trưng".
+4. ~~Tám phát hiện của đợt rà soát trước paper~~ → **xong**, chốt thành QĐ-011.
 
-Bước 4–7 làm tiếp được ngay.
+### Còn cần A quyết — không chặn gì, nhưng nên chốt trước GĐ3
+
+**V1. Cách phân tầng theo CV ở GĐ3.** Đo được hai lý do khiến ngưỡng CV tuyệt đối
+dùng chung cho ba môi trường sẽ hỏng: ρ(CV, mức tải) **đổi dấu** giữa Bitbrains
+(+0,375 / +0,249) và Alibaba (−0,692); và tam phân vị của E3 chỉ rộng 0,06, nằm gọn
+trong tầng thấp nhất của E1. Đề nghị phân tầng theo **phân vị CV trong từng môi
+trường**. Cột `ti_le_cham_chan` đã có sẵn trong `cv_gd2.csv` để kèm theo. Xem Bước 7.
+
+**V2. Chặn `CV ≤ √((100−m)/m)` có nên thành một mục Limitations riêng không.** Nó là
+cơ chế **khác** với trần 100 ở QĐ-011 điểm 3 — trần kiểm duyệt các *điểm*, chặn này
+giới hạn *thống kê phân tán*. Cả hai cùng làm CV thô của E3 và của E1/E2 không so
+trực tiếp được, và cái sau đảo ngược cách đọc: theo tỉ lệ chạm chặn thì E3 dùng
+**gấp hơn hai lần** khoảng biến động mà mức tải của nó cho phép, so với E1/E2.
+
+**V3. Đặc trưng lịch của E1/E2 có thể gần như vô dụng.** Bước 6 đo được E1 và E2
+**không có chu kỳ ngày**: ACF của chúng không bao giờ xuống âm, và "đỉnh" tại lag 288
+giải thích hết bằng nhịp một giờ. QĐ-010 chốt TN-B chạy hai biến thể có và không có
+đặc trưng lịch; kết quả Bước 6 gợi ý biến thể "không có lịch" có thể **không đổi gì**
+với E1/E2 mà chỉ ảnh hưởng E3. Đáng ghi trước để GĐ4 đọc kết quả cho đúng.
+
+**V4. Nhịp một giờ nên vào paper ở đâu.** 24/24 bội số của 12 trội hơn láng giềng ở
+cả ba môi trường — đây là một quan sát về dữ liệu, không phải về mô hình. Nó biện
+minh cho việc giữ `lag_12` và `lag_24` trong bộ đặc trưng, và có thể là một câu trong
+phần Dữ liệu hoặc trong phần bàn luận RQ1.
 
 ## Ghim config với code — `tests/test_config.py`
 
@@ -458,9 +721,11 @@ chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, c
 - [x] Bước 3 — `scripts/build_features.py --env all`, ghi 9 tệp `data/features/`
 - [x] Bước 4 — `scripts/describe_gd2.py --env all`
 - [x] Bước 5 — hình phân phối (**điều kiện qua cổng** — A duyệt bằng mắt)
-- [ ] Bước 6 — ACF/PACF, kèm tỉ lệ cặp bị bỏ ở mỗi lag
-- [ ] Bước 7 — burstiness
-- [ ] Bước 8 — hoàn thiện log này và chạy `check_gd2.py`
+- [x] Bước 6 — ACF/PACF, kèm tỉ lệ cặp bị bỏ ở mỗi lag
+- [x] Bước 7 — burstiness
+- [x] Bước 8 — hoàn thiện log này và chạy `check_gd2.py`
+- [ ] **A duyệt hình phân phối bằng mắt** — điều kiện qua cổng GĐ2
+- [ ] A quyết V1–V4 ở mục Vướng mắc
 
 ## File sinh ra
 
@@ -477,6 +742,14 @@ chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, c
 - `scripts/fig_target_dist.py` — hình phân phối, hai bản, tự khoá vòng với bảng Bước 4
 - `results/figures/fig_target_dist{,_paper}.{png,pdf}` — hình
 - `results/figures/fig_target_dist.caption.md` — caption đầy đủ, kèm câu ngắn cho paper
+- `results/figures/README.md` — giải thích hai biến thể của mỗi hình
+- `scripts/fig_acf.py` — ACF/PACF theo cặp không NaN, tự đối chiếu tham chiếu của A
+- `results/figures/fig_acf{,_paper}.{png,pdf}` — 4 panel: ACF ngắn, PACF, ACF dài, tỉ lệ cặp bỏ
+- `results/tables/acf_gd2.csv` — ACF, PACF, tỉ lệ cặp bỏ cho từng lag 0–300
+- `scripts/fig_burstiness.py` — CV từng chuỗi, chặn thang đo, tự đối chiếu A
+- `results/figures/fig_burstiness{,_paper}.{png,pdf}` — 4 panel
+- `results/tables/cv_gd2.csv` — 1.535 dòng, một dòng mỗi chuỗi, cho phân tầng GĐ3
+- `results/tables/cv_gd2_summary.csv` — tóm tắt ba môi trường
 - `data/features/{E1,E2,E3}_h{1,6,12}.parquet` — 9 tệp, 351 MB, **không commit**
 
 ## File sửa

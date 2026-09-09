@@ -313,23 +313,31 @@ def ve_hinh(bang, xs, duong, *, kem_doc: bool):
         ax_bang = fig.add_subplot(gs[0, 2], facecolor=NEN)
         y_tieu_de, y_phu = 0.945, 0.865
 
+    # Bản duyệt cổng dùng tiêu đề diễn giải; bản paper dùng tiêu đề mô tả thuần.
+    # Trong paper, diễn giải thuộc về caption chứ không thuộc về hình — một tiêu đề
+    # khẳng định kết luận ngay trên trục là thứ người phản biện sẽ hỏi.
     ve_panel(ax1, xs, duong, symlog=False, ten_panel="(a)",
-             tieu_de="Trục tuyến tính — ba mức tải tách hẳn nhau")
+             tieu_de=("Trục tuyến tính — ba mức tải tách hẳn nhau" if kem_doc
+                      else "ECDF, trục tuyến tính"))
     ve_panel(ax2, xs, duong, symlog=True, ten_panel="(b)",
-             tieu_de="Trục symlog — phóng to vùng dưới 1%")
+             tieu_de=("Trục symlog — phóng to vùng dưới 1%" if kem_doc
+                      else "ECDF, trục symlog"))
     tran = chu_thich_tran(ax1, duong, xs)
     ve_bang(ax_bang, bang, ten_panel="(c)" if not kem_doc else "")
 
     if ax_doc is not None:
         ve_huong_dan(ax_doc, bang, tran)
 
-    fig.suptitle("Phân phối CPU% sau tiền xử lý — ba môi trường trên cùng một trục",
-                 fontsize=13, color=MUC, x=0.055 if not kem_doc else 0.065,
-                 ha="left", y=y_tieu_de)
-    fig.text(0.055 if not kem_doc else 0.065, y_phu,
-             "Hàm phân phối tích luỹ thực nghiệm (ECDF). Gộp mọi điểm không NaN của "
-             "chuỗi được giữ, trong cửa sổ 8 ngày (QĐ-011 điểm 2).",
-             fontsize=9, color=MUC_PHU, ha="left")
+    x_le = 0.065 if kem_doc else 0.055
+    fig.suptitle("Phân phối CPU% của ba môi trường sau tiền xử lý",
+                 fontsize=13, color=MUC, x=x_le, ha="left", y=y_tieu_de)
+    # Bản paper không nhắc mã quyết định nội bộ — người đọc paper không biết QĐ-011
+    # là gì, và một hình phải tự đứng được.
+    phu = ("Hàm phân phối tích luỹ thực nghiệm (ECDF). Gộp mọi điểm không NaN của "
+           "chuỗi được giữ, trong cửa sổ 8 ngày (QĐ-011 điểm 2)." if kem_doc else
+           "Hàm phân phối tích luỹ thực nghiệm (ECDF), gộp mọi điểm quan sát của các "
+           "chuỗi còn lại sau bộ lọc, trong cửa sổ 8 ngày.")
+    fig.text(x_le, y_phu, phu, fontsize=9, color=MUC_PHU, ha="left")
 
     ax1.legend(loc="lower right", fontsize=8.2, frameon=True, framealpha=1.0,
                edgecolor="#d4d3ce", facecolor=NEN, borderpad=0.6,
