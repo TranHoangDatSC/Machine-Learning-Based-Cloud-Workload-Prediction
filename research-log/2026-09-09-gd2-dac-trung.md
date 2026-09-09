@@ -2,15 +2,19 @@
 
 **Người thực hiện:** B (agent)
 **Giai đoạn:** GĐ2
-**Thời lượng:** ~3 giờ (Bước 1, 2, 3, 4 của `research-log/brief-gd2-b.md`)
+**Thời lượng:** ~4 giờ (Bước 1–5 của `research-log/brief-gd2-b.md`)
 
-> **Trạng thái: đang làm dở.** Log này ghi Bước 1, 2, 3, 4. Bước 5, 6, 7 chưa chạy
-> lệnh nào, nên không mục nào dưới đây nói "đã hoàn thành" cho chúng.
+> **Trạng thái: đang làm dở.** Log này ghi Bước 1–5. Bước 6 và 7 chưa chạy lệnh
+> nào, nên không mục nào dưới đây nói "đã hoàn thành" cho chúng.
+>
+> `check_gd2.py` nay báo **12/12 sản phẩm** — nhưng dòng `results/figures/` của nó chỉ
+> kiểm thư mục có tệp không rỗng, và thư mục đó mới có hình phân phối. **ACF/PACF và
+> burstiness vẫn chưa làm.** Đừng đọc 12/12 thành xong GĐ2.
 >
 > `scripts/check_gd2.py` báo **ĐẠT** — nhưng đó là phần cổng **tự động hoá được**
 > (mục 3.2, R2–R4, bẫy mốc thời gian, vân tay đặc trưng). Điều kiện qua cổng thật ở
-> `gate-gd2.md` mục 3.5 là **hình phân phối target**, và A duyệt bằng mắt. Chưa có
-> hình thì chưa gọi là qua cổng GĐ2.
+> `gate-gd2.md` mục 3.5 là **hình phân phối**, và A duyệt bằng mắt. Hình đã có
+> (Bước 5) nhưng **chưa ai duyệt**, nên GĐ2 chưa qua cổng.
 >
 > Giữa Bước 3 và Bước 4 có một đợt rà soát toàn dự án trước khi viết paper, sinh ra
 > **QĐ-011**. Kết quả ở `research-log/2026-09-09-ra-soat-truoc-paper.md`; Bước 4 làm
@@ -33,6 +37,8 @@ xanh — rồi sinh chín ma trận đặc trưng và đối chiếu với neo G
 - **Bước 3.** `scripts/build_features.py --env all` — 9 tệp, khớp tuyệt đối chín neo.
 - **Rà soát trước paper.** 8 phát hiện, chốt thành QĐ-011 — log riêng.
 - **Bước 4.** `scripts/describe_gd2.py --env all` — 9 chỉ số neo lệch 0,0000%.
+- **Bước 5.** `scripts/fig_target_dist.py` — hình phân phối, hai bản: duyệt cổng và
+  đưa vào paper. Đây là **điều kiện qua cổng GĐ2**, chờ A duyệt bằng mắt.
 - **Ngoài phiếu.** Sửa nhãn `dow` sai trong QĐ-010 và protocol mục 8 (mục Phát hiện 4),
   và thêm `data/features/**` vào `.gitignore` — 351 MB parquet suýt lọt vào Git.
 
@@ -208,6 +214,83 @@ mọi con số trong bảng mô tả một quần thể không ai định nghĩa
 Bảng trong `docs/data-card.md` mục *Sau tiền xử lý* nay là **bản chép từ tệp máy
 sinh**, kèm ghi chú "sửa tay ở đây là tạo ra bản thứ hai không ai kiểm được".
 
+## Bước 5 — hình phân phối (điều kiện qua cổng)
+
+`python scripts/fig_target_dist.py` → `results/figures/fig_target_dist{,_paper}.{png,pdf}`
+và `fig_target_dist.caption.md`.
+
+### Chọn ECDF, và vì sao không chọn hai phương án kia
+
+Phiếu nêu ba lối: ECDF, log1p, trục phụ.
+
+| Phương án | Quyết định |
+|---|---|
+| **ECDF** | **Chọn.** Trục tung là xác suất tích luỹ nên **mỗi đường bắt buộc đi từ 0 lên 1** — không môi trường nào bị nén, kể cả khi mức tải lệch 20 lần. Không có tham số bin để vô tình chỉnh cho hình đẹp lên. Đọc thẳng được phân vị. Và khối bị kiểm duyệt tại trần hiện thành **bước nhảy nhìn thấy được** |
+| log1p | Bỏ. Đọc được cả ba nhưng bóp méo khoảng cách giữa các mức tải — mà chênh lệch mức tải chính là điều hình này phải cho thấy |
+| Trục phụ | **Bỏ dứt khoát.** Hai thang y trên một hình cho phép đặt hai đường cạnh nhau ở bất kỳ vị trí tương đối nào, nên hình nói được điều dữ liệu không nói |
+
+Hai panel vì chúng trả lời hai câu khác nhau. Panel (a) trục tuyến tính trả lời câu
+của RQ3: ba mức tải tách hẳn nhau. Panel (b) trục symlog phóng to vùng dưới 1%, nơi
+trung vị của E1/E2 thực sự nằm — trên trục tuyến tính vùng đó chỉ chiếm vài pixel
+sát trục tung.
+
+### Hai bản, hai người đọc
+
+- `fig_target_dist` — có panel (c) hướng dẫn đọc. Để A duyệt cổng và dán vào log.
+- `fig_target_dist_paper` — **bản sạch, không có chữ văn xuôi trong hình.** Chữ nằm
+  trong ảnh là chỗ của caption LaTeX; một khối văn xuôi in cứng vào PNG thì không
+  sửa được khi câu chữ của bài đổi, và trông nghiệp dư trong paper.
+
+Caption đầy đủ nằm ở `results/figures/fig_target_dist.caption.md`, gồm cả câu caption
+ngắn để dán thẳng xuống dưới hình.
+
+### Ba việc hình phải làm, và cách kiểm
+
+| Đòi hỏi (`gate-gd2.md` mục 3.5) | Làm thế nào |
+|---|---|
+| Ba môi trường trên cùng một hình, cùng trục | Cả ba đường trên cùng một cặp trục ở cả hai panel |
+| Trục đọc được, không đường nào bị ép sát mép | ECDF ép mọi đường dùng hết chiều cao. Đã mở ảnh nhìn bằng mắt |
+| Cho thấy điều RQ3 dựa vào | Panel (a): ba đường gần như không giao nhau |
+| **Chú thích trần 100** (QĐ-011 điểm 3) | Hộp chú thích chỉ vào bước nhảy tại 100, ghi 5,12% / 2,28% / 0% |
+| Vẽ phân phối gộp của `y`, không phải cột `target` (QĐ-011 điểm 2) | Ghi trong phụ đề hình, trong docstring, và trong caption |
+| Sinh lại bằng một lệnh | `python scripts/fig_target_dist.py` |
+
+**Khoá vòng giữa hình và bảng.** Bảng phân vị trong hình **đọc từ**
+`results/tables/describe_gd2.csv` chứ không tính lại — một nguồn sự thật, nên hình và
+bảng của paper không thể lệch nhau. Script còn kiểm chéo trung vị suy từ ECDF với
+`p50` trong bảng đó và thoát 1 nếu lệch quá bước lưới:
+
+```
+E1: ECDF  1,7937   bảng  1,7833
+E2: ECDF  1,7741   bảng  1,7667
+E3: ECDF 37,8500   bảng 37,8333
+```
+
+Chênh nhỏ là bước lưới hoành độ, không phải bất đồng về dữ liệu.
+
+### Màu và khả năng đọc
+
+Ba khe categorical đầu của bảng màu tham chiếu, dùng đúng thứ tự, không xoay vòng.
+Chạy validator trước khi vẽ: qua cả sáu phép kiểm trên nền sáng — dải độ sáng, sàn
+chroma, tách màu cho người mù màu (ΔE 9,2 deutan ở cặp xấu nhất), sàn thị lực thường
+(ΔE 27,6). Một cảnh báo tương phản ở màu aqua của E3, đã bù bằng nhãn trực tiếp và
+bảng phân vị. Thêm **mã hoá thứ hai bằng kiểu nét** (liền / đứt / gạch-chấm) để hình
+đọc được khi in đen trắng.
+
+### Ba lỗi bố cục tự bắt khi mở ảnh ra nhìn
+
+Validator kiểm màu, không kiểm bố cục. Mở ảnh xem mới thấy:
+
+1. Panel (c) **tràn chữ sang dưới bảng** — chữ bị cắt ở mép phải. Sửa bằng ngắt dòng
+   theo bề rộng thật (`textwrap`) thay vì xuống dòng bằng tay.
+2. Nhãn "trung vị" đặt bên phải, **bị hộp chú thích trần đè lên**. Dời sang trái.
+3. Mũi tên chú thích **cắt ngang đường E3**. Dời hộp xuống vùng trống thật ở góc
+   dưới phải — với `x > 60` cả ba đường đều trên `y = 0,9`, còn chú giải chiếm
+   `y < 0,25`, nên dải giữa hoàn toàn rỗng.
+
+Bản paper còn một lỗi thứ tư: tiêu đề panel (c) dài quá cột hẹp và bị cắt ở mép hình.
+Rút gọn còn "Bảng phân vị".
+
 ## Phát hiện
 
 **1. Bộ test tự nó có một lỗ hổng, và chỉ lộ ra khi phá code.** Vòng phá đầu tiên,
@@ -262,6 +345,8 @@ vào docstring test. **Cần A sửa một chữ trong QĐ-010.**
 | Ma trận đặc trưng | 9 tệp, 351 MB, 61s | `data/features/` |
 | `check_gd2.py` | **ĐẠT**, 11/12 sản phẩm | còn thiếu `results/figures/` |
 | Thống kê mô tả | 9/9 chỉ số neo lệch **0,0000%** | `describe_gd2.py`, ngưỡng 2% |
+| Bảng màu hình | qua 6/6 phép kiểm | ΔE 9,2 deutan ở cặp xấu nhất |
+| Lỗi bố cục tự bắt | 4 | chỉ thấy khi mở ảnh ra nhìn |
 
 ## Quyết định
 
@@ -372,7 +457,7 @@ chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, c
 
 - [x] Bước 3 — `scripts/build_features.py --env all`, ghi 9 tệp `data/features/`
 - [x] Bước 4 — `scripts/describe_gd2.py --env all`
-- [ ] Bước 5 — hình phân phối target (**điều kiện qua cổng**)
+- [x] Bước 5 — hình phân phối (**điều kiện qua cổng** — A duyệt bằng mắt)
 - [ ] Bước 6 — ACF/PACF, kèm tỉ lệ cặp bị bỏ ở mỗi lag
 - [ ] Bước 7 — burstiness
 - [ ] Bước 8 — hoàn thiện log này và chạy `check_gd2.py`
@@ -389,6 +474,9 @@ chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, c
 - `scripts/build_features.py` — sinh 9 ma trận, đối chiếu neo GĐ1
 - `scripts/describe_gd2.py` — bảng thống kê mô tả, tự đối chiếu neo
 - `results/tables/describe_gd2.{csv,md}` — bảng máy sinh cho data card và paper
+- `scripts/fig_target_dist.py` — hình phân phối, hai bản, tự khoá vòng với bảng Bước 4
+- `results/figures/fig_target_dist{,_paper}.{png,pdf}` — hình
+- `results/figures/fig_target_dist.caption.md` — caption đầy đủ, kèm câu ngắn cho paper
 - `data/features/{E1,E2,E3}_h{1,6,12}.parquet` — 9 tệp, 351 MB, **không commit**
 
 ## File sửa
