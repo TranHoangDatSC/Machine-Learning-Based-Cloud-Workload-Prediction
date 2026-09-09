@@ -203,6 +203,11 @@ dùng module ở Bước 1, ghi ra data/features/{env}_h{h}.parquet.
 Bỏ mọi dòng không hợp lệ theo định nghĩa ở protocol mục 8: mọi điểm trong
 [t-24, t] không NaN, và target tại t+h không NaN.
 
+QUAN TRỌNG: lọc bằng đúng luật cửa sổ đó, KHÔNG lọc bằng dropna() trên ma trận
+đặc trưng. Hai cách này không tương đương. 19 đặc trưng chỉ chạm 15 điểm trong
+cửa sổ (t-24, t-12..t-1, và t); các điểm t-23 tới t-13 không đặc trưng nào dùng
+nhưng protocol vẫn đòi chúng không NaN. dropna() lỏng hơn và sẽ giữ thừa dòng.
+
 In ra bảng số dòng của từng tệp.
 ```
 
@@ -223,8 +228,12 @@ Chín con số này lấy từ `catalog.parquet`, đã được kiểm chéo v�
 lập của A và khớp đến từng đơn vị. Cả hai bên tính trên cùng một tệp
 `data/processed/`, nên **lệch một dòng là có lỗi**, không phải nhiễu.
 
-Lệch thì nghi theo thứ tự này: `min_periods=1` (ra nhiều dòng hơn), quên
-`groupby(series_id)` (nhiều hơn), nhầm `t+h` thành `t+h-1` (lệch đúng vài nghìn).
+Lệch thì nghi theo thứ tự này: lọc bằng `dropna()` thay cho luật cửa sổ (nhiều hơn —
+A đã mắc đúng lỗi này, thừa 1.513 dòng ở E2 và 7.461 ở E3), `min_periods=1` (nhiều
+hơn), quên `groupby(series_id)` (nhiều hơn), nhầm `t+h` (lệch vài nghìn).
+
+**Kiểm cả ba môi trường.** E1 khớp kể cả khi lọc sai, vì NaN của nó thưa và có cấu
+trúc. Chỉ thử E1 rồi kết luận là đúng thì sẽ trượt cổng ở E2 và E3.
 
 **Không sửa số cho khớp. Sửa cách hiện thực.**
 

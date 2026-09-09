@@ -1,7 +1,8 @@
 # Hồ sơ cổng GĐ2
 
 **Người giữ cổng:** A
-**Trạng thái:** đang dựng — **A phải làm xong mục 2 và mục 4 trước khi B bắt đầu**
+**Trạng thái:** thước đo đã có (mục 2 xong). Còn lại trước khi B bắt đầu:
+**chốt QĐ-010** (mục 6) và **viết `scripts/check_gd2.py`** (mục 4).
 **Cập nhật:** 2026-09-09
 **Giai đoạn:** Khám phá dữ liệu và bộ đặc trưng (`docs/research-plan.md` GĐ2)
 
@@ -38,9 +39,17 @@ A đến từng đơn vị. Mọi con số GĐ2 dẫn xuất từ đó phải kh
 ngưỡng sai số — vì hai bên tính trên cùng một tệp `data/processed/`, lệch nghĩa là
 sai chứ không phải nhiễu.
 
-**Bản hiện thực độc lập của A:** `scripts/reference_gd2.py` — *chưa viết*. Sinh ma
-trận đặc trưng theo protocol mục 8 và bộ thống kê mô tả, để đối chiếu với sản phẩm
-của B. Đây là việc A phải làm **trước khi** B bắt đầu, đúng như GĐ1.
+**Bản hiện thực độc lập của A:** `scripts/reference_gd2.py` — **đã viết 2026-09-09**,
+chạy ra `results/tables/reference_gd2.json`. Sinh 19 đặc trưng theo protocol mục 8,
+đếm dòng hợp lệ, đo ACF và CV.
+
+Cố ý dùng lối nghĩ khác B: nạp mỗi môi trường thành **một ma trận numpy
+`(số chuỗi, 2304)`** rồi dịch theo trục thời gian, thay vì `groupby(series_id)` trên
+bảng dài. Ranh giới chuỗi khi đó là ranh giới hàng, nên lỗi bắc cầu giữa hai chuỗi
+không xảy ra được về mặt cấu trúc. Độc lập cả về cách tiếp cận, không chỉ về dòng mã.
+
+> **Đừng đưa `reference_gd2.py` cho agent đang viết `src/cwp/features/` đọc.** Nếu
+> cùng một agent viết cả hai bản thì việc chúng khớp nhau không chứng minh gì.
 
 ---
 
@@ -61,10 +70,27 @@ Lấy từ `catalog.parquet`, đã đối chiếu với `reference_E*.json` ngà
 | E2 | 302 | 678.486 | 675.665 | 673.322 |
 | E3 | 498 | 938.933 | 926.892 | 917.463 |
 
-Đây là phép kiểm mạnh nhất của cổng GĐ2, và nó gần như miễn phí. Định nghĩa dòng hợp
-lệ ở protocol mục 8 (`[t−24, t]` và `t+h` đều không NaN) trùng đúng với điều kiện để
-19 đặc trưng ở mục 8 tính được. Lệch một dòng nghĩa là có đặc trưng dùng cửa sổ sai —
-`min_periods=1` là thủ phạm phổ biến nhất.
+Đây là phép kiểm mạnh nhất của cổng GĐ2, và nó gần như miễn phí. `reference_gd2.py`
+đã tái lập đúng cả 9 con số này từ `data/processed/` bằng một hiện thực độc lập.
+
+> **Bẫy: `dropna()` trên ma trận đặc trưng KHÔNG bằng luật dòng hợp lệ.** Nó lỏng
+> hơn, và lỏng theo hướng im lặng.
+>
+> 19 đặc trưng chỉ chạm **15 điểm** trong cửa sổ: `t−24`, `t−12..t−1`, và `t`. Các
+> điểm **`t−23` đến `t−13` không đặc trưng nào dùng** — `lag` nhảy từ 12 sang 24,
+> rolling sâu nhất chỉ 12 bước. Nhưng protocol mục 8 đòi *toàn bộ* `[t−24, t]` không
+> NaN, và đó là chủ ý (xem câu "một điểm NaN đơn lẻ làm hỏng 25 dòng").
+>
+> Đo trên sản phẩm GĐ1, `dropna` thừa ra: **E2 h=1 thừa 1.513 dòng, E3 h=1 thừa
+> 7.461 dòng**. **E1 thì khớp** — NaN của E1 thưa và có cấu trúc nên lỗi không lộ.
+> Ai chỉ thử E1 sẽ tưởng mình đúng.
+>
+> A đã mắc đúng lỗi này khi viết bản tham chiếu, và chỉ phát hiện nhờ neo cứng. Nếu
+> cổng GĐ2 không có phép so này thì cả hai bên đã cùng đi tiếp với ma trận sai.
+
+Lệch theo hướng **nhiều hơn** thì nghi `dropna` thay cho luật cửa sổ, hoặc
+`min_periods=1`. Lệch theo hướng **ít hơn** thì nghi quên `groupby(series_id)` hoặc
+nhầm `t+h`.
 
 ### 2.2 Phân phối target — đã có từ GĐ1
 
@@ -78,18 +104,42 @@ Ba con số p50 này là lý do hình phân phối ở mục 3.5 phải cẩn th
 vị dưới 2%, E3 gần 38%. Vẽ trên trục tuyến tính chung thì E1 và E2 dồn hết vào cột
 đầu tiên và hình không nói được gì.
 
-### 2.3 Thống kê đặc trưng — A sinh sau
+### 2.3 Thống kê đặc trưng — đã sinh 2026-09-09
 
 ```bash
 python scripts/reference_gd2.py --env all --out results/tables/reference_gd2.json
 ```
 
+Vân tay từng đặc trưng (mean, std, %NaN của cả 19) nằm trong
+`results/tables/reference_gd2.json`. Bảng dưới là phần A duyệt bằng mắt.
+
 | Chỉ số | E1 | E2 | E3 |
-|---|---|---|---|
-| Số đặc trưng | | | |
-| Tỉ lệ NaN mỗi đặc trưng | | | |
-| ACF lag 1 / 6 / 12 / 24 (trung vị theo chuỗi) | | | |
-| CV trung vị, IQR | | | |
+|---|---:|---:|---:|
+| Số đặc trưng | 19 | 19 | 19 |
+| ACF lag 1 | 0,6674 | 0,6431 | **0,8634** |
+| ACF lag 6 | 0,4074 | 0,3414 | 0,6944 |
+| ACF lag 12 | 0,4459 | 0,2978 | 0,6287 |
+| ACF lag 24 | 0,3551 | 0,1982 | 0,4952 |
+| **ACF lag 288 (chu kỳ ngày)** | 0,1334 | 0,1271 | **0,5956** |
+| Cặp bị bỏ khi tính ACF lag 1 | 1,43% | 0,35% | 9,76% |
+| CV p25 / **p50** / p75 | 0,173 / **0,497** / 1,018 | 0,188 / **0,537** / 1,342 | 0,248 / **0,286** / 0,343 |
+| CV IQR | 0,845 | 1,154 | **0,096** |
+
+Ba điều đọc ra được ngay, và cả ba đều liên quan trực tiếp tới RQ2 và RQ3:
+
+1. **E3 mượt hơn hẳn.** ACF lag 1 là 0,86 so với 0,67 và 0,64. Máy vật lý gộp tải
+   của nhiều VM nên nhiễu triệt tiêu bớt — khớp với chênh lệch đơn vị quan sát đã
+   chấp nhận ở QĐ-004.
+2. **Chỉ E3 có chu kỳ ngày rõ.** ACF tại lag 288 là 0,60 với E3, còn E1 và E2 chỉ
+   0,13. Đáng chú ý: chu kỳ này đọc được **dù mốc thời gian E3 là tương đối** — pha
+   chưa biết không xoá được tính tuần hoàn. Đây là lập luận ủng hộ việc vẫn giữ đặc
+   trưng lịch cho E3 (mục 6).
+3. **E1 và E2 bursty hơn nhiều.** IQR của CV là 0,845 và 1,154, so với 0,096 của E3.
+   Đủ chênh để dùng burstiness làm biến phân tầng ở GĐ3.
+
+E1 có một chi tiết lạ: ACF lag 12 (0,4459) **cao hơn** lag 6 (0,4074). Không đơn
+điệu — có thể là nhịp một giờ. Chưa giải thích; nếu B thấy lại thì đó là xác nhận,
+không phải trùng hợp.
 
 ---
 
@@ -164,6 +214,12 @@ không thì đuôi chuỗi này chảy vào đầu chuỗi kia.
 
 **R4 — Số dòng khớp neo GĐ1.** Bảng ở mục 2.1, khớp **tuyệt đối** cho cả ba môi
 trường và cả ba horizon. Chín con số, chín dấu bằng.
+
+- [ ] Lọc dòng bằng **luật cửa sổ** `[t−24, t]` sạch, **không** bằng `dropna()` trên
+      ma trận đặc trưng — xem bẫy ở mục 2.1, hai thứ đó khác nhau
+- [ ] Kiểm cả ba môi trường, không chỉ E1. E1 khớp kể cả khi làm sai
+- [ ] Kiểm ngược: mọi dòng hợp lệ theo luật đều tính được đủ 19 đặc trưng (chiều này
+      phải đúng; chiều ngược lại thì không)
 
 ### 3.4 Ba cái bẫy của GĐ2
 
