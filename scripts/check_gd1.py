@@ -99,34 +99,42 @@ def rel_diff(got, want):
 
 def check_schema(cat, rep):
     g = "1. Schema catalog.parquet"
-    missing = [c for c in CATALOG_COLS if c not in cat.columns]
+    cols = set(cat.columns)
+    missing = [c for c in CATALOG_COLS if c not in cols]
     if missing:
         rep.add(g, "Đủ cột bắt buộc", FAIL, f"thiếu: {', '.join(missing)}")
-        return False
-    rep.add(g, f"Đủ {len(CATALOG_COLS)} cột bắt buộc", OK)
+    else:
+        rep.add(g, f"Đủ {len(CATALOG_COLS)} cột bắt buộc", OK)
 
-    bad = set(cat["reject_reason"].fillna("").unique()) - REASONS
-    rep.add(g, "Giá trị reject_reason hợp lệ", FAIL if bad else OK,
-            f"giá trị lạ: {bad}" if bad else "")
+    # Thiếu cột thì vẫn kiểm tiếp những gì kiểm được, để B thấy HẾT vấn đề trong
+    # một lần chạy thay vì sửa từng lỗi rồi chạy lại.
+    if "reject_reason" in cols:
+        bad = set(cat["reject_reason"].fillna("").unique()) - REASONS
+        rep.add(g, "Giá trị reject_reason hợp lệ", FAIL if bad else OK,
+                f"giá trị lạ: {bad}" if bad else "")
 
-    envs = set(cat["env"].unique())
-    rep.add(g, "Đủ ba môi trường", FAIL if set(ENVS) - envs else OK,
-            f"thiếu: {set(ENVS) - envs}" if set(ENVS) - envs else "")
+    if "env" in cols:
+        envs = set(cat["env"].unique())
+        rep.add(g, "Đủ ba môi trường", FAIL if set(ENVS) - envs else OK,
+                f"thiếu: {set(ENVS) - envs}" if set(ENVS) - envs else "")
 
-    dup = int(cat["series_id"].duplicated().sum())
-    rep.add(g, "series_id không trùng", FAIL if dup else OK,
-            f"{dup} định danh bị trùng" if dup else "")
+    if "series_id" in cols:
+        dup = int(cat["series_id"].duplicated().sum())
+        rep.add(g, "series_id không trùng", FAIL if dup else OK,
+                f"{dup} định danh bị trùng" if dup else "")
 
     # Bẫy Rnd: E2 phải có phần tháng trong định danh.
     # Chỉ bắt buộc với chuỗi ĐƯỢC GIỮ — đó là những chuỗi sẽ đi vào huấn luyện và
     # là nơi va chạm định danh gây rò rỉ. Chuỗi bị loại chỉ cảnh báo.
-    e2_keep = cat[(cat.env == "E2") & cat.kept]
+    e2_keep = (cat[(cat.env == "E2") & cat.kept]
+               if {"env", "series_id", "kept"} <= cols else cat.iloc[:0])
     if len(e2_keep):
         bad = e2_keep[~e2_keep["series_id"].astype(str).str.match(r"^E2_\d{4}-\d+_")]
         rep.add(g, "E2 giữ lại có tháng trong series_id (bẫy Rnd trùng tên)",
                 FAIL if len(bad) else OK,
                 f"{len(bad)} chuỗi sai, ví dụ: {bad['series_id'].iloc[0]}" if len(bad) else "")
-    e2_rej = cat[(cat.env == "E2") & ~cat.kept]
+    e2_rej = (cat[(cat.env == "E2") & ~cat.kept]
+              if {"env", "series_id", "kept"} <= cols else cat.iloc[:0])
     if len(e2_rej):
         bad_r = e2_rej[~e2_rej["series_id"].astype(str).str.match(r"^E2_\d{4}-\d+_")]
         if len(bad_r):
@@ -135,7 +143,8 @@ def check_schema(cat, rep):
 
     # E3 phải dùng đúng danh sách máy đã đóng băng — QĐ-009.
     # Trước đây A và B tự chọn mẫu riêng và chỉ trùng 56/500.
-    e3 = cat[cat.env == "E3"]
+    e3 = (cat[cat.env == "E3"]
+          if {"env", "series_id"} <= cols else cat.iloc[:0])
     frozen_path = ROOT / "config" / "e3_machines.txt"
     if len(e3) and frozen_path.exists():
         frozen = {ln.strip() for ln in frozen_path.read_text(encoding="utf-8").splitlines()
@@ -151,11 +160,15 @@ def check_schema(cat, rep):
         else:
             rep.add(g, f"E3 dùng đúng {len(frozen)} máy đã đóng băng", OK)
 
-    inconsistent = int(((cat["kept"]) & (cat["reject_reason"].fillna("") != "")).sum())
-    inconsistent += int(((~cat["kept"]) & (cat["reject_reason"].fillna("") == "")).sum())
-    rep.add(g, "kept khớp reject_reason", FAIL if inconsistent else OK,
-            f"{inconsistent} dòng mâu thuẫn" if inconsistent else "")
-    return True
+    if {"kept", "reject_reason"} <= cols:
+        inconsistent = int(((cat["kept"]) & (cat["reject_reason"].fillna("") != "")).sum())
+        inconsistent += int(((~cat["kept"]) & (cat["reject_reason"].fillna("") == "")).sum())
+        rep.add(g, "kept khớp reject_reason", FAIL if inconsistent else OK,
+                f"{inconsistent} dòng mâu thuẫn" if inconsistent else "")
+
+    # Đủ cột để đối chiếu số hay không
+    return {"env", "series_id", "kept", "reject_reason", "n_points", "n_interp",
+            "valid_rows_h12", "mean"} <= cols
 
 
 def summarize(cat, env):
@@ -351,9 +364,13 @@ def main():
     cat = pd.read_parquet(cat_path)
     rep.add(g0, f"Đọc được catalog ({len(cat):,} dòng)", OK)
 
-    if check_schema(cat, rep):
-        check_provenance(cat, rep)
+    can_compare = check_schema(cat, rep)
+    check_provenance(cat, rep)
+    if can_compare:
         check_numbers(cat, refs, rep)
+    else:
+        rep.add("2. Đối chiếu số", "Bỏ qua", WARN,
+                "thiếu cột cần thiết, sửa mục 1 rồi chạy lại")
     check_processed(ROOT / a.processed, rep)
     return rep.show()
 

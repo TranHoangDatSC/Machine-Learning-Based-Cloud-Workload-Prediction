@@ -4,6 +4,7 @@ Cập nhật thủ công mỗi khi thêm log mới. Mới nhất ở trên.
 
 | Ngày | Phiên | Người | GĐ | Kết quả chính |
 |---|---|---|---|---|
+| 2026-09-09 | [B chưa áp dụng QĐ-009](2026-09-09-b-chua-ap-dung-qd009.md) | A | GĐ1 | Số E3 không đổi vì code chưa sửa; trùng 146/500 máy — đúng biến thể đã chẩn đoán |
 | 2026-09-09 | [QĐ-009 đóng băng mẫu E3](2026-09-09-qd009-dong-bang-e3.md) | A | GĐ1 | A và B chọn hai tập máy khác nhau 89% — đóng băng `config/e3_machines.txt` |
 | 2026-09-08 | [Nguồn gốc catalog](2026-09-08-provenance-catalog.md) | A | GĐ1 | **B khớp A tuyệt đối** ở E1/E2; catalog là khảm 2 máy → thêm `built_on`/`built_at` |
 | 2026-09-08 | [Schema và kiểm cổng tự động](2026-09-08-schema-va-checker.md) | A | GĐ1 | Đặc tả 13 cột catalog; `check_gd1.py` + test cho chính nó, 4 tình huống xanh |
