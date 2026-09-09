@@ -245,14 +245,46 @@ ghi rõ là phân tích bổ sung.
 Chỉ dùng lịch sử của **chính chuỗi đó**. Không dùng thông tin từ chuỗi khác, không
 dùng thông tin tương lai.
 
-| Nhóm | Cụ thể |
-|---|---|
-| Lag | `t-1, t-2, t-3, t-6, t-12, t-24` (5 phút đến 2 giờ) |
-| Rolling | mean, std, min, max trên cửa sổ 6 và 12 điểm |
-| Sai phân | `y_t` trừ `y_{t-1}` |
-| Lịch | giờ trong ngày, thứ trong tuần, mã hoá sin/cos |
+**Đúng 19 đặc trưng, không thừa không thiếu.** Tên cột chốt theo QĐ-010 để hai bản
+hiện thực so được với nhau:
 
-Mọi thống kê rolling tính **chỉ trên quá khứ**, không bao gồm điểm hiện tại.
+| Nhóm | Tên cột | Số lượng |
+|---|---|---:|
+| Lag | `lag_1, lag_2, lag_3, lag_6, lag_12, lag_24` (5 phút đến 2 giờ) | 6 |
+| Rolling cửa sổ 6 | `roll_mean_6, roll_std_6, roll_min_6, roll_max_6` | 4 |
+| Rolling cửa sổ 12 | `roll_mean_12, roll_std_12, roll_min_12, roll_max_12` | 4 |
+| Sai phân | `diff_1` = `y_t` trừ `y_{t-1}` | 1 |
+| Lịch | `hour_sin, hour_cos, dow_sin, dow_cos` | 4 |
+
+Mọi thống kê rolling tính **chỉ trên quá khứ**, không bao gồm điểm hiện tại: giá trị
+tại `t` lấy trên đúng `w` điểm `y[t−w] … y[t−1]`. Cửa sổ thiếu điểm hoặc dính `NaN`
+đều ra `NaN` — **không dùng `min_periods=1`**.
+
+Lag và rolling tính **theo từng chuỗi**. Một tệp `data/processed/` chứa hàng trăm
+chuỗi nối nhau; thiếu `groupby(series_id)` thì đuôi chuỗi này chảy vào đầu chuỗi kia.
+
+### Ba quy ước — QĐ-010
+
+Chốt vì hai bản hiện thực đều đúng đặc tả mà vẫn ra số khác nhau:
+
+- **`ddof = 1`** cho `roll_std_*` và cho hệ số biến thiên. pandas mặc định 1, numpy
+  mặc định 0.
+- **Gốc `dow`:** epoch 1970-01-01 là thứ Năm, `((t // 86400) + 4) % 7` → 0 là thứ Hai.
+- **Cụm `NaN` chạm mép cửa sổ không nội suy**, và không ngoại suy để hai bên khớp.
+
+### Đặc trưng lịch — mốc thời gian E3 là tương đối
+
+`bucket × 300` là epoch giây với E1 và E2. Với **E3 thì không**: Alibaba ghi giây kể
+từ lúc bắt đầu trace (`b0 = 0`), không mang thông tin ngày thật.
+
+Theo QĐ-010: E1 và E2 dùng **UTC**; E3 vẫn sinh 4 đặc trưng lịch nhưng `hour` của nó
+mang nghĩa *"giờ kể từ lúc bắt đầu trace"*, **pha chưa biết**, và `dow` **không diễn
+giải được theo lịch tuần**. Không bịa ngày bắt đầu cho Alibaba.
+
+Lệch pha hằng số vô hại với TN-A vì model tự học được pha, nhưng chí mạng với TN-B.
+Vì vậy **TN-B chạy hai biến thể, có và không có 4 đặc trưng lịch**. Giữ chúng lại là
+có cơ sở: ACF tại lag 288 (24 giờ) của E3 là 0,60 so với 0,13 của E1 và E2 — chu kỳ
+ngày của E3 rất rõ và đọc được kể cả khi pha chưa biết.
 
 ### Dòng huấn luyện hợp lệ
 
@@ -269,6 +301,12 @@ Dòng không hợp lệ thì **bỏ dòng đó**, không cắt chuỗi và khôn
 Hệ quả cần nhớ: **một điểm `NaN` đơn lẻ làm hỏng 25 dòng.** Đó là lý do bước nội suy
 lỗ hổng ngắn ở mục 6 tồn tại — nó thu hồi phần lớn số dòng mà không bịa ra động lực
 học.
+
+> **Lọc dòng theo luật trên, KHÔNG bằng `dropna()` trên ma trận đặc trưng.** Hai thứ
+> đó không tương đương: 19 đặc trưng chỉ chạm 15 điểm trong cửa sổ (`t−24`,
+> `t−12..t−1`, `t`), còn `t−23` đến `t−13` thì không đặc trưng nào dùng. `dropna`
+> lỏng hơn — đo được thừa 1.513 dòng ở E2 h=1 và 7.461 dòng ở E3 h=1. **E1 khớp kể cả
+> khi làm sai**, nên phải kiểm cả ba môi trường. Xem QĐ-010.
 
 ## 9. Chia dữ liệu
 

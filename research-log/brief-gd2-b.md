@@ -45,16 +45,20 @@ không nói cách làm. Đừng đưa mã của A cho agent đọc.
 
 ---
 
-## Trước khi bắt đầu: chờ A chốt QĐ-010
+## Trạng thái: không còn gì chặn
 
-`gate-gd2.md` mục 6 có hai điểm giao thức còn thiếu, **B không được tự quyết**:
+QĐ-010 đã chốt ngày 2026-09-09 (`docs/decisions.md`), `docs/protocol.md` mục 8 đã sửa
+theo. Thước đo `scripts/reference_gd2.py` và lệnh nghiệm thu `scripts/check_gd2.py`
+đều đã có và đã tự kiểm. **Làm được cả 8 bước ngay.**
 
-1. Múi giờ và mốc lịch — E3 dùng thời gian tương đối, không có ngày thật.
-2. EDA được nhìn phần dữ liệu nào (train 70% hay toàn cửa sổ).
+Ba điều QĐ-010 chốt mà ảnh hưởng trực tiếp tới code của B:
 
-**Bước 1 và Bước 5–7 phụ thuộc hai quyết định này.** Bước 0, 2, 3, 4 làm được ngay.
-Nếu A chưa chốt mà đã đến Bước 5 thì dừng và hỏi, đừng tự chọn — quy tắc phối hợp 1
-và 4 ở `docs/research-plan.md`.
+1. **Tên 19 cột đặc trưng là cố định**, không phải gợi ý — xem mục 8. `check_gd2.py`
+   so đúng từng tên.
+2. **`ddof = 1`** cho `roll_std_*` (pandas mặc định đúng rồi; đừng đổi sang numpy).
+3. **E3 vẫn sinh đủ 4 đặc trưng lịch**, tính từ `bucket * 300` như E1 và E2. Khác
+   biệt duy nhất là *ý nghĩa*: với E3 đó là giây kể từ đầu trace, không phải epoch.
+   Công thức giống hệt nhau, nên code không phải rẽ nhánh theo môi trường.
 
 ---
 
@@ -81,22 +85,13 @@ Khớp: 12/12
 
 ---
 
-## Bước 0b — Bù hai việc còn treo của GĐ1
+## Bước 0b — GĐ1 đã đóng, không còn việc treo
 
-`gate-gd1.md` mục 5.3. Làm trước, đừng để dồn.
+Hai việc treo ở `gate-gd1.md` mục 5.3 đã bù xong ngày 2026-09-09: catalog sinh lại
+bằng một lệnh `--env all` (`built_at` đồng nhất `2026-09-09T11:50:43`), và log bàn
+giao có bảng lọc đủ sáu nhóm cột ở `research-log/2026-09-09-ban-giao-gd1.md`.
 
-1. **Chạy lại toàn bộ tiền xử lý bằng một lệnh `--env all`.** Catalog hiện sinh từ
-   hai lần chạy (08:28 và 08:33). Cùng máy nên số không sai, nhưng mục 3.4b của cổng
-   đòi một lệnh duy nhất.
-2. **Viết log GĐ1** trong `research-log/YYYY-MM-DD-slug.md`, có bảng lọc đủ sáu nhóm
-   cột theo `gate-gd1.md` mục 3.2, ba môi trường. Số lấy từ `catalog.parquet` của
-   chính B, không chép bảng của A.
-
-**Phải thấy** — sau khi chạy lại, `check_gd1.py` không còn dòng cảnh báo:
-
-```
-[  ok  ] Sinh từ một lần chạy duy nhất
-```
+Không phải làm gì ở bước này. Giữ lại mục để ai đọc phiếu biết GĐ1 đã đóng sạch.
 
 ---
 
@@ -109,12 +104,15 @@ Viết module sinh đặc trưng trong src/cwp/features/, theo docs/protocol.md 
 Đầu vào là data/processed/{env}.parquet với các cột env, series_id, bucket, y,
 is_interp. Đầu ra là ma trận đặc trưng cho một horizon h cho trước.
 
-Đúng 19 đặc trưng, không thừa không thiếu:
-- Lag: t-1, t-2, t-3, t-6, t-12, t-24            (6)
-- Rolling cửa sổ 6:  mean, std, min, max          (4)
-- Rolling cửa sổ 12: mean, std, min, max          (4)
-- Sai phân: y_t - y_{t-1}                         (1)
-- Lịch: hour_sin, hour_cos, dow_sin, dow_cos      (4)
+Đúng 19 đặc trưng, TÊN CỘT CỐ ĐỊNH theo QĐ-010, không được đặt tên khác:
+- lag_1, lag_2, lag_3, lag_6, lag_12, lag_24                       (6)
+- roll_mean_6,  roll_std_6,  roll_min_6,  roll_max_6               (4)
+- roll_mean_12, roll_std_12, roll_min_12, roll_max_12              (4)
+- diff_1  =  y_t - y_{t-1}                                          (1)
+- hour_sin, hour_cos, dow_sin, dow_cos                              (4)
+
+roll_std_* dùng ddof=1 (mặc định của pandas). Đừng đổi sang numpy.std,
+numpy mặc định ddof=0 và sẽ ra số khác.
 
 Bốn ràng buộc bắt buộc, sai một cái là hỏng cả giai đoạn:
 
@@ -127,9 +125,11 @@ Bốn ràng buộc bắt buộc, sai một cái là hỏng cả giai đoạn:
 
 Đặc trưng lịch suy từ cột bucket: bucket * 300 là số giây. Với E1 và E2 đó là
 epoch thật; với E3 đó là giây kể từ lúc bắt đầu trace, KHÔNG phải epoch —
-xử lý theo QĐ-010, hỏi A nếu chưa có quyết định đó.
+xử lý theo QĐ-010: công thức giống hệt E1/E2, chỉ khác ý nghĩa. Không
+rẽ nhánh theo môi trường, không bịa ngày bắt đầu cho Alibaba.
 
-Giữ lại cột series_id và bucket trong đầu ra để truy vết. Target là y tại t+h.
+Đầu ra đúng 22 cột: 19 đặc trưng trên, cộng series_id, bucket, và target
+(giá trị y tại t+h). Không thừa cột nào.
 ```
 
 ### Lệnh
@@ -268,7 +268,7 @@ Lệch quá 2% thì dừng lại, đừng đi tiếp — nghĩa là đọc sai t
 
 ---
 
-## Bước 5 — Hình phân phối target *(chờ QĐ-010 nếu dùng phần train)*
+## Bước 5 — Hình phân phối target
 
 **Đây là điều kiện qua cổng GĐ2.** `docs/research-plan.md`: *"hình quan trọng nhất của
 paper, nó dựng nền cho toàn bộ lập luận ở RQ3."*
@@ -299,7 +299,7 @@ Một tệp hình trong `results/figures/`, mở ra thấy rõ **cả ba** đư�
 
 ---
 
-## Bước 6 — ACF/PACF *(chờ QĐ-010)*
+## Bước 6 — ACF/PACF
 
 ### Prompt
 
@@ -330,7 +330,7 @@ thì mốc thời gian tương đối làm chu kỳ ngày khó đọc hơn hai m
 
 ---
 
-## Bước 7 — Burstiness *(chờ QĐ-010)*
+## Bước 7 — Burstiness
 
 ### Prompt
 
@@ -393,14 +393,13 @@ Chưa ĐẠT thì **đừng báo xong**. Đó là quy tắc đã áp ở GĐ1 v�
 |---|---|---|
 | 0 | Kiểm môi trường, `check_gd1.py` còn ĐẠT | — |
 | 0b | Bù hai việc treo của GĐ1 | — |
-| 1 | `src/cwp/features/` | QĐ-010 cho phần lịch |
+| 1 | `src/cwp/features/` | — |
 | 2 | `tests/test_features.py` + phá code kiểm ngược | Bước 1 |
 | 3 | Ma trận đặc trưng, khớp 9 con số neo | Bước 1, 2 |
 | 4 | Thống kê mô tả | — |
-| 5 | **Hình phân phối target — điều kiện qua cổng** | QĐ-010 |
-| 6 | ACF/PACF | QĐ-010 |
-| 7 | Burstiness | QĐ-010 |
+| 5 | **Hình phân phối target — điều kiện qua cổng** | Bước 0 |
+| 6 | ACF/PACF | Bước 0 |
+| 7 | Burstiness | Bước 0 |
 | 8 | Log + `check_gd2.py` | tất cả |
 
-Bước 0, 0b, 2, 3, 4 làm được ngay. Bước 1 làm được phần lag/rolling/sai phân, để
-phần lịch lại. Vướng quá 2 giờ thì dừng và hỏi A.
+Không bước nào bị chặn. Vướng quá 2 giờ thì dừng và hỏi A.

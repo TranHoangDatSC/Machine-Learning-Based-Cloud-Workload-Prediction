@@ -392,3 +392,71 @@ phép chọn.
 **Điều đáng ghi nhận.** Hai mẫu gần như rời nhau mà thống kê gộp chỉ lệch 0,04% là
 bằng chứng phép lấy mẫu phân tầng hoạt động đúng. Vấn đề không nằm ở chất lượng mẫu
 mà ở **khả năng tái lập**.
+
+---
+
+## QĐ-010 — Đặc trưng lịch, và bốn quy ước còn thiếu ở mục 8
+
+**Ngày:** 2026-09-09 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** Khi dựng cổng GĐ2, đo trên chính `data/processed/`:
+
+| Môi trường | bucket đầu | `bucket × 300` | Đọc ra |
+|---|---:|---:|---|
+| E1 | 4.587.716 | 1.376.314.800 | 2013-08-12T13:40:00Z — giờ thật |
+| E2 | 4.584.360 | 1.375.308.000 | 2013-07-31T22:00:00Z — giờ thật |
+| E3 | **0** | 0 | 1970-01-01T00:00:00Z — **vô nghĩa** |
+
+`time_stamp` của Alibaba là **giây kể từ lúc bắt đầu trace**, không phải epoch: E3
+chạy từ 0 tới 690.900 giây, đúng 8 ngày. Trace không mang thông tin nó bắt đầu vào
+ngày nào, giờ nào.
+
+Hệ quả: 4 trong 19 đặc trưng ở mục 8 là lịch. Với E3 chúng sẽ nói "1970-01-01, thứ
+Năm" — lệch pha một lượng **không biết được**, và `dow` thì hoàn toàn bịa. Mục 8
+không lường trường hợp này.
+
+**Điều quyết định cách xử lý: lệch pha hằng số vô hại với TN-A, chí mạng với TN-B.**
+Trong cùng một môi trường, model tự học được pha nên "giờ 0" là lúc nào không quan
+trọng. Xuyên môi trường thì `hour_sin = 0,5` của E1 và của E3 là hai thời điểm khác
+nhau trong ngày — đúng chỗ RQ3 hỏi thành phần nào transfer được.
+
+**Bằng chứng ủng hộ việc vẫn giữ đặc trưng lịch.** `reference_gd2.py` đo ACF tại lag
+288 (24 giờ): E3 **0,5956**, E1 0,1334, E2 0,1271. Chu kỳ ngày của E3 rất rõ và
+**đọc được dù mốc thời gian là tương đối** — pha chưa biết không xoá được tính tuần
+hoàn. Bỏ đặc trưng lịch của E3 là vứt đi tín hiệu mạnh nhất mà nó có.
+
+**Quyết định.**
+
+1. **E1 và E2 dùng UTC**, không quy về giờ địa phương Hà Lan.
+2. **E3 sinh lịch từ mốc tương đối**, khai báo thẳng `hour` của E3 là *"giờ kể từ lúc
+   bắt đầu trace"*, pha chưa biết. **Không bịa ngày bắt đầu cho Alibaba**, kể cả khi
+   tìm được con số nào đó trên mạng — không kiểm chứng được thì không đưa vào.
+3. **TN-B báo cáo cả có và không có 4 đặc trưng lịch.** Nếu bỏ lịch mà transfer tốt
+   lên thì bản thân điều đó là finding cho RQ3, và là finding thật.
+4. **`dow` của E3 không diễn giải được theo lịch tuần** — ghi rõ trong Limitations.
+
+**Ba quy ước kèm theo**, chốt vì hai bản hiện thực đều "đúng" mà ra số khác nhau:
+
+| Quy ước | Chốt | Vì sao phải chốt |
+|---|---|---|
+| `ddof` của rolling std và của CV | **1** | pandas mặc định 1, numpy mặc định 0 |
+| Gốc của `dow` | epoch 1970-01-01 là **thứ Năm**, `((t // 86400) + 4) % 7` → 0 là thứ Hai | Quy ước nào cũng được, miễn hai bên dùng chung |
+| Cụm `NaN` chạm mép cửa sổ | **Không nội suy**, không ngoại suy để hai bên khớp | Đã đúng ở GĐ1, xem `gate-gd1.md` mục 5.5 |
+
+**Đính chính một chỗ hiểu sai của chính A.** Khi dựng cổng, A viết rằng luật dòng hợp
+lệ *"trùng đúng với điều kiện để 19 đặc trưng tính được"*. **Sai.** 19 đặc trưng chỉ
+chạm 15 điểm trong cửa sổ — `t−24`, `t−12..t−1`, và `t`; các điểm `t−23` đến `t−13`
+không đặc trưng nào dùng, vì lag nhảy từ 12 sang 24 còn rolling sâu nhất chỉ 12 bước.
+
+Nên **`dropna()` trên ma trận đặc trưng lỏng hơn luật mục 8**. Đo được: thừa 1.513
+dòng ở E2 h=1 và 7.461 dòng ở E3 h=1. **E1 khớp kể cả khi làm sai**, nên lỗi không lộ
+nếu chỉ thử một môi trường. Luật mục 8 chặt hơn và đó là chủ ý; lọc dòng phải theo
+luật cửa sổ, không theo `dropna`.
+
+**Hệ quả.**
+
+1. Mục 8 bổ sung: bảng 19 tên đặc trưng chuẩn, ba quy ước trên, và cảnh báo `dropna`.
+2. `scripts/reference_gd2.py` và `scripts/check_gd2.py` hiện thực đúng các quy ước này.
+3. Phần Limitations của paper nêu: chu kỳ ngày-đêm của E1/E2 và E3 lệch pha không
+   xác định; `dow` của E3 không diễn giải được.
+4. TN-B ở GĐ4 chạy hai biến thể, có và không có đặc trưng lịch.

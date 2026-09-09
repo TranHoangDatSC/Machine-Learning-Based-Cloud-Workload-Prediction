@@ -1,8 +1,8 @@
 # Hồ sơ cổng GĐ2
 
 **Người giữ cổng:** A
-**Trạng thái:** thước đo đã có (mục 2 xong). Còn lại trước khi B bắt đầu:
-**chốt QĐ-010** (mục 6) và **viết `scripts/check_gd2.py`** (mục 4).
+**Trạng thái:** **MỞ — B vào làm được ngay.** Thước đo, lệnh nghiệm thu và QĐ-010 đều
+đã xong. Phiếu giao việc: `research-log/brief-gd2-b.md`.
 **Cập nhật:** 2026-09-09
 **Giai đoạn:** Khám phá dữ liệu và bộ đặc trưng (`docs/research-plan.md` GĐ2)
 
@@ -55,9 +55,9 @@ không xảy ra được về mặt cấu trúc. Độc lập cả về cách ti
 
 ## 2. Số liệu tham chiếu
 
-> **CHƯA SINH.** Bảng dưới đây trống có chủ đích — A chưa chạy `reference_gd2.py`.
-> Không điền số phỏng đoán vào đây; một con số sai ở bảng này sẽ thành "đáp án" mà
-> cả hai bên vô thức hướng tới, đúng cái bẫy QĐ-009 đã mắc.
+> Mọi số dưới đây đều **đo được**, không phỏng đoán. Một con số sai ở bảng này sẽ
+> thành "đáp án" mà cả hai bên vô thức hướng tới, đúng cái bẫy QĐ-009 đã mắc — nên
+> chỗ nào chưa chạy thì để trống, không điền ước lượng.
 
 ### 2.1 Neo cứng — đã kiểm chứng, khớp tuyệt đối
 
@@ -164,16 +164,21 @@ lần thiếu log (`gate-gd1.md` mục 5.2); lần này thì không.
 Đúng 19 đặc trưng, không thừa không thiếu. Thừa một đặc trưng ngoài danh sách là đổi
 giao thức, mà B không được đổi giao thức (`docs/research-plan.md`, quy tắc phối hợp 1).
 
-| Nhóm | Đặc trưng | Số lượng |
+| Nhóm | Tên cột | Số lượng |
 |---|---|---:|
-| Lag | `t-1, t-2, t-3, t-6, t-12, t-24` | 6 |
-| Rolling cửa sổ 6 | mean, std, min, max | 4 |
-| Rolling cửa sổ 12 | mean, std, min, max | 4 |
-| Sai phân | `y_t − y_{t−1}` | 1 |
+| Lag | `lag_1, lag_2, lag_3, lag_6, lag_12, lag_24` | 6 |
+| Rolling cửa sổ 6 | `roll_mean_6, roll_std_6, roll_min_6, roll_max_6` | 4 |
+| Rolling cửa sổ 12 | `roll_mean_12, roll_std_12, roll_min_12, roll_max_12` | 4 |
+| Sai phân | `diff_1` | 1 |
 | Lịch | `hour_sin, hour_cos, dow_sin, dow_cos` | 4 |
 | | **Tổng** | **19** |
 
-- [ ] Đủ 19, đúng tên nhóm
+Tên cột chốt theo QĐ-010, không phải gợi ý. `check_gd2.py` so đúng từng tên.
+
+**Schema tệp `data/features/{env}_h{h}.parquet`:** 19 cột trên, cộng `series_id`,
+`bucket`, và `target` (giá trị `y` tại `t+h`). Đúng 22 cột, không thừa cột nào.
+
+- [ ] Đủ 19, đúng tên cột
 - [ ] Không có đặc trưng nào dùng thông tin từ chuỗi khác (protocol mục 8 câu đầu)
 - [ ] Không có đặc trưng nào lấy từ `catalog.parquet` (mean, std của cả chuỗi — đó là
       thống kê tính trên toàn bộ thời gian, gồm cả tương lai)
@@ -261,16 +266,30 @@ burstiness) A chọn 2–3 hình đưa vào paper theo kế hoạch.
 ## 4. Lệnh nghiệm thu
 
 ```bash
-python scripts/check_gd2.py     # CHƯA VIẾT — A làm trước khi B bắt đầu
+python scripts/check_gd2.py
 pytest tests/ -v
 ```
 
-`check_gd2.py` phải tự động hoá được mục 3.2, 3.3 (R2–R4) và 3.4 bẫy múi giờ. R1 và
-mục 3.5 nằm ở `tests/test_features.py` và ở mắt A.
+`check_gd2.py` tự động hoá mục 3.2, 3.3 (R2–R4) và bẫy mốc thời gian ở 3.4, cộng một
+phép so vân tay từng đặc trưng (mean và std của cả 19) với `reference_gd2.json`.
+Còn lại **R1** nằm ở `tests/test_features.py` vì cần gọi lại hàm sinh đặc trưng, và
+**mục 3.5** thì A duyệt bằng mắt.
 
-Kèm theo, đúng bài học GĐ1: **`tests/test_check_gd2.py`** sinh ma trận đặc trưng giả
-lập và xác nhận `check_gd2.py` bắt được ít nhất bốn tình huống hỏng — thiếu
-`.shift(1)`, `min_periods=1`, lag bắc cầu qua chuỗi, và số dòng lệch neo.
+Hai phép kiểm đáng nói vì chúng bắt lỗi mà không cần tính lại đặc trưng từ `y`:
+
+- **Bất biến cửa sổ.** `roll_min_6 ≤ lag_1 ≤ roll_max_6`, `roll_mean_6` nằm giữa min
+  và max, và cửa sổ 12 bao cửa sổ 6.
+- **`.shift(1)` có thật không.** `y_t = lag_1 + diff_1` tính lại được từ chính ma
+  trận. Quên `.shift(1)` thì cửa sổ thành `[t−5, t]` nên luôn chứa `y_t`, tỉ lệ
+  `roll_min_6 ≤ y_t ≤ roll_max_6` bằng **đúng 100%**. Làm đúng thì tỉ lệ đó là
+  **78,9% (E1), 78,2% (E2), 66,1% (E3)** — đo trên bản tham chiếu. Ngưỡng đặt ở
+  99,9%, nằm giữa hai vùng rất xa nhau.
+
+Kèm theo, đúng bài học GĐ1: **`tests/test_check_gd2.py`** dựng thế giới giả lập ba
+môi trường rồi phá bảy kiểu, xác nhận `check_gd2.py` bắt được từng kiểu — quên
+`.shift(1)`, giữ dòng thiếu lịch sử, lag bắc cầu qua chuỗi, `dropna` thay luật cửa
+sổ, thừa đặc trưng, lịch sai gốc, sai `ddof`. Cộng một ca "đúng hết phải ĐẠT" và một
+ca "chưa làm thì báo thiếu, không đổ vỡ". **9 test, tất cả xanh.**
 
 ---
 
@@ -291,55 +310,34 @@ lập và xác nhận `check_gd2.py` bắt được ít nhất bốn tình huố
 
 ---
 
-## 6. Hai điểm A phải chốt trước khi B bắt đầu
+## 6. Hai điểm mơ hồ — ĐÃ CHỐT, xem QĐ-010
 
-Cả hai đều là chỗ protocol chưa nói rõ. Chốt xong ghi vào `docs/decisions.md` rồi mới
-sửa `docs/protocol.md` — B không tự quyết.
+Cả hai đã thành `docs/decisions.md` QĐ-010 ngày 2026-09-09 và đã sửa vào
+`docs/protocol.md` mục 8. Tóm tắt để khỏi phải mở tệp khác:
 
-**Đặc trưng lịch của E3 không có mốc lịch thật.** Đây là điểm chặn nặng nhất, đo được
-ngày 2026-09-09 trên chính `data/processed/`:
+**1. Đặc trưng lịch của E3 không có mốc lịch thật.** Đo được: bucket đầu của E1 là
+4.587.716 (2013-08-12T13:40Z), E2 là 4.584.360 (2013-07-31T22:00Z), còn **E3 là 0** —
+Alibaba ghi giây kể từ lúc bắt đầu trace, chạy 0 tới 690.900, đúng 8 ngày, không mang
+thông tin ngày thật.
 
-| Môi trường | bucket đầu | `bucket × 300` | Đọc ra |
-|---|---:|---:|---|
-| E1 | 4.587.716 | 1.376.314.800 | 2013-08-12T13:40:00Z — **giờ thật** |
-| E2 | 4.584.360 | 1.375.308.000 | 2013-07-31T22:00:00Z — **giờ thật** |
-| E3 | **0** | 0 | 1970-01-01T00:00:00Z — **vô nghĩa** |
+Chốt: E1 và E2 dùng **UTC**; E3 **vẫn sinh đủ 4 đặc trưng lịch** nhưng khai rõ `hour`
+là *"giờ kể từ đầu trace"*, pha chưa biết, `dow` không diễn giải được theo lịch tuần.
+Không bịa ngày bắt đầu cho Alibaba. **TN-B ở GĐ4 chạy hai biến thể, có và không có 4
+đặc trưng lịch** — nếu bỏ lịch mà transfer tốt lên thì đó là finding thật cho RQ3.
 
-`time_stamp` của Alibaba là **giây tính từ lúc bắt đầu trace**, không phải epoch:
-E3 chạy từ 0 tới 690.900 giây, đúng 8 ngày. Trace không mang thông tin nó bắt đầu vào
-thứ mấy, giờ nào.
+Căn cứ giữ lại đặc trưng lịch cho E3: ACF tại lag 288 của E3 là **0,5956** so với
+0,13 của E1 và E2 (mục 2.3). Chu kỳ ngày rất rõ và **đọc được kể cả khi pha chưa
+biết** — bỏ đi là vứt tín hiệu mạnh nhất mà E3 có.
 
-Hệ quả cụ thể: 4 trong 19 đặc trưng ở protocol mục 8 là lịch. Với E3 chúng sẽ nói
-"1970-01-01, thứ Năm" — sai lệch pha một lượng **không biết được**, và `dow` thì hoàn
-toàn bịa. protocol mục 8 không lường trường hợp này.
+**2. Ba quy ước kỹ thuật** mà hai bản hiện thực đều "đúng" vẫn ra số khác nhau:
+`ddof = 1` cho `roll_std_*` và CV; gốc `dow` là `((t // 86400) + 4) % 7`; cụm `NaN`
+chạm mép cửa sổ không nội suy và không ngoại suy.
 
-Điều quan trọng: **lệch pha hằng số vô hại với TN-A, chí mạng với TN-B.** Trong cùng
-một môi trường, model tự học được pha, nên "giờ 0" là lúc nào không quan trọng. Xuyên
-môi trường thì `hour_sin = 0.5` của E1 và của E3 là hai thời điểm khác nhau trong
-ngày — đúng chỗ RQ3 hỏi thành phần nào transfer được.
-
-> Đề xuất, A quyết:
-> 1. **E1, E2 dùng UTC**, không quy về giờ địa phương Hà Lan. Nhất quán quan trọng
->    hơn đúng giờ bản địa.
-> 2. **E3 sinh lịch từ mốc tương đối**, khai báo thẳng `hour` của E3 là "giờ kể từ
->    lúc bắt đầu trace", pha chưa biết. Không bịa ngày bắt đầu cho Alibaba, kể cả khi
->    tìm được con số đâu đó trên mạng — không kiểm chứng được thì không đưa vào.
-> 3. **TN-B báo cáo cả có và không có 4 đặc trưng lịch.** Nếu bỏ lịch đi mà transfer
->    tốt lên thì bản thân điều đó là finding cho RQ3, và là finding thật.
-> 4. `dow` của E3 ghi rõ trong Limitations là không diễn giải được theo lịch tuần.
-
-Chốt xong thì đây là **QĐ-010**, và protocol mục 8 phải sửa theo — đây là chỗ giao
-thức thiếu, không phải chỗ B làm sai.
-
-**EDA được nhìn phần dữ liệu nào.** protocol mục 9 chia 70/15/15 theo thời gian, test
-chỉ chạm một lần. GĐ2 là giai đoạn khám phá, và ACF/PACF với burstiness sẽ **dẫn tới
-lựa chọn đặc trưng** — nhìn vào test rồi chọn đặc trưng là rò rỉ ở mức quy trình,
-loại rò rỉ không test nào bắt được.
-
-> Đề xuất: mọi phân tích **dẫn tới quyết định** (ACF/PACF, burstiness, chọn lag) tính
-> trên **phần train 70%**. Hình phân phối target mô tả dữ liệu chứ không dẫn tới
-> quyết định nào, dùng toàn cửa sổ 8 ngày cũng được, nhưng phải ghi rõ trong caption
-> là toàn cửa sổ.
+**Còn lại một điểm chưa chốt, và nó chưa chặn ai.** EDA được nhìn phần dữ liệu nào:
+ACF/PACF và burstiness sẽ **dẫn tới lựa chọn đặc trưng**, mà bộ đặc trưng thì đã cố
+định ở protocol mục 8 rồi — nên rủi ro rò rỉ quy trình ở GĐ2 gần như bằng không.
+Đề xuất giữ nguyên: mô tả trên toàn cửa sổ 8 ngày, ghi rõ trong caption. Chốt lại khi
+nào GĐ3 thực sự chọn siêu tham số.
 
 ---
 
