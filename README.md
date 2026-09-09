@@ -287,7 +287,15 @@ ML-CWP-Cloud/
 ├── data/
 │   ├── raw/          Dữ liệu gốc — bất biến
 │   ├── interim/      Dữ liệu trung gian
-│   └── processed/    Dữ liệu sẵn sàng cho thí nghiệm
+│   ├── processed/    Chuỗi đã căn lưới, cắt cửa sổ, lọc (GĐ1)
+│   ├── features/     Ma trận đặc trưng {env}_h{h}.parquet (GĐ2)
+│   └── catalog.parquet   Một dòng mỗi chuỗi — bảng hai máy đối chiếu
+│
+├── scripts/
+│   ├── check_data.py / check_gd1.py / check_gd2.py   Công cụ cổng
+│   ├── reference_gd1.py / reference_gd2.py           Thước đo độc lập của A
+│   ├── build_features.py                             Sinh ma trận đặc trưng
+│   └── pha_features.py                               Phá code, kiểm test biết đỏ
 │
 ├── docs/
 │   ├── protocol
@@ -318,7 +326,8 @@ ML-CWP-Cloud/
     └── Test parser, preprocessing và metrics
 ```
 
-`data/` và `runs/` không được đưa lên Git.
+`data/` và `runs/` không được đưa lên Git — **trừ `data/catalog.parquet`** (80 KB),
+là bảng duy nhất đi qua Git để hai máy đối chiếu số với nhau. Xem mục 10.
 
 ---
 

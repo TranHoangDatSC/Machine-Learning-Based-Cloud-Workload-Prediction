@@ -2,15 +2,19 @@
 
 **Người thực hiện:** B (agent)
 **Giai đoạn:** GĐ2
-**Thời lượng:** ~2 giờ (Bước 1, 2, 3 của `research-log/brief-gd2-b.md`)
+**Thời lượng:** ~3 giờ (Bước 1, 2, 3, 4 của `research-log/brief-gd2-b.md`)
 
-> **Trạng thái: đang làm dở.** Log này ghi Bước 1, 2, 3. Bước 4–7 chưa chạy lệnh
-> nào, nên không mục nào dưới đây nói "đã hoàn thành" cho chúng.
+> **Trạng thái: đang làm dở.** Log này ghi Bước 1, 2, 3, 4. Bước 5, 6, 7 chưa chạy
+> lệnh nào, nên không mục nào dưới đây nói "đã hoàn thành" cho chúng.
 >
 > `scripts/check_gd2.py` báo **ĐẠT** — nhưng đó là phần cổng **tự động hoá được**
 > (mục 3.2, R2–R4, bẫy mốc thời gian, vân tay đặc trưng). Điều kiện qua cổng thật ở
 > `gate-gd2.md` mục 3.5 là **hình phân phối target**, và A duyệt bằng mắt. Chưa có
 > hình thì chưa gọi là qua cổng GĐ2.
+>
+> Giữa Bước 3 và Bước 4 có một đợt rà soát toàn dự án trước khi viết paper, sinh ra
+> **QĐ-011**. Kết quả ở `research-log/2026-09-09-ra-soat-truoc-paper.md`; Bước 4 làm
+> theo định nghĩa quần thể mà QĐ-011 điểm 2 chốt.
 
 ## Mục tiêu phiên
 
@@ -27,6 +31,8 @@ xanh — rồi sinh chín ma trận đặc trưng và đối chiếu với neo G
 - **Bước 2 (phần sau).** Phá code 7 kiểu, xác nhận test bắt được từng kiểu. Đóng gói
   thành `scripts/pha_features.py` để A chạy lại được.
 - **Bước 3.** `scripts/build_features.py --env all` — 9 tệp, khớp tuyệt đối chín neo.
+- **Rà soát trước paper.** 8 phát hiện, chốt thành QĐ-011 — log riêng.
+- **Bước 4.** `scripts/describe_gd2.py --env all` — 9 chỉ số neo lệch 0,0000%.
 - **Ngoài phiếu.** Sửa nhãn `dow` sai trong QĐ-010 và protocol mục 8 (mục Phát hiện 4),
   và thêm `data/features/**` vào `.gitignore` — 351 MB parquet suýt lọt vào Git.
 
@@ -154,6 +160,54 @@ numpy `(số chuỗi, 2304)` rồi dịch theo trục thời gian, B dùng `grou
 trên bảng dài. Hai lối nghĩ khác nhau, cùng 19 con số mean và 19 con số std đến chữ
 số thập phân thứ sáu, trên cả ba môi trường.
 
+## Bước 4 — thống kê mô tả sau lọc
+
+`python scripts/describe_gd2.py --env all` → `results/tables/describe_gd2.{csv,md}`.
+
+Quần thể mô tả theo **QĐ-011 điểm 2**: phân phối gộp của `y` trên các chuỗi được
+giữ, trong cửa sổ 8 ngày — gọi là *"CPU% sau tiền xử lý"*, **không phải** cột
+`target`. Đây là chỗ mà đợt rà soát trước Bước 4 đã gỡ được một cái bẫy đặt tên:
+`gate-gd2.md` mục 2.2 gọi ba con số neo là "Target mean/p50/std" trong khi chúng mô
+tả `y`, còn `reference_gd2.json` của A lại dùng đúng cột `target` — hai tài liệu nói
+hai thứ dưới cùng một chữ, chênh 0,3–0,9%, dưới ngưỡng 2% nên cổng không bắt.
+
+| Chỉ số | E1 | E2 | E3 |
+|---|---:|---:|---:|
+| Số chuỗi | 735 | 302 | 498 |
+| Điểm trong cửa sổ | 1.693.440 | 695.808 | 1.147.392 |
+| Trung bình | **13,6352** | **9,2199** | **38,0123** |
+| Độ lệch chuẩn | **27,9530** | **21,4265** | **14,9522** |
+| Nhỏ nhất | 0,0000 | 0,0000 | 0,0000 |
+| p10 / p25 | 0,7000 / 1,2000 | 0,4583 / 1,0417 | 20,9000 / 29,2500 |
+| **Trung vị** | **1,7833** | **1,7667** | **37,8333** |
+| p75 / p90 | 5,3667 / 57,7000 | 4,0667 / 23,5667 | 47,3333 / 56,3000 |
+| p95 | **100,0000** | 60,0667 | 61,2667 |
+| Lớn nhất | 100,0000 | 100,0000 | 99,8000 |
+| Tỉ lệ NaN % | 1,4272 | 0,3086 | **9,2936** |
+| Điểm bằng đúng 100 % | **5,1238** | **2,2788** | 0,0000 |
+| Tỉ lệ nội suy % | 0,0163 | 0,0924 | 0,1647 |
+
+**Chín chỉ số neo lệch 0,0000%** so với `gate-gd2.md` mục 2.2 — script tự đối chiếu
+và thoát 1 nếu quá 2%, giống `build_features.py`.
+
+Hai cột thêm ngoài danh sách của phiếu, mỗi cột một lý do cụ thể:
+
+- `Điểm bằng đúng 100 %` — QĐ-011 điểm 3 đòi khai báo trần clip. Con số nói lên vấn
+  đề rõ hơn mọi câu văn: **p95 của E1 chính là trần**, còn E3 thì 0%.
+- `Tỉ lệ nội suy %` — protocol mục 6 liệt nó vào danh sách **bắt buộc báo cáo**.
+
+Thêm `p10` và `p90` (phiếu chỉ đòi p25/p50/p75/p95) vì bảng *"quần thể thô"* trong
+data card dùng bộ phân vị p10–p90; thiếu hai phân vị này thì hai quần thể không so
+được từng dòng một. So xong thấy chênh lớn nhất ở E1: trung vị 0,84 → 1,7833, trung
+bình 6,75 → 13,6352, đúng như QĐ-011 điểm 1 mô tả.
+
+Script kiểm một bất biến trước khi tính: `set(series_id)` trong `data/processed/`
+phải **bằng đúng** tập `kept` của catalog. Đây là hợp đồng giữa GĐ1 và GĐ2; lệch thì
+mọi con số trong bảng mô tả một quần thể không ai định nghĩa. Hiện khớp cả ba.
+
+Bảng trong `docs/data-card.md` mục *Sau tiền xử lý* nay là **bản chép từ tệp máy
+sinh**, kèm ghi chú "sửa tay ở đây là tạo ra bản thứ hai không ai kiểm được".
+
 ## Phát hiện
 
 **1. Bộ test tự nó có một lỗ hổng, và chỉ lộ ra khi phá code.** Vòng phá đầu tiên,
@@ -207,6 +261,7 @@ vào docstring test. **Cần A sửa một chữ trong QĐ-010.**
 | `y_t` lọt biên quá khứ | 78,85 / 78,18 / 66,14% | tham chiếu A: 78,9 / 78,2 / 66,1% |
 | Ma trận đặc trưng | 9 tệp, 351 MB, 61s | `data/features/` |
 | `check_gd2.py` | **ĐẠT**, 11/12 sản phẩm | còn thiếu `results/figures/` |
+| Thống kê mô tả | 9/9 chỉ số neo lệch **0,0000%** | `describe_gd2.py`, ngưỡng 2% |
 
 ## Quyết định
 
@@ -316,7 +371,7 @@ chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, c
 ## Việc tiếp theo
 
 - [x] Bước 3 — `scripts/build_features.py --env all`, ghi 9 tệp `data/features/`
-- [ ] Bước 4 — `scripts/describe_gd2.py --env all`
+- [x] Bước 4 — `scripts/describe_gd2.py --env all`
 - [ ] Bước 5 — hình phân phối target (**điều kiện qua cổng**)
 - [ ] Bước 6 — ACF/PACF, kèm tỉ lệ cặp bị bỏ ở mỗi lag
 - [ ] Bước 7 — burstiness
@@ -332,6 +387,8 @@ chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, c
 - `tests/test_config.py` — 13 test, ghim `config/*.yaml` với `spec.py`
 - `scripts/pha_features.py` — phá code 7 kiểu, xác nhận test biết đỏ
 - `scripts/build_features.py` — sinh 9 ma trận, đối chiếu neo GĐ1
+- `scripts/describe_gd2.py` — bảng thống kê mô tả, tự đối chiếu neo
+- `results/tables/describe_gd2.{csv,md}` — bảng máy sinh cho data card và paper
 - `data/features/{E1,E2,E3}_h{1,6,12}.parquet` — 9 tệp, 351 MB, **không commit**
 
 ## File sửa

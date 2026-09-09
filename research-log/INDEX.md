@@ -4,6 +4,7 @@ Cập nhật thủ công mỗi khi thêm log mới. Mới nhất ở trên.
 
 | Ngày | Phiên | Người | GĐ | Kết quả chính |
 |---|---|---|---|---|
+| 2026-09-09 | [Rà soát toàn dự án trước paper](2026-09-09-ra-soat-truoc-paper.md) | B | GĐ2 | Nền móng vững (79.200 ô đặc trưng sai 0), nhưng **data card mô tả quần thể trước lọc** và ghi phương pháp đã bãi bỏ; tiền đề ACF của QĐ-005 đã đổi; clip tạo trần 5,12% ở E1 chưa ai khai báo |
 | 2026-09-09 | [GĐ2: module đặc trưng và kiểm rò rỉ](2026-09-09-gd2-dac-trung.md) | B | GĐ2 | 19 đặc trưng + 38 test; phá code 7 kiểu đều bị bắt. 9 ma trận khớp tuyệt đối neo GĐ1, vân tay khớp A ở cả 3 môi trường. **Đang làm dở, mới Bước 1–3** |
 | 2026-09-09 | [Mở cổng GĐ2](2026-09-09-mo-cong-gd2.md) | A | GĐ2 | QĐ-010 + thước đo + checker. `dropna` ≠ luật dòng hợp lệ — E1 khớp kể cả khi làm sai |
 | 2026-09-09 | [Bàn giao GĐ1](2026-09-09-ban-giao-gd1.md) | A thay B | GĐ1 | Bảng lọc đầy đủ; **GĐ1 ĐÓNG**. Lệch cuối cùng hoá ra là lỗi đếm của A, không phải của B |

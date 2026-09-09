@@ -134,6 +134,28 @@ Autocorr bậc 1 trên lưới 5 phút của ba môi trường nằm cùng vùng
 Nghĩa là động lực học *có* khả năng so sánh được, chỉ mức tải là lệch. Tách hai
 thành phần biến RQ3 từ câu hỏi hiển nhiên thành câu hỏi thật.
 
+> **Đính chính lý do — 2026-09-09, theo QĐ-011 điểm 5. Quyết định giữ nguyên.**
+>
+> Đoạn trên đo trên **mẫu ngẫu nhiên của dữ liệu thô** (2026-08-30), trước cửa sổ 8
+> ngày và trước bộ lọc chuỗi. Đo lại trên quần thể nghiên cứu:
+>
+> | ACF lag 1 | E1 | E2 | E3 |
+> |---|---:|---:|---:|
+> | Thô, mẫu ngẫu nhiên | 0,675 | 0,644 | 0,781 |
+> | **Quần thể nghiên cứu** | **0,6674** | **0,6431** | **0,8634** |
+>
+> E3 tách hẳn khỏi E1 và E2; vùng nay là 0,643–0,863 chứ không phải 0,644–0,781. Nên
+> câu *"động lực học có khả năng so sánh được"* **không còn đúng như đã viết**.
+>
+> **Quyết định N0/N1/N2 vẫn giữ, và cơ sở của nó mạnh hơn trước.** Lập luận đúng bây
+> giờ là: ba môi trường lệch nhau ở **cả hai** thành phần — mức tải *và* mức tự tương
+> quan. Transfer thô vì thế trộn hai nguồn khác biệt vào một con số duy nhất và không
+> quy trách nhiệm được cho nguồn nào. Đó chính là lý do phải tách, chứ không phải vì
+> động lực học vốn giống nhau.
+>
+> Một phần chênh lệch của E3 đến từ hiệu ứng tổng hợp ở mức máy vật lý — xem QĐ-004,
+> và phát biểu trong bài phải theo đúng khuôn câu đã chốt ở đó.
+
 **Hệ quả.** Đây trở thành đóng góp chính của paper. Cũng là phần dễ rò rỉ dữ liệu
 nhất — thống kê chuẩn hoá N1 bắt buộc chỉ tính trên cửa sổ train.
 
@@ -477,3 +499,144 @@ luật cửa sổ, không theo `dropna`.
 3. Phần Limitations của paper nêu: chu kỳ ngày-đêm của E1/E2 và E3 lệch pha không
    xác định; `dow` của E3 không diễn giải được.
 4. TN-B ở GĐ4 chạy hai biến thể, có và không có đặc trưng lịch.
+
+---
+
+## QĐ-011 — Đính chính tài liệu dữ liệu trước khi viết paper
+
+**Ngày:** 2026-09-09 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** Trước khi sinh bảng và hình của GĐ2 Bước 4–7 — những thứ đi thẳng vào
+paper — B rà lại toàn bộ hành trình dự án và **đo lại** mọi con số trên sản phẩm
+thật thay vì đọc tài liệu. Chi tiết: `research-log/2026-09-09-ra-soat-truoc-paper.md`.
+
+Nền móng vững: catalog đúng nguồn gốc một máy một lần chạy, mẫu E3 khớp 500/500 tệp
+đóng băng, cửa sổ 8 ngày đúng ở cả 1.535 chuỗi được giữ, `catalog.mean` tính đúng
+trên điểm quan sát thật, và 79.200 ô ma trận đặc trưng đối chiếu trực tiếp với
+`data/processed/` sai **0 ô**.
+
+Vấn đề nằm ở tài liệu. `docs/data-card.md` — tệp mà phần Dữ liệu của paper sẽ dựa
+vào — đo ngày 2026-08-30 **trên mẫu ngẫu nhiên của dữ liệu thô**, trước cửa sổ 8
+ngày, trước bộ lọc chuỗi, và trước cả QĐ-003, QĐ-008, QĐ-009. Tệp không nói điều đó
+ở bất kỳ đâu, nên đọc vào thì tưởng nó mô tả dữ liệu nghiên cứu.
+
+**Quyết định.** Sáu điểm dưới đây. Điểm 1–4 là đính chính tài liệu; điểm 5 sửa lý do
+của một quyết định cũ mà không đảo quyết định đó; điểm 6 là khai báo bổ sung.
+
+### 1. Hai quần thể, hai tên gọi, không được trộn
+
+Từ nay mọi con số về dữ liệu phải nói rõ nó thuộc quần thể nào:
+
+| | **Thô** | **Nghiên cứu** |
+|---|---|---|
+| Định nghĩa | toàn bộ trace, trước cửa sổ và trước lọc | chuỗi được giữ, trong cửa sổ 8 ngày |
+| Nguồn số | `data-card.md`, đo trên mẫu ngẫu nhiên 2026-08-30 | `catalog.parquet` + `data/processed/`, đo trên toàn bộ |
+| Dùng để | mô tả nguồn dữ liệu và lý do cắt scope | **mọi bảng và hình của paper** |
+
+Chênh lệch giữa hai quần thể không nhỏ, và không đều giữa các môi trường:
+
+| Chỉ số | E1 thô → nghiên cứu | E2 thô → nghiên cứu | E3 thô → nghiên cứu |
+|---|---|---|---|
+| Trung bình CPU% | 6,75 → **13,6352** | 6,99 → **9,2199** | 38,13 → **38,0123** |
+| Trung vị CPU% | 0,84 → **1,7833** | 1,07 → **1,7667** | 37,0 → **37,8333** |
+| ACF lag 1 | 0,675 → **0,6674** | 0,644 → **0,6431** | 0,781 → **0,8634** |
+
+Nguyên nhân đã truy được: bộ lọc `gan_chet` bỏ 36,3% chuỗi E1 và 39,4% chuỗi E2
+nhưng chỉ 0,4% chuỗi E3. Lọc gần như chỉ cắt ở đuôi dưới, nên trung bình E1 tăng hơn
+gấp đôi còn E3 đứng yên. **Đây là hiệu ứng chọn lọc, phải nêu trong phần Dữ liệu**,
+không phải đặc tính tự nhiên của Bitbrains.
+
+### 2. "target" trong bảng mô tả và hình phân phối = phân phối gộp của `y`
+
+`gate-gd2.md` mục 2.2 gọi ba con số 13,6352 / 9,2199 / 38,0123 là *"Target mean /
+p50 / std"*. Sai tên: đó là phân phối gộp của `y` trên các chuỗi được giữ, **không
+phải** cột `target` của ma trận đặc trưng. Cột `target` thật cho 13,6741 / 9,2667 /
+38,3678 — chênh 0,3–0,9%, dưới ngưỡng 2% nên cổng không bắt được.
+
+**Chốt:** bảng thống kê mô tả (Bước 4) và hình phân phối (Bước 5) mô tả
+**"CPU% sau tiền xử lý"** — phân phối gộp của `y` trên chuỗi được giữ. Ba lý do:
+
+1. Nó **không phụ thuộc horizon**, nên một bảng và một hình dùng chung cho cả ba `h`.
+2. Nó **đã được hai bản hiện thực độc lập kiểm chéo** ở GĐ1, lệch 0,000%.
+3. Phần Dữ liệu của paper mô tả **dữ liệu**, không mô tả một dẫn xuất theo `h`.
+
+Thống kê của cột `target` thuộc phần Thiết lập thí nghiệm, báo cáo riêng, lấy từ
+`target_mean_h1/h6/h12` đã có sẵn trong `reference_gd2.json`. **Không con số nào
+đổi — chỉ đổi tên gọi cho đúng thứ đang được đo.**
+
+**Không sửa nhãn trong nhật ký cũ.** Các log đã đóng (`2026-09-09-ban-giao-gd1.md`,
+`2026-09-08-chot-qd008.md`, QĐ-008 và QĐ-009 ở chính tệp này) còn dùng chữ "Target
+mean". Đó là bản ghi lịch sử, sửa lại là viết lại quá khứ. Quy tắc áp dụng từ nay về
+sau và cho tài liệu còn sống: `protocol.md`, `data-card.md`, `gate-gd2.md`, và mọi
+bảng hình của paper.
+
+### 3. Hiệu ứng trần do clip phải khai báo
+
+protocol mục 6 bước 1 clip CPU% về `[0, 100]`, và mục 6 đã đòi báo cáo tỉ lệ clip.
+Nhưng chưa ai đo **hệ quả sau khi căn lưới**: tỉ lệ điểm nằm đúng tại trần 100.
+
+| | E1 | E2 | E3 |
+|---|---:|---:|---:|
+| Điểm bằng đúng 100 | **5,1238%** | **2,2788%** | **0,0000%** |
+| Phân vị 95 của CPU% | **100,0000** | 60,0667 | 61,2667 |
+
+Phân vị 95 của E1 **chính là trần**. Đây là kiểm duyệt (censoring) và nó **bất đối
+xứng giữa đúng ba môi trường đang được đem so sánh**. Ba hệ quả phải nêu:
+
+- Hình phân phối ở Bước 5 sẽ có một cột dựng đứng tại 100 cho E1 và E2. Phải chú
+  thích, không để người đọc tự đoán.
+- Mọi chỉ số ở vùng tải cao của E1/E2 đo trên dữ liệu đã bị chặn trần. Model dự đoán
+  vượt 100 bị phạt dù có thể đúng.
+- Lập luận "E3 mượt hơn, dễ dự đoán hơn" có một phần đến từ việc E3 không chạm trần.
+  Vào Limitations, không được bỏ qua.
+
+**Không đổi luật clip.** Thang 0–100 là định nghĩa của biến mục tiêu ở mục 4; đổi nó
+là đổi bài toán. Chỉ khai báo.
+
+### 4. Hai mô tả phương pháp trong data card đã sai — xoá
+
+| Data card ghi | Thực tế |
+|---|---|
+| Giá trị thiếu → *"Forward-fill tối đa 3 bước"* | **QĐ-008 đã bãi bỏ ffill.** Nay là nội suy tuyến tính cụm ≤ 2 điểm |
+| Độ dài chuỗi → *"Ngưỡng 2.000 điểm"* | QĐ-008 thay bằng `min_valid_rows_h12 = 500` |
+
+Đây không phải số lệch mà là **mô tả sai phương pháp**, và sai đúng chỗ nguy hiểm:
+ffill tạo đoạn phẳng làm autocorrelation tăng giả tạo, mà autocorrelation là đại
+lượng trung tâm của RQ3. Khai rằng mình đã ffill trong khi code không ffill là tự
+tạo ra một lỗ hổng phản biện không có thật.
+
+### 5. Tiền đề ACF của QĐ-005 đã đổi — sửa lý do, **giữ nguyên quyết định**
+
+QĐ-005 biện minh cho ablation N0/N1/N2 bằng câu: *"Autocorr bậc 1 của ba môi trường
+nằm cùng vùng, 0,644 đến 0,781. Nghĩa là động lực học có khả năng so sánh được, chỉ
+mức tải là lệch."* Đo trên quần thể nghiên cứu, E3 là **0,8634**, tách hẳn khỏi E1
+(0,6674) và E2 (0,6431). Vùng nay là 0,643–0,863.
+
+**Quyết định QĐ-005 giữ nguyên hiệu lực, và còn cần hơn trước** — nay hai bên lệch cả
+mức tải lẫn mức tự tương quan, nên transfer thô lại càng không nói lên điều gì. Chỉ
+câu biện minh phải sửa: động lực học **không** nằm cùng vùng như đã tưởng, và đó
+chính là lý do phải tách hai thành phần thay vì đo gộp.
+
+### 6. Đặc trưng lịch là UTC; E1 và E2 vận hành ở UTC+2
+
+QĐ-010 chốt E1/E2 dùng UTC. Đo được một dữ kiện xác nhận cách đọc: `b0` của E2 là
+4.584.360 → **2013-07-31T22:00:00Z**, đúng bằng **00:00 giờ Amsterdam mùa hè
+(UTC+2)**. Trace bắt đầu đúng nửa đêm giờ địa phương, nên "một ngày" trong dữ liệu
+E2 bắt đầu tại giờ UTC 22.
+
+Giữ UTC. Nhưng mọi phát biểu diễn giải giờ trong paper phải ghi rõ **"giờ UTC"**;
+giờ vận hành thật của trung tâm dữ liệu Hà Lan là UTC+2, và với `dow` thì lệch này
+đủ để đẩy hoạt động nửa đêm sang ngày hôm trước.
+
+**Hệ quả.**
+
+1. `docs/data-card.md`: thêm khai báo quần thể ở đầu tệp, đánh dấu các bảng cũ là
+   "thô — mẫu ngẫu nhiên", xoá hai mô tả phương pháp sai, thêm mục
+   **"Sau tiền xử lý — quần thể nghiên cứu"** với số đo được trên toàn bộ.
+2. `docs/protocol.md` mục 4: khai báo hiệu ứng trần. Mục 8: ghi rõ giờ là UTC.
+3. QĐ-005: thêm khối đính chính, giữ nguyên quyết định.
+4. `research-log/gate-gd2.md` mục 2.2: đổi nhãn "Target" thành "CPU% sau tiền xử lý".
+5. Bước 4 và Bước 5 của `brief-gd2-b.md` làm theo điểm 2; Bước 6 báo tỉ lệ cặp bị bỏ
+   cạnh mọi con số ACF của E3 (14,65% ở lag 288).
+6. Phần Limitations của paper nhận thêm ba mục: hiệu ứng chọn lọc của bộ lọc
+   `gan_chet`, kiểm duyệt tại trần 100 của E1/E2, và tỉ lệ thiếu 9,29% của E3.

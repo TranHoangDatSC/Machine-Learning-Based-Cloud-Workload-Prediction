@@ -80,6 +80,27 @@ cũng bỏ được lượt quét thứ nhất trên tệp 9 GB.
 **Không dùng** `CPU usage [MHZ]`: phụ thuộc số core và tốc độ core của từng VM nên
 không so sánh được giữa các môi trường, làm RQ3 vô nghĩa.
 
+### Trần 100 là kiểm duyệt, và nó bất đối xứng — QĐ-011
+
+> Bổ sung 2026-09-09.
+
+Bitbrains ghi CPU% vượt 100 (máy nhiều core), Alibaba thì không. Mục 6 bước 1 clip về
+`[0, 100]`, nên sau khi căn lưới:
+
+| | E1 | E2 | E3 |
+|---|---:|---:|---:|
+| Điểm bằng đúng 100 | **5,1238%** | **2,2788%** | **0,0000%** |
+| Phân vị 95 của CPU% | **100,0000** | 60,0667 | 61,2667 |
+
+Phân vị 95 của E1 chính là trần. **Thang 0–100 giữ nguyên** — nó là định nghĩa của
+biến mục tiêu, đổi nó là đổi bài toán. Nhưng ba điều phải làm:
+
+- Hình phân phối ở GĐ2 chú thích rõ cột dựng đứng tại 100 của E1/E2.
+- Diễn giải chỉ số ở vùng tải cao của E1/E2 phải nhắc rằng dữ liệu đã bị chặn trần;
+  model dự đoán vượt 100 bị phạt dù có thể đúng.
+- Limitations nêu rằng một phần của kết luận "E3 dễ dự đoán hơn" đến từ việc E3
+  không chạm trần, chứ không chỉ từ hiệu ứng tổng hợp ở QĐ-004.
+
 ## 5. Lưới thời gian
 
 **300 giây (5 phút) cho cả ba môi trường.**
@@ -277,6 +298,12 @@ Chốt vì hai bản hiện thực đều đúng đặc tả mà vẫn ra số k
 
 `bucket × 300` là epoch giây với E1 và E2. Với **E3 thì không**: Alibaba ghi giây kể
 từ lúc bắt đầu trace (`b0 = 0`), không mang thông tin ngày thật.
+
+> **E1 và E2 vận hành ở UTC+2 — QĐ-011 điểm 6, bổ sung 2026-09-09.** `b0` của E2 là
+> 4.584.360 → `2013-07-31T22:00:00Z`, đúng bằng **00:00 giờ Amsterdam mùa hè**. Trace
+> bắt đầu đúng nửa đêm giờ địa phương, nên "một ngày" trong dữ liệu E1/E2 bắt đầu ở
+> giờ UTC 22. Giữ UTC, nhưng mọi phát biểu về giờ trong bài phải ghi rõ **"giờ UTC"**;
+> với `dow` thì lệch 2 giờ đủ để đẩy hoạt động nửa đêm sang ngày hôm trước.
 
 Theo QĐ-010: E1 và E2 dùng **UTC**; E3 vẫn sinh 4 đặc trưng lịch nhưng `hour` của nó
 mang nghĩa *"giờ kể từ lúc bắt đầu trace"*, **pha chưa biết**, và `dow` **không diễn

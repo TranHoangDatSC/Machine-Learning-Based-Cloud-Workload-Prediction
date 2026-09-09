@@ -94,11 +94,23 @@ nhầm `t+h`.
 
 ### 2.2 Phân phối target — đã có từ GĐ1
 
+> **Đổi nhãn 2026-09-09 theo QĐ-011 điểm 2. Con số không đổi.** Ba dòng dưới đây là
+> **phân phối gộp của `y`** trên các chuỗi được giữ, không phải cột `target` của ma
+> trận đặc trưng. Cột `target` thật cho 13,6741 / 9,2667 / 38,3678 ở h=1 (xem
+> `reference_gd2.json: target_mean_h*`) — chênh 0,3–0,9%, dưới ngưỡng 2% nên cổng
+> không bắt được, và đó chính là lý do phải chốt tên gọi thay vì để hai tài liệu nói
+> hai thứ dưới cùng một chữ.
+>
+> Bảng mô tả ở Bước 4 và hình ở Bước 5 mô tả **"CPU% sau tiền xử lý"** — quần thể
+> dưới đây, không phụ thuộc horizon.
+
 | Chỉ số | E1 | E2 | E3 |
 |---|---:|---:|---:|
-| Target mean | 13,6352 | 9,2199 | 38,0123 |
-| Target p50 | 1,7833 | 1,7667 | 37,8333 |
-| Target std | 27,9530 | 21,4265 | 14,9522 |
+| CPU% sau tiền xử lý — mean | 13,6352 | 9,2199 | 38,0123 |
+| CPU% sau tiền xử lý — p50 | 1,7833 | 1,7667 | 37,8333 |
+| CPU% sau tiền xử lý — std | 27,9530 | 21,4265 | 14,9522 |
+| *(tham khảo)* p95 | **100,0000** | 60,0667 | 61,2667 |
+| *(tham khảo)* điểm bằng đúng 100 | **5,1238%** | **2,2788%** | 0,0000% |
 
 Ba con số p50 này là lý do hình phân phối ở mục 3.5 phải cẩn thận: E1 và E2 có trung
 vị dưới 2%, E3 gần 38%. Vẽ trên trục tuyến tính chung thì E1 và E2 dồn hết vào cột
@@ -257,6 +269,11 @@ nhất của paper, nó dựng nền cho toàn bộ lập luận ở RQ3."*
 - [ ] Hình cho thấy được điều mà RQ3 dựa vào: ba môi trường khác nhau về **mức tải**,
       và câu hỏi transfer là thành phần nào của tín hiệu sống sót qua khác biệt đó
 - [ ] Sinh lại được bằng một lệnh, ghi trong log
+- [ ] **Chú thích trần 100** (QĐ-011 điểm 3). 5,12% điểm của E1 và 2,28% của E2 nằm
+      đúng tại 100; phân vị 95 của E1 chính là trần. Hình sẽ có một cột dựng đứng ở
+      mép phải cho E1/E2 mà E3 không có — không chú thích thì người đọc tưởng đó là
+      đặc tính workload chứ không phải hệ quả của bước clip
+- [ ] Vẽ và mô tả **phân phối gộp của `y`**, không phải cột `target` (QĐ-011 điểm 2)
 
 Hình này A duyệt bằng mắt, không tự động hoá được. Hai hình còn lại (ACF/PACF,
 burstiness) A chọn 2–3 hình đưa vào paper theo kế hoạch.
