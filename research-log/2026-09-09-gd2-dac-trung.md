@@ -35,13 +35,13 @@ xanh — rồi sinh chín ma trận đặc trưng và đối chiếu với neo G
 - **Bước 3.** `scripts/build_features.py --env all` — 9 tệp, khớp tuyệt đối chín neo.
 - **Rà soát trước paper.** 8 phát hiện, chốt thành QĐ-011 — log riêng.
 - **Bước 4.** `scripts/describe_gd2.py --env all` — 9 chỉ số neo lệch 0,0000%.
-- **Bước 5.** `scripts/fig_target_dist.py` — hình phân phối, hai bản: duyệt cổng và
-  đưa vào paper. Đây là **điều kiện qua cổng GĐ2**, chờ A duyệt bằng mắt.
+- **Bước 5.** `scripts/fig_target_dist.py` — hình phân phối. Đây là **điều kiện qua
+  cổng GĐ2**, chờ A duyệt bằng mắt.
 - **Bước 6.** `scripts/fig_acf.py --env all` — ACF/PACF, 30/30 chỉ số khớp bản độc
   lập của A. Xác nhận nhịp một giờ mà A ghi "chưa giải thích".
 - **Bước 7.** `scripts/fig_burstiness.py --env all` — CV, 12/12 chỉ số khớp A. Phát
   hiện CV bị chặn cứng bởi thang đo.
-- **Bước 8.** Log này, `check_gd2.py` **ĐẠT**, `pytest tests/ -v` **141 passed**.
+- **Bước 8.** Log này, `check_gd2.py` **ĐẠT**, `pytest tests/` **148 passed**.
 - **Ngoài phiếu.** Sửa nhãn `dow` sai trong QĐ-010 và protocol mục 8 (mục Phát hiện 4),
   và thêm `data/features/**` vào `.gitignore` — 351 MB parquet suýt lọt vào Git.
 
@@ -241,12 +241,14 @@ của RQ3: ba mức tải tách hẳn nhau. Panel (b) trục symlog phóng to v�
 trung vị của E1/E2 thực sự nằm — trên trục tuyến tính vùng đó chỉ chiếm vài pixel
 sát trục tung.
 
-### Hai bản, hai người đọc
+### Hai dạng tệp, hai mục đích
 
-- `fig_target_dist` — có panel (c) hướng dẫn đọc. Để A duyệt cổng và dán vào log.
-- `fig_target_dist_paper` — **bản sạch, không có chữ văn xuôi trong hình.** Chữ nằm
-  trong ảnh là chỗ của caption LaTeX; một khối văn xuôi in cứng vào PNG thì không
-  sửa được khi câu chữ của bài đổi, và trông nghiệp dư trong paper.
+Sửa lại sau khi A yêu cầu tách rạch ròi (xem mục "Tách hình" ở cuối log):
+
+- **`.png` — đúng MỘT hình mỗi tệp**, tiêu đề mô tả thuần, không chữ diễn giải. Dán
+  thẳng vào bài được, không phải cắt ảnh.
+- **`.pdf` — tập hợp các hình đó**, cộng một trang diễn giải ở đầu và chú thích dưới
+  từng hình. Để đọc và để duyệt.
 
 Caption đầy đủ nằm ở `results/figures/fig_target_dist.caption.md`, gồm cả câu caption
 ngắn để dán thẳng xuống dưới hình.
@@ -570,7 +572,7 @@ mục 8 nay ghi "0 là Chủ Nhật", kèm đính chính có ngày và bảng ba
 | Module đặc trưng | 4 tệp, 448 dòng | `src/cwp/features/` |
 | Test đặc trưng | 38, xanh hết | `tests/test_features.py` |
 | Test ghim config | 13, xanh hết | `tests/test_config.py` |
-| Toàn bộ test dự án | 141 passed | 90 cũ + 38 + 13 |
+| Toàn bộ test dự án | 148 passed, 1 skipped | 90 cũ + 38 + 13 + 8 (viz) |
 | Kiểu phá code bị bắt | 7/7 | `scripts/pha_features.py` ĐẠT |
 | Kiểu phá config bị bắt | 6/6 | chạy tay, bảng ở mục "Ghim config" |
 | `assert_contiguous_grid` | 0,07s / 1,69 triệu dòng | 0,4% thời gian sinh đặc trưng |
@@ -740,14 +742,17 @@ chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, c
 - `scripts/describe_gd2.py` — bảng thống kê mô tả, tự đối chiếu neo
 - `results/tables/describe_gd2.{csv,md}` — bảng máy sinh cho data card và paper
 - `scripts/fig_target_dist.py` — hình phân phối, hai bản, tự khoá vòng với bảng Bước 4
-- `results/figures/fig_target_dist{,_paper}.{png,pdf}` — hình
-- `results/figures/fig_target_dist.caption.md` — caption đầy đủ, kèm câu ngắn cho paper
-- `results/figures/README.md` — giải thích hai biến thể của mỗi hình
+- `results/figures/gd2/` — **11 tệp `.png`, mỗi tệp đúng MỘT hình**, đánh số 01–11,
+  tiêu đề mô tả thuần, dán thẳng vào bài được
+- `results/figures/gd2/gd2_{phan-phoi-cpu,acf-pacf,burstiness}.pdf` — ba PDF gộp, mỗi
+  PDF có một trang diễn giải ở đầu và chú thích dưới từng hình
+- `results/figures/gd2/fig_target_dist.caption.md` — caption đầy đủ cho hình phân phối
+- `results/figures/README.md` — quy ước thư mục và hai dạng tệp
+- `src/cwp/viz/xuat.py` — bộ xuất dùng chung: mỗi panel một tệp, và PDF gộp
+- `tests/test_viz.py` — 8 test cho bộ xuất (1 tự bỏ qua vì thiếu `pypdf`)
 - `scripts/fig_acf.py` — ACF/PACF theo cặp không NaN, tự đối chiếu tham chiếu của A
-- `results/figures/fig_acf{,_paper}.{png,pdf}` — 4 panel: ACF ngắn, PACF, ACF dài, tỉ lệ cặp bỏ
 - `results/tables/acf_gd2.csv` — ACF, PACF, tỉ lệ cặp bỏ cho từng lag 0–300
 - `scripts/fig_burstiness.py` — CV từng chuỗi, chặn thang đo, tự đối chiếu A
-- `results/figures/fig_burstiness{,_paper}.{png,pdf}` — 4 panel
 - `results/tables/cv_gd2.csv` — 1.535 dòng, một dòng mỗi chuỗi, cho phân tầng GĐ3
 - `results/tables/cv_gd2_summary.csv` — tóm tắt ba môi trường
 - `data/features/{E1,E2,E3}_h{1,6,12}.parquet` — 9 tệp, 351 MB, **không commit**
@@ -762,3 +767,53 @@ chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, c
 - `README.md` — mục 10: thêm "Dựng lại sản phẩm dẫn xuất — không chép giữa hai máy"
 - `.gitignore` — thêm `data/features/**`
 - `research-log/INDEX.md` — thêm một dòng
+
+---
+
+## Tách hình — theo yêu cầu của A, sau Bước 8
+
+A yêu cầu ba việc: gom hình theo giai đoạn cho dễ tìm, tách rạch ròi `.pdf` chứa
+diễn giải với ảnh chỉ chứa **một hình**, và ảnh phải đứng độc lập để dán vào bài.
+
+### Đã làm
+
+| | Trước | Sau |
+|---|---|---|
+| Chỗ đặt | `results/figures/` phẳng, 12 tệp lẫn lộn | `results/figures/gd2/`, đánh số 01–11 |
+| Ảnh | 3 ảnh ghép 2×2, mỗi ảnh 4 panel | **11 ảnh, mỗi ảnh đúng một hình** |
+| Diễn giải | in cứng vào ảnh ghép (panel "Đọc gì từ hình này") | 3 PDF, mỗi PDF một trang diễn giải + chú thích dưới từng hình |
+| Biến thể `_paper` | có, khác bản thường ở tiêu đề | **bỏ** — mỗi ảnh nay vốn đã là bản dùng được cho bài |
+
+Bộ xuất dùng chung ở `src/cwp/viz/xuat.py`, có `tests/test_viz.py` (8 test) kiểm đúng
+những thứ hỏng lặng lẽ: mỗi panel ra đúng một tệp, **mỗi tệp chứa đúng một `Axes`**,
+PDF đủ số trang, và hàm vẽ chịu được việc bị gọi hai lần (một cho ảnh, một cho PDF).
+
+### Ba lỗi tự bắt khi mở từng ảnh ra nhìn
+
+Tỉ lệ khung khi panel đứng một mình khác hẳn khi nó nằm trong lưới 2×2, nên mọi vị
+trí chú thích canh tay trước đó đều phải xem lại:
+
+1. **Hình 09 và 02 mất chú giải.** Trong ảnh ghép, chúng mượn chú giải của panel kề
+   bên. Đứng riêng thì người đọc không biết màu nào là môi trường nào — hỏng đúng
+   mục đích "đứng độc lập".
+2. **Chú giải che dữ liệu ở hình 04 và 06.** Góc trên phải vốn trống trong ảnh ghép
+   lại rơi trúng dải p25–p75 của E1, và ở hình 06 thì che đoạn E3 đi lên.
+3. **Hộp chú thích trần ở hình 01 đè lên đường trung vị.** Vị trí `y = 0,46` vừa
+   khít trong lưới 2×2 nhưng chạm `y = 0,5` ở khung rộng hơn.
+
+Cách sửa cho lỗi 1 và 2 không phải canh lại từng hình mà là **đặt chú giải xuống
+dưới trục**, nằm ngang, ba cột. Canh tay thì sẽ lệch lại ngay khi dữ liệu đổi; đặt
+dưới trục thì không bao giờ che dữ liệu, và đó cũng là chỗ quen thuộc của chú giải
+trong hình bài báo. Đóng thành `xuat.chu_giai_duoi()` để cả ba script dùng chung.
+
+### Xoá tệp cũ
+
+12 tệp ảnh ghép ở `results/figures/` đã bị xoá vì bị thay thế hoàn toàn — trong đó
+4 tệp `fig_target_dist*` đã commit ở "Xong buoc 5 giai doan 2". Không mất thông tin:
+mọi hình sinh lại được bằng ba lệnh, và nội dung nay nằm trong `gd2/`.
+
+### Còn nguyên
+
+Cả ba script vẫn tự đối chiếu với bản độc lập của A sau khi vẽ, và vẫn khớp: 30/30
+chỉ số ACF, 12/12 chỉ số CV, và trung vị ECDF vẫn khoá vòng với `describe_gd2.csv`.
+Việc đổi cách xuất hình không đụng tới một con số nào.

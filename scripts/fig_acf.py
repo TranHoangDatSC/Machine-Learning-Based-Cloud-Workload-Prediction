@@ -55,7 +55,8 @@ import pandas as pd
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
+
+from cwp.viz import xuat
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -229,7 +230,7 @@ def doi_chieu(do: dict[str, dict], ref_path: Path) -> int:
 
 # ------------------------------------------------------------------- vẽ
 
-def khung_truc(ax, ten_panel, tieu_de, *, xlabel, ylabel):
+def khung_truc(ax, *, xlabel, ylabel):
     ax.grid(True, color="#e6e5e0", linewidth=0.6, zorder=0)
     ax.set_axisbelow(True)
     for c in ("top", "right"):
@@ -239,117 +240,98 @@ def khung_truc(ax, ten_panel, tieu_de, *, xlabel, ylabel):
     ax.tick_params(colors=MUC_PHU, labelsize=8, length=3)
     ax.set_xlabel(xlabel, fontsize=9, color=MUC_PHU)
     ax.set_ylabel(ylabel, fontsize=9, color=MUC_PHU)
-    ax.set_title(f"{ten_panel}  {tieu_de}", fontsize=9.5, color=MUC,
-                 loc="left", pad=8)
 
 
-def ve(do: dict[str, dict], out_dir: Path, dpi: int, *, kem_doc: bool) -> Path:
-    """Dựng hình. `kem_doc=True` dùng tiêu đề diễn giải, để duyệt cổng và dán vào log.
+LAGS_N = np.arange(1, LAG_NGAN + 1)
+LAGS_D = np.arange(1, LAG_DAI + 1)
 
-    Bản paper (`kem_doc=False`) dùng tiêu đề **mô tả thuần**: trong một bài báo, kết
-    luận thuộc về caption và phần bàn luận, không thuộc về tiêu đề trục. Một panel
-    đặt tên là "kiểm chu kỳ ngày" đã khẳng định trước điều đang cần chứng minh.
-    """
-    plt.rcParams["font.family"] = "DejaVu Sans"
-    fig = plt.figure(figsize=(12.0, 8.2), facecolor=NEN)
-    gs = GridSpec(2, 2, figure=fig, hspace=0.40, wspace=0.19,
-                  left=0.062, right=0.985, top=0.865, bottom=0.075)
-    ax_a = fig.add_subplot(gs[0, 0], facecolor=NEN)
-    ax_b = fig.add_subplot(gs[0, 1], facecolor=NEN)
-    ax_c = fig.add_subplot(gs[1, 0], facecolor=NEN)
-    ax_d = fig.add_subplot(gs[1, 1], facecolor=NEN)
 
-    lag_n = np.arange(1, LAG_NGAN + 1)
-    lag_d = np.arange(1, LAG_DAI + 1)
-
-    # (a) ACF ngắn hạn, kèm dải tứ phân vị
+def panel_acf_ngan(ax, do):
+    """ACF lag 1–48, trung vị và dải tứ phân vị."""
     for env in ENVS:
         d = do[env]
-        ax_a.fill_between(lag_n, d["acf_p25"][1:LAG_NGAN + 1],
-                          d["acf_p75"][1:LAG_NGAN + 1],
-                          color=MAU[env], alpha=0.13, linewidth=0, zorder=2)
-        ax_a.plot(lag_n, d["acf_p50"][1:LAG_NGAN + 1], color=MAU[env],
-                  linestyle=NET[env], linewidth=1.8, label=NHAN[env], zorder=3)
+        ax.fill_between(LAGS_N, d["acf_p25"][1:LAG_NGAN + 1],
+                        d["acf_p75"][1:LAG_NGAN + 1],
+                        color=MAU[env], alpha=0.13, linewidth=0, zorder=2)
+        ax.plot(LAGS_N, d["acf_p50"][1:LAG_NGAN + 1], color=MAU[env],
+                linestyle=NET[env], linewidth=1.8, label=NHAN[env], zorder=3)
     for g in range(LAG_GIO, LAG_NGAN + 1, LAG_GIO):
-        ax_a.axvline(g, color=MUC_MO, linewidth=0.7, linestyle=":", zorder=1)
-    ax_a.axhline(0, color=MUC_MO, linewidth=0.8, zorder=1)
-    khung_truc(ax_a, "(a)", "ACF, lag 1–48 (4 giờ) — trung vị và dải p25–p75",
-               xlabel="lag (bucket 5 phút)", ylabel="Tự tương quan")
-    ax_a.set_xlim(0, LAG_NGAN + 1)
-    # Đặt ở đáy phải: đỉnh trái là chỗ chú giải đứng, còn dưới y = 0,05 ở nửa phải
-    # thì không đường nào và không dải nào chạm tới.
-    ax_a.text(LAG_NGAN, ax_a.get_ylim()[0], "vạch chấm: bội số 12 bucket (1 giờ) ",
-              fontsize=7.5, color=MUC_MO, va="bottom", ha="right")
+        ax.axvline(g, color=MUC_MO, linewidth=0.7, linestyle=":", zorder=1)
+    ax.axhline(0, color=MUC_MO, linewidth=0.8, zorder=1)
+    khung_truc(ax, xlabel="lag (bucket 5 phút)", ylabel="Tự tương quan")
+    ax.set_xlim(0, LAG_NGAN + 1)
+    ax.text(LAG_NGAN, ax.get_ylim()[0], "vạch chấm: bội số 12 bucket (1 giờ) ",
+            fontsize=7.5, color=MUC_MO, va="bottom", ha="right")
+    xuat.chu_giai_duoi(ax)
 
-    # (b) PACF
-    for env in ENVS:
-        ax_b.plot(lag_n, do[env]["pacf_p50"][1:LAG_NGAN + 1], color=MAU[env],
-                  linestyle=NET[env], linewidth=1.8, zorder=3)
-    ax_b.axhline(0, color=MUC_MO, linewidth=0.8, zorder=1)
-    khung_truc(ax_b, "(b)", "PACF, lag 1–48 — trung vị theo chuỗi",
-               xlabel="lag (bucket 5 phút)", ylabel="Tự tương quan riêng phần")
-    ax_b.set_xlim(0, LAG_NGAN + 1)
 
-    # (c) ACF dài hạn — chu kỳ ngày lộ ra hay không
+def panel_pacf(ax, do):
+    """PACF lag 1–48, trung vị theo chuỗi."""
     for env in ENVS:
-        ax_c.plot(lag_d, do[env]["acf_p50"][1:LAG_DAI + 1], color=MAU[env],
-                  linestyle=NET[env], linewidth=1.6, zorder=3)
-    ax_c.axvline(LAG_NGAY, color=MUC_MO, linewidth=0.9, linestyle="--", zorder=1)
-    ax_c.axhline(0, color=MUC_MO, linewidth=0.8, zorder=1)
-    khung_truc(ax_c, "(c)", ("ACF tới lag 300 — kiểm chu kỳ ngày tại lag 288"
-                             if kem_doc else "ACF, lag 1–300"),
-               xlabel="lag (bucket 5 phút)", ylabel="Tự tương quan")
-    ax_c.set_xlim(0, LAG_DAI)
+        ax.plot(LAGS_N, do[env]["pacf_p50"][1:LAG_NGAN + 1], color=MAU[env],
+                linestyle=NET[env], linewidth=1.8, label=NHAN[env], zorder=3)
+    ax.axhline(0, color=MUC_MO, linewidth=0.8, zorder=1)
+    khung_truc(ax, xlabel="lag (bucket 5 phút)",
+               ylabel="Tự tương quan riêng phần")
+    ax.set_xlim(0, LAG_NGAN + 1)
+    xuat.chu_giai_duoi(ax)
+
+
+def panel_acf_dai(ax, do):
+    """ACF lag 1–300, đủ phủ lag 288 = 24 giờ."""
     for env in ENVS:
-        v = do[env]["acf_p50"][LAG_NGAY]
-        ax_c.plot([LAG_NGAY], [v], marker="o", markersize=5, color=MAU[env],
-                  markeredgecolor=NEN, markeredgewidth=1.2, zorder=4)
-    ax_c.annotate(
+        ax.plot(LAGS_D, do[env]["acf_p50"][1:LAG_DAI + 1], color=MAU[env],
+                linestyle=NET[env], linewidth=1.6, label=NHAN[env], zorder=3)
+    ax.axvline(LAG_NGAY, color=MUC_MO, linewidth=0.9, linestyle="--", zorder=1)
+    ax.axhline(0, color=MUC_MO, linewidth=0.8, zorder=1)
+    khung_truc(ax, xlabel="lag (bucket 5 phút)", ylabel="Tự tương quan")
+    ax.set_xlim(0, LAG_DAI)
+    for env in ENVS:
+        ax.plot([LAG_NGAY], [do[env]["acf_p50"][LAG_NGAY]], marker="o",
+                markersize=5, color=MAU[env], markeredgecolor=NEN,
+                markeredgewidth=1.2, zorder=4)
+    ax.annotate(
         f"lag 288 = 24 giờ\nE3 {do['E3']['acf_p50'][LAG_NGAY]:.4f}  ·  "
         f"E1 {do['E1']['acf_p50'][LAG_NGAY]:.4f}  ·  "
         f"E2 {do['E2']['acf_p50'][LAG_NGAY]:.4f}",
         xy=(LAG_NGAY, do["E3"]["acf_p50"][LAG_NGAY]),
-        xytext=(150, 0.80), textcoords="data", fontsize=8, color=MUC_PHU,
+        xytext=(140, 0.80), textcoords="data", fontsize=8, color=MUC_PHU,
         ha="left", va="center",
         arrowprops=dict(arrowstyle="->", color=MUC_MO, linewidth=0.9,
                         connectionstyle="arc3,rad=-0.2"),
         bbox=dict(boxstyle="round,pad=0.4", facecolor=NEN, edgecolor="#d4d3ce",
                   linewidth=0.7), zorder=5)
+    xuat.chu_giai_duoi(ax)
 
-    # (d) tỉ lệ cặp bị bỏ
+
+def panel_bo_cap(ax, do):
+    """Tỉ lệ cặp (t, t+k) bị bỏ vì có NaN ở một trong hai đầu."""
     for env in ENVS:
-        ax_d.plot(lag_d, do[env]["bo_cap_pct"][1:LAG_DAI + 1], color=MAU[env],
-                  linestyle=NET[env], linewidth=1.8, zorder=3)
-    ax_d.axvline(LAG_NGAY, color=MUC_MO, linewidth=0.9, linestyle="--", zorder=1)
-    khung_truc(ax_d, "(d)", "Tỉ lệ cặp (t, t+k) bị bỏ vì có NaN",
-               xlabel="lag (bucket 5 phút)", ylabel="% cặp bị bỏ")
-    ax_d.set_xlim(0, LAG_DAI)
-    ax_d.set_ylim(bottom=0)
-    # Nhãn ghi giá trị tại lag 288 thì phải đặt ĐÚNG tại lag 288 — đặt ở mép phải
-    # (lag 300) sẽ khiến người đọc gán con số cho sai điểm.
+        ax.plot(LAGS_D, do[env]["bo_cap_pct"][1:LAG_DAI + 1], color=MAU[env],
+                linestyle=NET[env], linewidth=1.8, label=NHAN[env], zorder=3)
+    ax.axvline(LAG_NGAY, color=MUC_MO, linewidth=0.9, linestyle="--", zorder=1)
+    khung_truc(ax, xlabel="lag (bucket 5 phút)", ylabel="% cặp bị bỏ")
+    ax.set_xlim(0, LAG_DAI)
+    ax.set_ylim(bottom=0)
     for env in ENVS:
-        ax_d.annotate(f"{do[env]['bo_cap_pct'][LAG_NGAY]:.2f}%",
-                      xy=(LAG_NGAY, do[env]["bo_cap_pct"][LAG_NGAY]),
-                      xytext=(-6, 4), textcoords="offset points",
-                      fontsize=8, color=MAU[env], ha="right", va="bottom")
+        ax.annotate(f"{do[env]['bo_cap_pct'][LAG_NGAY]:.2f}%",
+                    xy=(LAG_NGAY, do[env]["bo_cap_pct"][LAG_NGAY]),
+                    xytext=(-6, 4), textcoords="offset points",
+                    fontsize=8, color=MAU[env], ha="right", va="bottom")
+    xuat.chu_giai_duoi(ax)
 
-    fig.suptitle("Cấu trúc phụ thuộc thời gian — ACF và PACF ba môi trường",
-                 fontsize=13, color=MUC, x=0.062, ha="left", y=0.965)
-    fig.text(0.062, 0.918,
-             "Trung vị trên toàn bộ chuỗi được giữ, từng lag một. Tương quan tại lag "
-             "k chỉ dùng các cặp (t, t+k) mà cả hai đều không NaN — không nén trục "
-             "thời gian.",
-             fontsize=9, color=MUC_PHU, ha="left")
-    ax_a.legend(loc="upper right", fontsize=8.2, frameon=True, framealpha=1.0,
-                edgecolor="#d4d3ce", facecolor=NEN, borderpad=0.6,
-                labelcolor=MUC_PHU)
 
-    ten = "fig_acf" if kem_doc else "fig_acf_paper"
-    png = out_dir / f"{ten}.png"
-    fig.savefig(png, dpi=dpi, facecolor=NEN)
-    fig.savefig(out_dir / f"{ten}.pdf", facecolor=NEN)
-    plt.close(fig)
-    return png
+def panels(do) -> list:
+    return [
+        xuat.Panel("04_acf-lag48", "ACF, lag 1–48 (4 giờ) — trung vị và dải p25–p75",
+                   (7.0, 4.8), lambda ax: panel_acf_ngan(ax, do)),
+        xuat.Panel("05_pacf-lag48", "PACF, lag 1–48 — trung vị theo chuỗi",
+                   (7.0, 4.8), lambda ax: panel_pacf(ax, do)),
+        xuat.Panel("06_acf-lag300", "ACF, lag 1–300", (7.0, 4.8),
+                   lambda ax: panel_acf_dai(ax, do)),
+        xuat.Panel("07_ti-le-cap-bo", "Tỉ lệ cặp (t, t+k) bị bỏ vì có NaN",
+                   (7.0, 4.8), lambda ax: panel_bo_cap(ax, do)),
+    ]
 
 
 def main() -> int:
@@ -358,7 +340,7 @@ def main() -> int:
     ap.add_argument("--processed", default="data/processed")
     ap.add_argument("--catalog", default="data/catalog.parquet")
     ap.add_argument("--tables", default="results/tables")
-    ap.add_argument("--out", default="results/figures")
+    ap.add_argument("--out", default="results/figures/gd2")
     ap.add_argument("--dpi", type=int, default=200)
     a = ap.parse_args()
 
@@ -403,15 +385,21 @@ def main() -> int:
         print(f"{'':4}bỏ cặp: " + "  ".join(
             f"lag{k}={d['bo_cap_pct'][k]:.2f}%" for k in (1, 6, 12, 24, LAG_NGAY)))
 
-    ve(do, out_dir, a.dpi, kem_doc=True)
-    ve(do, out_dir, a.dpi, kem_doc=False)
+    plt.rcParams["font.family"] = "DejaVu Sans"
+    anh, pdf = xuat.xuat_bo_hinh(
+        panels(do), out_dir, "gd2_acf-pacf.pdf",
+        tieu_de="Cấu trúc phụ thuộc thời gian — ACF và PACF ba môi trường",
+        phu=("Trung vị trên toàn bộ chuỗi được giữ, từng lag một. Tương quan tại lag "
+             "k chỉ dùng các cặp (t, t+k) mà cả hai đầu đều không NaN — không nén "
+             "trục thời gian. Sinh bằng `python scripts/fig_acf.py --env all`."),
+        dien_giai=dien_giai(do), chu_thich=chu_thich_panel(do), dpi=a.dpi)
+
     print()
-    for ten in ("fig_acf", "fig_acf_paper"):
-        for duoi in ("png", "pdf"):
-            print(f"Đã ghi: {(out_dir / f'{ten}.{duoi}').relative_to(ROOT)}")
+    for p in list(anh) + [pdf]:
+        print(f"Đã ghi: {p.relative_to(ROOT)}")
     print(f"Đã ghi: {csv_path.relative_to(ROOT)}")
-    print("\nfig_acf       — tiêu đề diễn giải, để duyệt cổng và dán vào log")
-    print("fig_acf_paper — tiêu đề mô tả thuần, đứng độc lập, để dán vào paper")
+    print("\nMỗi .png chứa đúng MỘT hình — dán thẳng vào bài.")
+    print("Tệp .pdf gộp bốn hình và phần diễn giải — để đọc và để duyệt.")
 
     if a.env != "all":
         print("\n(Chạy --env all để đối chiếu đủ ba môi trường với tham chiếu của A.)")
@@ -426,6 +414,73 @@ def main() -> int:
     print("Mọi chỉ số khớp tham chiếu độc lập của A.")
     return 0
 
+
+
+def dien_giai(do) -> list[tuple[str, str]]:
+    """Trang diễn giải của PDF — ACF và PACF là hai khái niệm dễ lẫn."""
+    return [
+        ("ACF là gì",
+         "Tự tương quan tại lag k là hệ số tương quan giữa giá trị tại thời điểm t "
+         "và giá trị tại t+k, tính trên mọi cặp như vậy trong chuỗi. ACF gần 1 nghĩa "
+         "là biết giá trị bây giờ thì đoán được khá tốt giá trị k bước nữa. Ở đây "
+         "một bước là một bucket 5 phút, nên lag 12 là một giờ và lag 288 là một "
+         "ngày. ACF giảm dần theo lag là chuyện bình thường; điều đáng chú ý là nó "
+         "giảm nhanh hay chậm, và có nhô lên ở lag nào không."),
+        ("PACF là gì, và khác ACF chỗ nào",
+         "Tự tương quan riêng phần tại lag k là phần tương quan giữa t và t+k mà "
+         "KHÔNG giải thích được bằng các lag ngắn hơn. Ví dụ nếu hôm nay giống hôm "
+         "qua và hôm qua giống hôm kia, thì ACF tại lag 2 sẽ cao — nhưng chỉ là hệ "
+         "quả dây chuyền. PACF bóc lớp dây chuyền đó ra. PACF tắt sau vài bậc đầu "
+         "nghĩa là chỉ vài lag gần nhất mang thông tin riêng, các lag xa hơn không "
+         "thêm gì mới. Đó là căn cứ để chọn bộ đặc trưng lag."),
+        ("Vì sao không dùng hàm ACF có sẵn",
+         "Chuỗi đã căn lưới vẫn còn NaN vì cụm thiếu dài hơn 2 điểm không được nội "
+         "suy, và E3 thiếu tới 9,29% điểm. Hàm ACF thông thường không nhận NaN. Nếu "
+         "bỏ NaN đi rồi mới tính thì trục thời gian bị CO LẠI — sau khi nén, hai "
+         "điểm cạnh nhau có thể cách nhau 2 giờ thật, và ACF đo được sẽ cao giả tạo. "
+         "Ở đây tương quan tại lag k chỉ dùng các cặp (t, t+k) mà cả hai đầu đều có "
+         "số thật, giữ nguyên khoảng cách thời gian. Hình 4 báo tỉ lệ cặp bị bỏ ở "
+         "mỗi lag, và con số đó phải đi kèm mọi phát biểu về E3."),
+        ("\"Đại diện\" nghĩa là gì",
+         "Mỗi môi trường có hàng trăm chuỗi, mỗi chuỗi một đường ACF riêng. Đường vẽ "
+         "ở đây là TRUNG VỊ của các đường đó tại từng lag, không phải một chuỗi được "
+         "chọn tay. Dải mờ ở Hình 1 là khoảng tứ phân vị p25–p75, cho thấy các chuỗi "
+         "giống nhau đến đâu. Không gộp mọi điểm của mọi chuỗi vào một dãy rồi tính "
+         "một tương quan: cách đó cho ACF lag 1 của E1 là 0,96 thay vì 0,67, vì nó "
+         "trộn phương sai giữa các máy vào — đo sự khác nhau giữa các máy chứ không "
+         "đo động lực học theo thời gian."),
+        ("Ba điều đọc ra được",
+         "Một, nhịp một giờ có thật: ACF nhô lên tại mọi bội số của 12 bucket, ở cả "
+         "24/24 mốc trong dải lag 12–288 và ở cả ba môi trường. Hai, chỉ E3 có chu "
+         "kỳ ngày thật — ACF của nó xuống đáy −0,42 quanh lag 139 (nửa ngày) rồi lên "
+         "0,60 tại lag 288 (trọn ngày), đúng dạng sóng của một chu kỳ; E1 và E2 "
+         "không bao giờ xuống âm, và mức nhô của chúng tại lag 288 giải thích hết "
+         "bằng nhịp một giờ vì 288 cũng là bội số của 12. Ba, PACF của cả ba tắt sau "
+         "vài bậc đầu, nên bộ lag 1, 2, 3, 6, 12, 24 của giao thức là đủ."),
+    ]
+
+
+def chu_thich_panel(do) -> dict[str, str]:
+    return {
+        "04_acf-lag48":
+            "Đường là trung vị trên toàn bộ chuỗi được giữ; dải mờ là p25–p75. Vạch "
+            "chấm dọc đặt tại các bội số của 12 bucket (1 giờ) — ACF nhô lên đúng "
+            "tại đó.",
+        "05_pacf-lag48":
+            "Suy từ ACF bằng đệ quy Durbin–Levinson chạy trên từng chuỗi rồi lấy "
+            "trung vị. Chuỗi nào đệ quy mất ổn định thì bị loại khỏi trung vị: "
+            f"{do['E1']['n_chuoi'] - do['E1']['n_pacf']} chuỗi ở E1, "
+            f"{do['E2']['n_chuoi'] - do['E2']['n_pacf']} ở E2, "
+            f"{do['E3']['n_chuoi'] - do['E3']['n_pacf']} ở E3 — dưới 0,5% cả ba.",
+        "06_acf-lag300":
+            "Vạch đứt dọc tại lag 288 = 24 giờ. E3 có dạng sóng đầy đủ: cắt 0 tại "
+            "lag 74, đáy −0,4191 tại lag 139, quay lại dương từ lag 219. E1 và E2 "
+            "chỉ có dãy răng lược của nhịp một giờ, không có sóng ngày.",
+        "07_ti-le-cap-bo":
+            "Phần trăm cặp (t, t+k) bị loại vì có NaN ở một trong hai đầu. E3 bỏ "
+            "nhiều gấp mười E1 và gấp hai mươi E2; con số tại lag 288 phải đi kèm "
+            "mọi phát biểu về chu kỳ ngày của E3.",
+    }
 
 if __name__ == "__main__":
     sys.exit(main())
