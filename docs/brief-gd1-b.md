@@ -410,10 +410,15 @@ Hai hàm:
 1) machine_means(path, chunksize=...) -> pd.Series
    Lượt quét thứ nhất: CPU trung bình của từng máy, index là machine_id.
 
-2) sample_machines(means, n=500, strata=5, seed=42) -> list[str]
-   Chia các máy thành `strata` tầng bằng nhau theo CPU trung bình,
-   lấy ngẫu nhiên n/strata máy mỗi tầng với random_state=seed.
-   Đúng như protocol.md mục 3.
+2) load_machines_frozen() -> list[str]
+   ĐỌC danh sách 500 máy cố định từ config/e3_machines.txt.
+   Bỏ dòng trống và dòng bắt đầu bằng '#'.
+   TUYỆT ĐỐI KHÔNG tự chọn mẫu lại. protocol.md mục 3 đã đóng băng danh sách
+   này (QĐ-009) vì phép chọn cũ phụ thuộc thứ tự quét tệp, khiến hai bản hiện
+   thực đúng đặc tả vẫn ra hai tập máy khác nhau tới 89%.
+   Có sẵn hàm load_frozen() trong scripts/freeze_e3_sample.py, dùng lại được.
+
+   Hệ quả: KHÔNG cần lượt quét thứ nhất nữa. Chỉ còn một lượt đọc 9 GB.
 
 3) load_machines(path, machines, chunksize=...) -> pd.DataFrame
    Lượt quét thứ hai: chỉ giữ dòng của các máy đã chọn.
@@ -425,22 +430,20 @@ In tiến trình bằng tqdm — lượt quét mất vài phút.
 
 ```bash
 python -c "
-from cwp.io.alibaba import machine_means, sample_machines
-m = machine_means('data/raw/Alibaba-Cluster-Trace/machine_usage.csv')
-print('số máy quét được:', len(m))
-sel = sample_machines(m, n=500, strata=5, seed=42)
-print('số máy đã chọn  :', len(sel), '| trùng lặp:', len(sel) != len(set(sel)))
+from cwp.io.alibaba import load_machines_frozen
+sel = load_machines_frozen()
+print('số máy đọc được:', len(sel), '| trùng lặp:', len(sel) != len(set(sel)))
+print('máy đầu:', sel[0])
 "
 ```
 
 ### Phải thấy
 
 ```
-số máy quét được: 4023
-số máy đã chọn  : 500 | trùng lặp: False
+số máy đọc được: 500 | trùng lặp: False
 ```
 
-Ra `4022` nghĩa là dòng đầu bị nuốt làm header.
+Ra khác 500 là đọc sai tệp, hoặc chưa `git pull`.
 
 ### Rồi chạy E3
 
@@ -453,8 +456,9 @@ python scripts/check_gd1.py
 
 ```
 Chuỗi vào       : 500
-Chuỗi còn lại   : 499
-Dòng hợp lệ h=12: 919907
+Loại gan_chet   : 2
+Chuỗi còn lại   : 498
+Dòng hợp lệ h=12: 917463
 ...
 ĐẠT — sản phẩm GĐ1 khớp tham chiếu trong ngưỡng cho phép.
 ```
@@ -552,14 +556,14 @@ Báo A nghiệm thu.
 |---|---:|---:|---:|
 | Chuỗi vào | 1.250 | 500 | 500 |
 | `ngoai_cua_so` | **55** | 1 | 0 |
-| `gan_chet` | 454 | 197 | 1 |
+| `gan_chet` | 454 | 197 | 2 |
 | `hang` | 0 | 0 | 0 |
 | `it_dong` | 6 | 0 | 0 |
-| Chuỗi còn lại | 735 | 302 | 499 |
-| Dòng hợp lệ h=1 | 1.650.896 | 678.486 | 941.439 |
-| Dòng hợp lệ h=12 | 1.642.811 | 673.322 | 919.907 |
-| Tỉ lệ nội suy | 0,016% | 0,092% | 0,183% |
+| Chuỗi còn lại | 735 | 302 | 498 |
+| Dòng hợp lệ h=1 | 1.650.896 | 678.486 | 938.933 |
+| Dòng hợp lệ h=12 | 1.642.811 | 673.322 | 917.463 |
+| Tỉ lệ nội suy | 0,016% | 0,092% | 0,167% |
 | Tỉ lệ clip | 2,8434% | 2,1933% | 0% |
-| Target mean | 13,6352 | 9,2199 | 38,0464 |
+| Target mean | 13,6352 | 9,2199 | 38,0123 |
 
 Ngưỡng cho phép ở `gate-gd1.md` mục 3.3. Chuỗi vào phải khớp **tuyệt đối**.

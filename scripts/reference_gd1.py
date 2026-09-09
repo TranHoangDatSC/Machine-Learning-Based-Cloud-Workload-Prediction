@@ -26,6 +26,7 @@ try:
 except Exception:
     pass
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw"
 
@@ -168,22 +169,12 @@ def run_alibaba(interp_k):
     path = RAW / "Alibaba-Cluster-Trace" / "machine_usage.csv"
     cols = ["machine_id", "time_stamp", "cpu_util_percent"]
 
-    tot, cnt = {}, {}
-    for ch in pd.read_csv(path, names=cols, usecols=[0, 1, 2], chunksize=5_000_000):
-        g = ch.groupby("machine_id")["cpu_util_percent"].agg(["sum", "count"])
-        for m, r in g.iterrows():
-            tot[m] = tot.get(m, 0.0) + r["sum"]
-            cnt[m] = cnt.get(m, 0) + r["count"]
-    means = pd.Series({m: tot[m] / cnt[m] for m in tot if cnt[m] > 0})
-    print(f"  [E3] quét được {len(means)} máy", flush=True)
-
-    strata = pd.qcut(means.rank(method="first"), E3_STRATA, labels=False)
-    per = E3_SAMPLE_N // E3_STRATA
-    chosen = []
-    for k in range(E3_STRATA):
-        pool = means.index[strata == k]
-        chosen.extend(pd.Series(list(pool)).sample(per, random_state=SEED).tolist())
-    chosen = set(chosen)
+    # Danh sách máy ĐÃ ĐÓNG BĂNG (QĐ-009). Trước đây chọn mẫu ngay tại đây, nhưng
+    # kết quả phụ thuộc thứ tự quét tệp nên A và B ra hai tập khác nhau — chỉ trùng
+    # 56/500. Đọc danh sách cố định cũng bỏ được luôn lượt quét thứ nhất.
+    from freeze_e3_sample import load_frozen
+    chosen = set(load_frozen())
+    print(f"  [E3] dùng danh sách đóng băng: {len(chosen)} máy", flush=True)
 
     parts = []
     for ch in pd.read_csv(path, names=cols, usecols=[0, 1, 2], chunksize=5_000_000):

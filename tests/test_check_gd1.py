@@ -24,7 +24,17 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 REF_DIR = ROOT / "results" / "tables"
 CHECKER = ROOT / "scripts" / "check_gd1.py"
+FROZEN = ROOT / "config" / "e3_machines.txt"
 ENVS = ["E1", "E2", "E3"]
+
+
+def frozen_machines():
+    """500 máy E3 đã đóng băng (QĐ-009). Catalog giả lập phải dùng đúng danh sách
+    này, nếu không checker sẽ đánh trượt — và đánh trượt như vậy là đúng."""
+    if not FROZEN.exists():
+        pytest.skip("chưa có config/e3_machines.txt")
+    return [ln.strip() for ln in FROZEN.read_text(encoding="utf-8").splitlines()
+            if ln.strip() and not ln.startswith("#")]
 
 
 def load_refs():
@@ -42,6 +52,7 @@ def build_catalog(refs, scale=1.0, break_e2_id=False, drop_col=None,
                   hosts=None, stamps=None):
     """hosts/stamps: dict env -> giá trị, để giả lập catalog khảm nhiều máy."""
     rows = []
+    e3_ids = frozen_machines()
     for env, r in refs.items():
         n_keep = r["chuoi_con_lai"]
         per = int(r["dong_h12"] * scale) // max(n_keep, 1)
@@ -50,7 +61,12 @@ def build_catalog(refs, scale=1.0, break_e2_id=False, drop_col=None,
         i = 0
         for k in range(n_keep):
             month_ok = env != "E2" or not break_e2_id
-            sid = f"{env}_2013-8_{k}" if (env == "E2" and month_ok) else f"{env}_{k}"
+            if env == "E3":
+                sid = f"E3_{e3_ids[k]}"
+            elif env == "E2" and month_ok:
+                sid = f"E2_2013-8_{k}"
+            else:
+                sid = f"{env}_{k}"
             rows.append(dict(
                 env=env, series_id=sid, kept=True, reject_reason="",
                 n_points=pts,
@@ -67,9 +83,13 @@ def build_catalog(refs, scale=1.0, break_e2_id=False, drop_col=None,
         }
         for reason, cnt in rej.items():
             for _ in range(cnt):
-                pre = f"{env}_2013-8" if env == "E2" else env
+                if env == "E3":
+                    sid_r = f"E3_{e3_ids[i]}"      # vẫn nằm trong danh sách đóng băng
+                else:
+                    pre = f"{env}_2013-8" if env == "E2" else env
+                    sid_r = f"{pre}_rej{i}"
                 rows.append(dict(
-                    env=env, series_id=f"{pre}_rej{i}", kept=False,
+                    env=env, series_id=sid_r, kept=False,
                     reject_reason=reason, n_points=0, n_interp=0,
                     valid_rows_h1=0, valid_rows_h6=0, valid_rows_h12=0,
                     mean=0.0, p50=0.0, std=0.0, n_clipped=0,
@@ -164,6 +184,23 @@ def test_cung_may_khac_thoi_diem_chi_canh_bao(env):
     rc, out = run_checker(p, proc)
     assert rc == 0, f"cùng máy khác thời điểm không nên đánh trượt:\n{out}"
     assert "một lần chạy" in out.lower()
+
+
+def test_e3_sai_danh_sach_may_thi_truot(env):
+    """E3 dùng máy ngoài danh sách đóng băng -> phải TRƯỢT (QĐ-009).
+
+    Ngày 2026-09-09 A và B tự chọn mẫu riêng, chỉ trùng 56/500, mà thống kê gộp vẫn
+    lệch dưới 0,05% nên không có gì phát hiện được.
+    """
+    refs, tmp, proc = env
+    p = tmp / "catalog.parquet"
+    cat = build_catalog(refs)
+    m = cat.env == "E3"
+    cat.loc[m, "series_id"] = [f"E3_may_la_{i}" for i in range(int(m.sum()))]
+    cat.to_parquet(p)
+    rc, out = run_checker(p, proc)
+    assert rc == 1, "E3 dùng máy ngoài danh sách đóng băng mà checker vẫn cho qua"
+    assert "đóng băng" in out
 
 
 def test_luong_cua_A_khong_co_processed(env):

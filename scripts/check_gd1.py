@@ -133,6 +133,24 @@ def check_schema(cat, rep):
             rep.add(g, "E2 bị loại cũng nên có tháng trong series_id", WARN,
                     f"{len(bad_r)} chuỗi thiếu — không chặn, nhưng nên thống nhất")
 
+    # E3 phải dùng đúng danh sách máy đã đóng băng — QĐ-009.
+    # Trước đây A và B tự chọn mẫu riêng và chỉ trùng 56/500.
+    e3 = cat[cat.env == "E3"]
+    frozen_path = ROOT / "config" / "e3_machines.txt"
+    if len(e3) and frozen_path.exists():
+        frozen = {ln.strip() for ln in frozen_path.read_text(encoding="utf-8").splitlines()
+                  if ln.strip() and not ln.startswith("#")}
+        got = {sid[3:] if sid.startswith("E3_") else sid
+               for sid in e3["series_id"].astype(str)}
+        missing, extra = frozen - got, got - frozen
+        if missing or extra:
+            rep.add(g, "E3 dùng đúng danh sách máy đã đóng băng", FAIL,
+                    f"trùng {len(frozen & got)}/{len(frozen)} — thiếu {len(missing)}, "
+                    f"thừa {len(extra)}. Phải đọc config/e3_machines.txt (QĐ-009), "
+                    "không tự chọn mẫu.")
+        else:
+            rep.add(g, f"E3 dùng đúng {len(frozen)} máy đã đóng băng", OK)
+
     inconsistent = int(((cat["kept"]) & (cat["reject_reason"].fillna("") != "")).sum())
     inconsistent += int(((~cat["kept"]) & (cat["reject_reason"].fillna("") == "")).sum())
     rep.add(g, "kept khớp reject_reason", FAIL if inconsistent else OK,

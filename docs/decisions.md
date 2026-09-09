@@ -334,3 +334,61 @@ cứu, và gần như không đổi lượng dữ liệu.
 không phụ thuộc vào tham số `K`. Bảng này đưa vào phần Limitations.
 
 Tệp: `results/tables/reference_gd1_K0.json`.
+
+
+---
+
+## QĐ-009 — Đóng băng danh sách 500 máy của E3
+**Ngày:** 2026-09-09 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** B nộp E3: 499 chuỗi giữ, 919.526 dòng h=12. Tham chiếu của A: 499
+chuỗi, 919.907 dòng. Lệch 0,041% — nằm trong ngưỡng 5% nên vẫn qua cổng.
+
+Truy nguyên bằng cách dựng lại phép chọn mẫu của A rồi so với 500 máy trong catalog
+của B:
+
+| Cách chọn | Trùng với B |
+|---|---:|
+| A (`reference_gd1.py`) | **56/500** |
+| Biến thể `qcut` trên giá trị | 56/500 |
+| Biến thể sort theo `machine_id` | 146/500 |
+
+**A và B đo hai tập máy khác nhau tới 89%.**
+
+**Nguyên nhân.** Protocol mục 3 ghi `random_state = 42`, nhưng `.sample()` chọn theo
+**vị trí**, mà vị trí phụ thuộc **thứ tự** danh sách máy. Thứ tự đó do cách hiện thực
+xây bảng trung bình quyết định — A dùng thứ tự máy xuất hiện khi quét tệp, B dùng
+thứ tự khác. Cả hai đều đúng đặc tả; **đặc tả mới là thứ thiếu**.
+
+**Quyết định.** Sinh một danh sách 500 máy cố định, commit vào
+`config/e3_machines.txt`. Mọi lần chạy E3 đọc đúng tệp đó, không tự chọn lại.
+
+Quy tắc sinh (`scripts/freeze_e3_sample.py`): sort theo `machine_id` → xếp tầng theo
+rank CPU trung bình, 5 tầng → 100 máy mỗi tầng, `random_state = 42`.
+
+**Lý do không chọn cách "chỉ cần sort trước khi sample".** Cách đó khắc phục được
+nguyên nhân trực tiếp nhưng vẫn để kết quả phụ thuộc hành vi của `pd.qcut` và của
+`.sample()` qua các phiên bản pandas. Đóng băng danh sách loại bỏ mọi phụ thuộc, và
+quan trọng hơn: **người đọc paper dựng lại được đúng mẫu** mà không cần chạy lại
+phép chọn.
+
+**Hệ quả.**
+
+1. Số tham chiếu E3 đổi. Đã sinh lại `results/tables/reference_E3.json`:
+
+| Chỉ số | Trước | Sau |
+|---|---:|---:|
+| Chuỗi còn lại | 499 | **498** |
+| Loại `gan_chet` | 1 | **2** |
+| Dòng hợp lệ h=12 | 919.907 | **917.463** |
+| Tỉ lệ nội suy | 0,183% | **0,167%** |
+| Target mean | 38,0464 | **38,0123** |
+
+2. B phải sửa `io/alibaba.py` đọc danh sách cố định thay vì tự chọn, rồi chạy lại E3.
+3. `check_gd1.py` thêm kiểm tra: `series_id` của E3 phải khớp **đúng** danh sách.
+4. Bỏ được lượt quét thứ nhất trên tệp 9 GB — E3 chạy nhanh hơn khoảng một nửa.
+5. Phần Dữ liệu của paper phải nêu rõ mẫu được đóng băng và tệp nằm trong repo.
+
+**Điều đáng ghi nhận.** Hai mẫu gần như rời nhau mà thống kê gộp chỉ lệch 0,04% là
+bằng chứng phép lấy mẫu phân tầng hoạt động đúng. Vấn đề không nằm ở chất lượng mẫu
+mà ở **khả năng tái lập**.

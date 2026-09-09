@@ -43,9 +43,30 @@ RQ2 đọc theo cột môi trường.
 Lý do giới hạn E2 và E3: xem `decisions.md` mục QĐ-003. Dữ liệu còn lại giữ nguyên
 trên đĩa, dùng cho kiểm tra tính vững nếu còn thời gian.
 
-### Mẫu phân tầng E3
-Chia 4.023 máy thành 5 tầng theo ngũ phân vị của CPU% trung bình, lấy ngẫu nhiên
-100 máy mỗi tầng. `random_state = 42`.
+### Mẫu phân tầng E3 — ĐÃ ĐÓNG BĂNG
+
+Danh sách 500 máy cố định ở **`config/e3_machines.txt`**, đã commit vào repo. Mọi
+lần chạy E3 **phải đọc đúng tệp này**, không được tự chọn lại mẫu.
+
+Cách sinh danh sách (đã chạy một lần, `scripts/freeze_e3_sample.py`):
+sắp xếp 4.023 máy theo `machine_id` → xếp 5 tầng theo rank của CPU% trung bình →
+lấy 100 máy mỗi tầng với `random_state = 42`.
+
+> **Vì sao phải đóng băng.** Bản đặc tả cũ chỉ ghi `random_state = 42`. Chưa đủ:
+> `.sample()` chọn theo **vị trí**, mà vị trí phụ thuộc **thứ tự** danh sách máy —
+> thứ tự đó lại phụ thuộc cách hiện thực xây bảng trung bình.
+>
+> Ngày 2026-09-09, A và B chạy hai bản hiện thực **đều đúng đặc tả** nhưng chỉ trùng
+> nhau **56/500 máy**. Thống kê gộp vẫn lệch dưới 0,05% — phép phân tầng làm đúng
+> việc của nó — nhưng hai bên đang đo hai quần thể khác nhau, nên con số E3 của B
+> không kiểm chứng được code của B.
+>
+> Đây cùng loại lỗi với Bảng 6 bài HJS phân tích ở `tu-bai-cu-den-bai-nay.md` mục 3:
+> hai con số trông so được nhưng đo hai thứ khác nhau. Chi tiết: `decisions.md`
+> QĐ-009.
+
+Đọc danh sách bằng `scripts/freeze_e3_sample.load_frozen()`. Dùng danh sách cố định
+cũng bỏ được lượt quét thứ nhất trên tệp 9 GB.
 
 ## 4. Biến mục tiêu
 
