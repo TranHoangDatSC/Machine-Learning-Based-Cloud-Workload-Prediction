@@ -2,7 +2,7 @@
 
 Chạy:  pytest tests/test_io.py -v
 
-Bốn điều kiện bắt buộc của bước 7 (xem docs/brief-gd1-b.md):
+Bốn điều kiện bắt buộc của bước 7 (xem research-log/brief-gd1-b.md):
     - `load_raw` trả đúng 2 cột `time_s` (int64) và `cpu_pct` (float64)
     - `time_s` nằm trong 1.3e9 .. 1.5e9, tức là GIÂY chứ không phải mili-giây
     - `make_series_id` cho E2 luôn chứa tháng, khớp `^E2_\\d{4}-\\d+_`

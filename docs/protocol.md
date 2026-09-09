@@ -222,7 +222,7 @@ python scripts/check_gd1.py
 ```
 
 Script đối chiếu `catalog.parquet` với số liệu tham chiếu ở
-`results/tables/reference_E*.json` theo ngưỡng ghi trong `docs/gate-gd1.md` mục 3.3.
+`results/tables/reference_E*.json` theo ngưỡng ghi trong `research-log/gate-gd1.md` mục 3.3.
 
 ## 7. Cửa sổ thời gian chung
 

@@ -1,7 +1,7 @@
 """Kiểm cổng GĐ1 tự động.
 
 Đối chiếu sản phẩm của B với số liệu tham chiếu do A sinh độc lập, theo ngưỡng ghi
-trong docs/gate-gd1.md mục 3.3. Kiểm cả schema lẫn số liệu.
+trong research-log/gate-gd1.md mục 3.3. Kiểm cả schema lẫn số liệu.
 
 B chạy trước khi báo xong. A chạy khi nghiệm thu. Cùng một lệnh, cùng một kết quả.
 
@@ -323,7 +323,7 @@ def print_progress(root, a):
         print(f"  [thiếu] {p:<34} {d}")
     print()
     print("Đặc tả: docs/protocol.md mục 6b (schema) và mục 5–8 (quy tắc xử lý).")
-    print("Số phải khớp: docs/gate-gd1.md mục 2.")
+    print("Số phải khớp: research-log/gate-gd1.md mục 2.")
 
 
 def main():
@@ -335,7 +335,7 @@ def main():
 
     cat_path = ROOT / a.catalog
     print()
-    print("KIỂM CỔNG GĐ1 — docs/gate-gd1.md")
+    print("KIỂM CỔNG GĐ1 — research-log/gate-gd1.md")
     print(f"catalog    : {cat_path}")
     print(f"tham chiếu : {ROOT / a.ref}")
 

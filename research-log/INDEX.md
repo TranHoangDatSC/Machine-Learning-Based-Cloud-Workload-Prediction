@@ -4,6 +4,7 @@ Cập nhật thủ công mỗi khi thêm log mới. Mới nhất ở trên.
 
 | Ngày | Phiên | Người | GĐ | Kết quả chính |
 |---|---|---|---|---|
+| 2026-09-09 | [Bàn giao GĐ1](2026-09-09-ban-giao-gd1.md) | A thay B | GĐ1 | Bảng lọc đầy đủ; **GĐ1 ĐÓNG**. Lệch cuối cùng hoá ra là lỗi đếm của A, không phải của B |
 | 2026-09-09 | [A rà soát và sửa code GĐ1](2026-09-09-ra-soat-code-b.md) | A | GĐ1 | Code tự chỉnh mẫu cho khớp `gan_chet==1` — đã xoá. 5 lỗi, **cổng ĐẠT** |
 | 2026-09-09 | [B chưa áp dụng QĐ-009](2026-09-09-b-chua-ap-dung-qd009.md) | A | GĐ1 | Số E3 không đổi vì code chưa sửa; trùng 146/500 máy — đúng biến thể đã chẩn đoán |
 | 2026-09-09 | [QĐ-009 đóng băng mẫu E3](2026-09-09-qd009-dong-bang-e3.md) | A | GĐ1 | A và B chọn hai tập máy khác nhau 89% — đóng băng `config/e3_machines.txt` |

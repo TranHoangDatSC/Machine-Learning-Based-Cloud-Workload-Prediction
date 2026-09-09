@@ -78,7 +78,12 @@ def interp_short(s, k):
             i += 1
     out = s.copy()
     out.values[keep] = filled.values[keep]
-    return out, int(keep.sum())
+    # Đếm điểm THỰC SỰ được nội suy, không đếm `keep`. `keep` gồm cả cụm ngắn chạm
+    # mép cửa sổ, mà `limit_area="inside"` không lấp vì thiếu neo một phía — đếm
+    # chúng là khai khống một can thiệp chưa xảy ra. Sai 24 điểm ở E3 (1.738 thay vì
+    # 1.714, tức 0,167% thay vì 0,165%); E1 và E2 không có cụm nào như vậy nên không
+    # lệch. Dữ liệu luôn đúng, chỉ con số báo cáo sai. Xem gate-gd1.md mục 5.5.
+    return out, int(na.sum() - out.isna().to_numpy().sum())
 
 
 def valid_rows(ok, h):

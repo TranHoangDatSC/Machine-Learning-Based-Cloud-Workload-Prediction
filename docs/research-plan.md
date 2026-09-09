@@ -113,18 +113,18 @@ cũng là phần quyết định giá trị bài.
 Tốn thời gian nhất, ít được ghi nhận nhất. Làm chắc ở đây thì mọi thứ sau đều trôi.
 
 **B:**
-- [ ] `src/cwp/io/bitbrains.py` — parser `;\t`, timestamp là **giây** không phải mili-giây
-- [ ] `src/cwp/io/alibaba.py` — đọc chunk, không header, chỉ lấy 3 cột cần
-- [ ] `src/cwp/preprocess/clean.py` — clip `[0, 100]`, mask sentinel
-- [ ] `src/cwp/preprocess/resample.py` — căn lưới 5 phút, bucket rỗng để NaN
-- [ ] `src/cwp/preprocess/filter.py` — bốn điều kiện lọc ở protocol mục 6
-- [ ] Sinh `data/processed/` dạng parquet
-- [ ] Sinh `data/catalog.parquet` — một dòng mỗi chuỗi
-- [ ] `tests/test_io.py`, `tests/test_resample.py`
-- [ ] **Chạy `python scripts/check_gd1.py` cho tới khi ra ĐẠT** — không báo xong trước khi đạt
-- [ ] Log: bảng số chuỗi vào, bị loại theo từng điều kiện, còn lại
+- [x] `src/cwp/io/bitbrains.py` — parser `;\t`, timestamp là **giây** không phải mili-giây
+- [x] `src/cwp/io/alibaba.py` — đọc chunk, không header, chỉ lấy 3 cột cần
+- [x] `src/cwp/preprocess/clean.py` — clip `[0, 100]`, mask sentinel
+- [x] `src/cwp/preprocess/resample.py` — căn lưới 5 phút, bucket rỗng để NaN
+- [x] `src/cwp/preprocess/filter.py` — bốn điều kiện lọc ở protocol mục 6
+- [x] Sinh `data/processed/` dạng parquet
+- [x] Sinh `data/catalog.parquet` — một dòng mỗi chuỗi
+- [x] `tests/test_io.py`, `tests/test_resample.py`
+- [x] **Chạy `python scripts/check_gd1.py` cho tới khi ra ĐẠT** — không báo xong trước khi đạt
+- [x] Log: bảng số chuỗi vào, bị loại theo từng điều kiện, còn lại
 
-> **Phiếu giao việc chi tiết:** `docs/brief-gd1-b.md` — chín bước, mỗi bước có
+> **Phiếu giao việc chi tiết:** `research-log/brief-gd1-b.md` — chín bước, mỗi bước có
 > prompt cho agent, lệnh chạy và kết quả phải thấy để đối chiếu.
 
 **Bẫy đã biết** — kiểm tra kỹ bốn chỗ này:
@@ -136,7 +136,7 @@ Tốn thời gian nhất, ít được ghi nhận nhất. Làm chắc ở đây 
 
 **A — làm trước khi B nộp, không đợi:**
 - [x] Dựng thước đo tham chiếu độc lập: `scripts/reference_gd1.py`
-- [x] Lập hồ sơ cổng `docs/gate-gd1.md` — danh sách kiểm, ngưỡng, lệnh nghiệm thu
+- [x] Lập hồ sơ cổng `research-log/gate-gd1.md` — danh sách kiểm, ngưỡng, lệnh nghiệm thu
 - [x] Phát hiện khuyết tật protocol mục 6 bước 6, ghi QĐ-008
 - [x] **QĐ-008 CÓ HIỆU LỰC** — khảo sát 4 phương án, chọn P4 (nội suy ≤2 rồi lọc dòng)
 - [x] Chốt hai điểm mơ hồ: cửa sổ 8 ngày **toàn cục**, ngưỡng đổi sang **≥500 dòng h=12**
@@ -147,13 +147,13 @@ Tốn thời gian nhất, ít được ghi nhận nhất. Làm chắc ở đây 
 - [x] Tự động hoá kiểm cổng: `scripts/check_gd1.py` + `tests/test_check_gd1.py`
 
 **A — khi B nộp:**
-- [ ] Chạy `python scripts/check_gd1.py` — phải ra ĐẠT
-- [ ] Kiểm mắt hai thứ script không tự làm được: đọc `src/cwp/preprocess/filter.py`
+- [x] Chạy `python scripts/check_gd1.py` — phải ra ĐẠT
+- [x] Kiểm mắt hai thứ script không tự làm được: đọc `src/cwp/preprocess/filter.py`
       xem có `.shift(1)` ở rolling chưa, và xem log của B có bảng lọc đủ cột chưa
-- [ ] Ghi kết quả vào `gate-gd1.md` mục 5
+- [x] Ghi kết quả vào `gate-gd1.md` mục 5
 
 **Điều kiện qua cổng:** A đối chiếu bảng của B với `scripts/reference_gd1.py`, theo
-danh sách đầy đủ ở `docs/gate-gd1.md`. Ngưỡng: số chuỗi vào phải khớp tuyệt đối,
+danh sách đầy đủ ở `research-log/gate-gd1.md`. Ngưỡng: số chuỗi vào phải khớp tuyệt đối,
 các chỉ số còn lại lệch không quá 5%.
 
 > Điều kiện cũ ghi "đối chiếu với `2026-08-30-tham-dinh-du-lieu.md`" đã **bị thay**.
