@@ -440,8 +440,25 @@ hoàn. Bỏ đặc trưng lịch của E3 là vứt đi tín hiệu mạnh nhấ
 | Quy ước | Chốt | Vì sao phải chốt |
 |---|---|---|
 | `ddof` của rolling std và của CV | **1** | pandas mặc định 1, numpy mặc định 0 |
-| Gốc của `dow` | epoch 1970-01-01 là **thứ Năm**, `((t // 86400) + 4) % 7` → 0 là thứ Hai | Quy ước nào cũng được, miễn hai bên dùng chung |
+| Gốc của `dow` | epoch 1970-01-01 là **thứ Năm**, `((t // 86400) + 4) % 7` → **0 là Chủ Nhật** | Quy ước nào cũng được, miễn hai bên dùng chung |
 | Cụm `NaN` chạm mép cửa sổ | **Không nội suy**, không ngoại suy để hai bên khớp | Đã đúng ở GĐ1, xem `gate-gd1.md` mục 5.5 |
+
+> **Đính chính nhãn `dow` — 2026-09-09, B phát hiện khi viết `tests/test_features.py`.**
+> Bản chốt đầu tiên ghi *"→ 0 là thứ Hai"*. Sai nhãn: công thức `+4` cho 0 là **Chủ
+> Nhật**. Đo trên chính dữ liệu đã có —
+>
+> | Mốc | Thứ thật | Công thức ra |
+> |---|---|---:|
+> | 1970-01-01 (epoch) | thứ Năm | 4 |
+> | `b0` của E1 = 4.587.716 → 2013-08-12 | thứ Hai | 1 |
+> | `b0` của E2 = 4.584.360 → 2013-07-31 | thứ Tư | 3 |
+>
+> **Công thức giữ nguyên, chỉ sửa nhãn.** Không con số nào đổi:
+> `reference_gd2.py`, `check_gd2.py` và `src/cwp/features/` đều hiện thực công thức
+> chứ không dựa vào nhãn, nên `reference_gd2.json` không phải sinh lại. Sửa vì E1 và
+> E2 có mốc thời gian thật — đọc theo nhãn cũ thì phần bàn về chu kỳ tuần trong paper
+> lệch đúng một ngày. `tests/test_features.py::test_lich_goc_dow_dung_cong_thuc_chot_o_qd010`
+> ghim ba con số ở bảng trên để nhãn không trôi lại lần nữa.
 
 **Đính chính một chỗ hiểu sai của chính A.** Khi dựng cổng, A viết rằng luật dòng hợp
 lệ *"trùng đúng với điều kiện để 19 đặc trưng tính được"*. **Sai.** 19 đặc trưng chỉ

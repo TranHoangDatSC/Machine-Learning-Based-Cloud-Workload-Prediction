@@ -2,17 +2,21 @@
 
 **Người thực hiện:** B (agent)
 **Giai đoạn:** GĐ2
-**Thời lượng:** ~1 giờ (Bước 1 và Bước 2 của `research-log/brief-gd2-b.md`)
+**Thời lượng:** ~2 giờ (Bước 1, 2, 3 của `research-log/brief-gd2-b.md`)
 
-> **Trạng thái: đang làm dở.** Log này mới ghi Bước 1 và Bước 2. Bước 3–7 chưa chạy
-> lệnh nào, nên không mục nào dưới đây nói "đã hoàn thành" cho chúng. `check_gd2.py`
-> hiện báo **CHƯA ĐẠT** — đúng như phải thế khi chưa có `data/features/`.
+> **Trạng thái: đang làm dở.** Log này ghi Bước 1, 2, 3. Bước 4–7 chưa chạy lệnh
+> nào, nên không mục nào dưới đây nói "đã hoàn thành" cho chúng.
+>
+> `scripts/check_gd2.py` báo **ĐẠT** — nhưng đó là phần cổng **tự động hoá được**
+> (mục 3.2, R2–R4, bẫy mốc thời gian, vân tay đặc trưng). Điều kiện qua cổng thật ở
+> `gate-gd2.md` mục 3.5 là **hình phân phối target**, và A duyệt bằng mắt. Chưa có
+> hình thì chưa gọi là qua cổng GĐ2.
 
 ## Mục tiêu phiên
 
-Viết `src/cwp/features/` theo protocol mục 8 và QĐ-010, rồi viết
-`tests/test_features.py` với bốn phép kiểm rò rỉ R1–R4 — và chứng minh bộ test đó
-biết đỏ, không chỉ biết xanh.
+Viết `src/cwp/features/` theo protocol mục 8 và QĐ-010, viết `tests/test_features.py`
+với bốn phép kiểm rò rỉ R1–R4 — và chứng minh bộ test đó biết đỏ, không chỉ biết
+xanh — rồi sinh chín ma trận đặc trưng và đối chiếu với neo GĐ1.
 
 ## Đã làm
 
@@ -22,6 +26,9 @@ biết đỏ, không chỉ biết xanh.
 - **Bước 2.** `tests/test_features.py` — 38 test, tất cả xanh.
 - **Bước 2 (phần sau).** Phá code 7 kiểu, xác nhận test bắt được từng kiểu. Đóng gói
   thành `scripts/pha_features.py` để A chạy lại được.
+- **Bước 3.** `scripts/build_features.py --env all` — 9 tệp, khớp tuyệt đối chín neo.
+- **Ngoài phiếu.** Sửa nhãn `dow` sai trong QĐ-010 và protocol mục 8 (mục Phát hiện 4),
+  và thêm `data/features/**` vào `.gitignore` — 351 MB parquet suýt lọt vào Git.
 
 ## Bước 1 — `src/cwp/features/`
 
@@ -49,24 +56,7 @@ Ba lựa chọn hiện thực đáng ghi:
    chốt tên cột nên không để config đổi được chúng. Rủi ro: hai nguồn trôi khỏi nhau
    về sau. **Cần A quyết** — xem mục Vướng mắc.
 
-### Đối chiếu neo GĐ1 — đã chạy, nhưng đây chưa phải Bước 3
-
-Chưa viết `scripts/build_features.py` và chưa ghi tệp nào vào `data/features/`. Gọi
-thẳng `valid_row_mask` trên `data/processed/` chỉ để **xem** số dòng ra bao nhiêu:
-
-| Môi trường | h=1 | h=6 | h=12 |
-|---|---:|---:|---:|
-| E1 | 1.650.896 ✓ | 1.647.221 ✓ | 1.642.811 ✓ |
-| E2 | 678.486 ✓ | 675.665 ✓ | 673.322 ✓ |
-| E3 | 938.933 ✓ | 926.892 ✓ | 917.463 ✓ |
-
-Chín dấu bằng, lệch 0 dòng ở cả ba môi trường. Bước 3 vẫn phải chạy lại qua script
-và ghi ra parquet để `check_gd2.py` kiểm được.
-
-Kèm một phép so gián tiếp với bản của A: tỉ lệ `y_t` lọt biên `[roll_min_6,
-roll_max_6]` đo được **78,85% (E1) / 78,18% (E2) / 66,14% (E3)**, trùng với
-78,9 / 78,2 / 66,1 mà `gate-gd2.md` mục 4 đo trên `reference_gd2.py`. Hai bản hiện
-thực độc lập cùng quy ước `.shift(1)`.
+Số dòng đối chiếu với neo GĐ1: xem Bước 3.
 
 ## Bước 2 — `tests/test_features.py`
 
@@ -113,6 +103,57 @@ Ba kiểu phiếu chỉ đích danh là P1, P2, P3 — cả ba đỏ đúng nhó
 chính phép đối chiếu số dòng làm bằng chứng mã nguồn về đúng nguyên trạng, chặt hơn
 là nhìn bằng mắt.
 
+## Bước 3 — chín ma trận đặc trưng
+
+`python scripts/build_features.py --env all` → 9 tệp, 351 MB, 70 giây.
+
+Script không lọc thêm gì; toàn bộ việc lọc nằm trong `cwp.features.make_feature_matrix`
+và đi qua `valid_row_mask`, tức luật cửa sổ `[t-24, t]` chứ không phải `dropna()`.
+
+### Số dòng — khớp tuyệt đối cả chín
+
+| Môi trường | h | Số dòng | Neo `catalog.parquet` | Lệch | Chuỗi | MB |
+|---|---:|---:|---:|---:|---:|---:|
+| E1 | 1 | 1.650.896 | 1.650.896 | **0** | 735 | 51,4 |
+| E1 | 6 | 1.647.221 | 1.647.221 | **0** | 735 | 50,6 |
+| E1 | 12 | 1.642.811 | 1.642.811 | **0** | 735 | 50,2 |
+| E2 | 1 | 678.486 | 678.486 | **0** | 302 | 22,2 |
+| E2 | 6 | 675.665 | 675.665 | **0** | 302 | 21,9 |
+| E2 | 12 | 673.322 | 673.322 | **0** | 302 | 21,7 |
+| E3 | 1 | 938.933 | 938.933 | **0** | 498 | 44,9 |
+| E3 | 6 | 926.892 | 926.892 | **0** | 498 | 44,2 |
+| E3 | 12 | 917.463 | 917.463 | **0** | 498 | 43,7 |
+
+Đã kiểm **cả ba** môi trường, không chỉ E1 — đúng cảnh báo của phiếu rằng E1 khớp kể
+cả khi lọc sai. E2 và E3 là hai chỗ `dropna()` sẽ lộ (thừa 1.513 và 7.461 dòng), và
+cả hai đều lệch 0.
+
+Số chuỗi trong ma trận bằng đúng số chuỗi `kept` của GĐ1 ở cả ba môi trường
+(735 / 302 / 498), nên không chuỗi nào bị bộ lọc dòng xoá sạch.
+
+### `check_gd2.py` — ĐẠT
+
+```
+ĐẠT — bộ đặc trưng GĐ2 khớp protocol mục 8, không phát hiện rò rỉ.
+TIẾN ĐỘ GĐ2: 11/12 sản phẩm
+```
+
+Không mục nào trượt. Một cảnh báo, và nó **đúng theo QĐ-010**: *"E3: mốc thời gian là
+tương đối, không phải epoch"*.
+
+Ba nhóm đáng ghi lại vì chúng so B với bản độc lập của A:
+
+| Phép kiểm | Kết quả |
+|---|---|
+| **Vân tay 19 đặc trưng** (mean và std, so `reference_gd2.json`, ngưỡng 1e-6) | khớp ở **cả ba** môi trường |
+| **R2 — `.shift(1)` có thật không**: tỉ lệ `y_t` lọt biên `[roll_min_6, roll_max_6]` | 78,85% / 78,18% / 66,14% — tham chiếu A: 78,9 / 78,2 / 66,1 |
+| **R3 — ranh giới chuỗi**: mọi chuỗi có đủ 24 bucket lịch sử riêng | 735 / 302 / 498 chuỗi, không chuỗi nào vi phạm |
+
+Vân tay khớp là phép so có giá trị nhất ở đây: A nạp mỗi môi trường thành một ma trận
+numpy `(số chuỗi, 2304)` rồi dịch theo trục thời gian, B dùng `groupby(series_id)`
+trên bảng dài. Hai lối nghĩ khác nhau, cùng 19 con số mean và 19 con số std đến chữ
+số thập phân thứ sáu, trên cả ba môi trường.
+
 ## Phát hiện
 
 **1. Bộ test tự nó có một lỗ hổng, và chỉ lộ ra khi phá code.** Vòng phá đầu tiên,
@@ -156,40 +197,125 @@ vào docstring test. **Cần A sửa một chữ trong QĐ-010.**
 |---|---|---|
 | Module đặc trưng | 4 tệp, 448 dòng | `src/cwp/features/` |
 | Test đặc trưng | 38, xanh hết | `tests/test_features.py` |
-| Toàn bộ test dự án | 128 passed | 90 cũ + 38 mới |
+| Test ghim config | 13, xanh hết | `tests/test_config.py` |
+| Toàn bộ test dự án | 141 passed | 90 cũ + 38 + 13 |
 | Kiểu phá code bị bắt | 7/7 | `scripts/pha_features.py` ĐẠT |
-| Neo số dòng GĐ1 | 9/9 khớp tuyệt đối | chưa qua Bước 3, mới gọi thẳng hàm |
+| Kiểu phá config bị bắt | 6/6 | chạy tay, bảng ở mục "Ghim config" |
+| `assert_contiguous_grid` | 0,07s / 1,69 triệu dòng | 0,4% thời gian sinh đặc trưng |
+| Neo số dòng GĐ1 | 9/9 khớp tuyệt đối | `build_features.py --env all` |
+| Vân tay 19 đặc trưng vs A | khớp 3/3 môi trường | ngưỡng 1e-6, `check_gd2.py` mục 6 |
 | `y_t` lọt biên quá khứ | 78,85 / 78,18 / 66,14% | tham chiếu A: 78,9 / 78,2 / 66,1% |
+| Ma trận đặc trưng | 9 tệp, 351 MB, 61s | `data/features/` |
+| `check_gd2.py` | **ĐẠT**, 11/12 sản phẩm | còn thiếu `results/figures/` |
 
 ## Quyết định
 
-- Giữ công thức `dow` theo QĐ-010, **không** sửa theo nhãn — công thức là cái chốt và
-  `check_gd2.py` so đúng nó. Chỗ cần sửa là chú thích trong `docs/decisions.md`.
+- **Sửa nhãn `dow` trong QĐ-010 và protocol mục 8**, giữ nguyên công thức. Đã ghi
+  đính chính có ngày và lý do vào `docs/decisions.md` (QĐ-010) theo quy tắc "không
+  sửa im lặng" ở đầu `protocol.md`. Không con số nào phải sinh lại.
 - Thêm `assert_contiguous_grid` chặn bảng đầu vào đã bị lọc NaN. Không có trong phiếu;
   bỏ được mà không ảnh hưởng con số nào nếu A thấy thừa.
 - Giữ `scripts/pha_features.py` trong repo thay vì chạy tay rồi vứt — bảng "phá code"
   ở trên là một lời khai, và lời khai thì phải kiểm chứng lại được.
+- Thêm `data/features/**` vào `.gitignore`, cùng chỗ với `data/processed/**`. Chín
+  tệp nặng 351 MB; `.gitignore` trước đó chưa có dòng nào chặn thư mục này.
+- **`config/features.yaml` giữ lại làm tài liệu, không cho code đọc**, và thêm
+  `tests/test_config.py` ghim nó với `spec.py`. Ghim luôn `preprocess.yaml` ở
+  `grid_seconds` và `row_validity.max_lag`.
+- **`assert_contiguous_grid` ở lại tầng đặc trưng**, không chuyển sang `check_gd1.py`.
+- **Sản phẩm dẫn xuất thì dựng lại, không chép giữa hai máy.** Ghi thành một mục con
+  trong README mục 10 kèm chuỗi lệnh đầy đủ.
 
 ## Vướng mắc
 
-**Cần A quyết — không chặn Bước 3, nhưng nên chốt trước khi đóng GĐ2:**
+**Cả ba đã xử lý trong phiên này. Không còn gì treo.**
 
-1. **QĐ-010 chú thích `dow` sai một chữ** (mục Phát hiện 4). Sửa "0 là thứ Hai" thành
-   "0 là Chủ Nhật", hoặc đổi công thức sang `+3` nếu thật sự muốn 0 là thứ Hai — nhưng
-   đổi công thức thì `check_gd2.py` và `reference_gd2.json` phải sinh lại, và điều đó
-   không đáng cho một nhãn.
-2. **`config/features.yaml` không được code đọc.** Nó đang mô tả đúng bộ đặc trưng
-   nhưng chỉ bằng lời. Ba lối: (a) bỏ tệp, (b) thêm test so nó với `spec.py`, (c) để
-   nguyên và chấp nhận rủi ro trôi. Tôi nghiêng về (b).
-3. **`assert_contiguous_grid` có phải việc của tầng đặc trưng không**, hay nên nằm ở
-   `check_gd1.py`. Hiện để ở tầng đặc trưng vì đó là nơi giả định bị vi phạm sẽ gây
-   hại.
+1. ~~QĐ-010 chú thích `dow` sai một chữ~~ → **xong**. `docs/decisions.md` QĐ-010 và
+   `docs/protocol.md` mục 8 nay ghi "0 là Chủ Nhật", kèm bảng ba mốc đo được và ghi
+   chú rằng công thức không đổi.
+2. ~~`config/features.yaml` không được code đọc~~ → **xong**, xem mục "Ghim config"
+   dưới đây.
+3. ~~`assert_contiguous_grid` nằm ở tầng nào~~ → **giữ ở tầng đặc trưng**, xem mục
+   "Vì sao giữ ở tầng đặc trưng".
 
-Không có gì chặn. Bước 3–7 làm tiếp được ngay.
+Bước 4–7 làm tiếp được ngay.
+
+## Ghim config với code — `tests/test_config.py`
+
+Đếm được ngày 2026-09-09: `preprocess.yaml` có 6 nơi đọc, `datasets.yaml` 4 nơi,
+còn `features.yaml`, `split.yaml`, `paths.yaml` thì **0**. Hai tệp sau mô tả GĐ3/GĐ4
+chưa xây nên chưa ai đọc là bình thường; `features.yaml` mô tả thứ **vừa xây xong**
+mà không ai đọc — đó mới là chỗ bất thường.
+
+Không cho code đọc config (làm thế là biến 19 tên cột thành thứ sửa được ngoài
+`decisions.md`, trái QĐ-010), cũng không xoá config. Thay vào đó: **code chốt ở
+`spec.py`, config là tài liệu, `tests/test_config.py` là người gác.**
+
+13 test. Mạnh nhất là `test_ten_19_cot_suy_tu_config_khop_spec` — dựng lại cả 19 tên
+cột **từ config** rồi so với `FEATURE_COLS`, nên nó bắt được cả lệch thứ tự lẫn lệch
+quy tắc ghép tên, không chỉ lệch giá trị.
+
+Nhân tiện bổ sung ba quy ước QĐ-010 vào `features.yaml` (`rolling_ddof`,
+`dow_epoch_offset`, `grid_seconds`) — trước đó tệp mô tả thiếu đúng ba thứ đã làm A
+và B ra số khác nhau.
+
+Cũng ghim luôn `preprocess.yaml`, vì ở đó có một rủi ro **thật chứ không giả định**:
+`row_validity.max_lag` được `filter.py` và `build.py` đọc để đếm `valid_rows_h*` ghi
+vào `catalog.parquet` — tức là neo của cổng GĐ2 — trong khi tầng đặc trưng hardcode
+`MAX_LAG`. Sửa config mà không sửa `spec.py` thì chín neo lệch.
+
+Phá config 6 kiểu để xác nhận test biết đỏ:
+
+| Phá | Kết quả | Test bắt được |
+|---|---|---|
+| thêm `48` vào `lags` | ĐỎ 2 failed | `test_lags_khop_spec`, `test_ten_19_cot_suy_tu_config_khop_spec` |
+| `rolling_ddof` → 0 | ĐỎ 1 failed | `test_ba_quy_uoc_qd010_khop_spec` |
+| `shift_before_rolling` → false | ĐỎ 1 failed | `test_shift_before_rolling_phai_bat` |
+| thêm khoá `lags_extra` | ĐỎ 1 failed | `test_config_khong_co_khoa_la` |
+| `row_validity.max_lag` → 25 | ĐỎ 1 failed | `test_max_lag_cua_tien_xu_ly_bang_max_lag_cua_dac_trung` |
+| `grid_seconds` → 600 | ĐỎ 1 failed | `test_grid_seconds_hai_config_bang_nhau` |
+
+## Vì sao giữ `assert_contiguous_grid` ở tầng đặc trưng
+
+Đo được: **0,07 giây** trên 1,69 triệu dòng của E1 — rẻ hơn lệnh `sort` đứng ngay
+trước nó (0,17s), và bằng 0,4% thời gian sinh đặc trưng. Chi phí không phải yếu tố
+quyết định.
+
+Hai yếu tố quyết định:
+
+1. `check_gd1.py` **cảnh báo chứ không đánh trượt** khi thiếu `data/processed/` —
+   có chú thích trong mã ghi rõ lý do là để A nghiệm thu được trên máy chưa chạy
+   tiền xử lý. Đặt phép kiểm ở đó thì **trên máy A nó không bao giờ chạy**.
+2. Ở tầng đặc trưng thì nó chạy mọi lần hàm được gọi, kể cả khi ai đó mở notebook,
+   `dropna()` cho gọn rồi gọi `make_feature_matrix`. Đó đúng là kịch bản gây hại, vì
+   lag và rolling tính theo **vị trí dòng**.
+
+Nhân đây bỏ một chỗ thừa trong `build_features.py`: script từng gọi `prepare_input`
+rồi truyền kết quả cho `make_feature_matrix` — hàm này lại `prepare_input` lần nữa.
+Nay gọi thẳng `make_feature_matrix(df, h)`. Mất thêm ~0,2 giây mỗi môi trường, đổi
+lại **sản phẩm đi đúng đường mà `tests/test_features.py` kiểm**, không phải một
+đường tắt song song. Tổng thời gian 70,4s → 61,0s (giảm vì bớt một lượt sắp xếp).
+
+## Đồng bộ dữ liệu giữa hai máy — README mục 10
+
+Câu hỏi lộ ra khi bàn việc trên: A pull repo về thì không có `data/processed/` lẫn
+`data/features/` (cả hai trong `.gitignore`), nên A **không chạy được `check_gd2.py`**.
+README mục 10 trước đó dừng ở `check_data.py`, không có lệnh nào dẫn từ raw sang hai
+thư mục đó.
+
+Đã thêm mục con **"Dựng lại sản phẩm dẫn xuất — không chép giữa hai máy"**: bảng ba
+sản phẩm kèm kích thước và trạng thái Git, chuỗi lệnh đầy đủ từ repo vừa clone tới
+hết GĐ2, và ba chỗ dễ vấp.
+
+Chọn **dựng lại** chứ không chép, vì `check_data.py` đã xác minh md5 của raw nên hai
+máy chắc chắn cùng đầu vào; pipeline xác định sau khi QĐ-009 đóng băng mẫu E3 vào
+`config/e3_machines.txt`; và `catalog.parquet` — thứ duy nhất đi qua Git — chính là
+bảng để hai bên so số. **Chép sản phẩm dẫn xuất sang nhau thì mất luôn phép kiểm
+chéo, hai máy thành một máy.** Đó là bài học QĐ-009 và mục 6b, chỉ khác chỗ áp dụng.
 
 ## Việc tiếp theo
 
-- [ ] Bước 3 — `scripts/build_features.py --env all`, ghi 9 tệp `data/features/`
+- [x] Bước 3 — `scripts/build_features.py --env all`, ghi 9 tệp `data/features/`
 - [ ] Bước 4 — `scripts/describe_gd2.py --env all`
 - [ ] Bước 5 — hình phân phối target (**điều kiện qua cổng**)
 - [ ] Bước 6 — ACF/PACF, kèm tỉ lệ cặp bị bỏ ở mỗi lag
@@ -203,4 +329,18 @@ Không có gì chặn. Bước 3–7 làm tiếp được ngay.
 - `src/cwp/features/calendar.py` — 4 đặc trưng lịch
 - `src/cwp/features/matrix.py` — luật dòng hợp lệ và ráp ma trận 22 cột
 - `tests/test_features.py` — 38 test, R1–R4
+- `tests/test_config.py` — 13 test, ghim `config/*.yaml` với `spec.py`
 - `scripts/pha_features.py` — phá code 7 kiểu, xác nhận test biết đỏ
+- `scripts/build_features.py` — sinh 9 ma trận, đối chiếu neo GĐ1
+- `data/features/{E1,E2,E3}_h{1,6,12}.parquet` — 9 tệp, 351 MB, **không commit**
+
+## File sửa
+
+- `docs/decisions.md` — QĐ-010: nhãn `dow` "0 là thứ Hai" → "0 là Chủ Nhật", kèm đính
+  chính có ngày và bảng ba mốc đo được
+- `docs/protocol.md` — mục 8, ba quy ước: cùng sửa nhãn, trỏ về đính chính ở QĐ-010
+- `config/features.yaml` — thêm ba quy ước QĐ-010 còn thiếu, và nói rõ ngay đầu tệp
+  rằng đây là tài liệu, bản chốt ở `spec.py`
+- `README.md` — mục 10: thêm "Dựng lại sản phẩm dẫn xuất — không chép giữa hai máy"
+- `.gitignore` — thêm `data/features/**`
+- `research-log/INDEX.md` — thêm một dòng

@@ -563,6 +563,58 @@ nghĩa.
 
 Alibaba lệch dung lượng gần như luôn là tải chưa xong.
 
+### Dựng lại sản phẩm dẫn xuất — không chép giữa hai máy
+
+Chỉ `data/raw/` mới chép qua ổ cứng. Sản phẩm dẫn xuất thì **dựng lại tại chỗ**:
+
+| Sản phẩm | Kích thước | Đi qua Git? |
+| --- | ---: | --- |
+| `data/processed/*.parquet` | 6 MB | không |
+| `data/features/*.parquet` | 351 MB | không |
+| `data/catalog.parquet` | 80 KB | **có** — đây là bảng hai máy đối chiếu với nhau |
+
+Dựng lại thay vì chép vì ba lẽ. `check_data.py` đã xác minh md5 nên hai máy chắc chắn
+cùng đầu vào. Pipeline xác định — yếu tố ngẫu nhiên duy nhất là mẫu 500 máy E3, và
+QĐ-009 đã đóng băng nó vào `config/e3_machines.txt` (có trong Git). Và `catalog.parquet`
+— thứ duy nhất đi qua Git — chính là bảng để hai bên so số; chép sản phẩm dẫn xuất
+sang nhau thì mất luôn phép kiểm chéo đó, hai máy thành một máy.
+
+Chuỗi lệnh đầy đủ, từ repo vừa clone tới hết GĐ2:
+
+```bash
+# 0 — môi trường
+python -m pip install -e .
+python tests/test_env.py                      # Khớp: 12/12
+
+# 1 — dữ liệu thô: chép hoặc tải theo hai mục trên, rồi xác minh
+python scripts/check_data.py                  # KHỚP
+
+# 2 — GĐ1: raw → data/processed/ + data/catalog.parquet
+python -m cwp.preprocess.build --env all      # E3 quét tệp 9 GB, ~5 phút
+python scripts/check_gd1.py                   # ĐẠT
+
+# 3 — GĐ2: processed → data/features/
+python scripts/build_features.py --env all    # 9 tệp, ~70 giây
+python scripts/check_gd2.py                   # ĐẠT
+
+# 4 — toàn bộ test
+pytest tests/ -q
+```
+
+Ba chỗ dễ vấp:
+
+- **`--env all` trong một lệnh duy nhất, trên một máy.** `catalog.parquet` mang
+  `built_on` và `built_at`. Chạy từng môi trường vào các thời điểm khác nhau thì
+  `check_gd1.py` **cảnh báo**; chạy trên nhiều máy khác nhau thì nó **trượt**. Bản
+  nộp cuối của mỗi giai đoạn phải là một lần chạy. Xem `protocol.md` mục 6b.
+- **Bỏ bước 2 thì bước 3 không chạy được.** `build_features.py` đọc
+  `data/processed/`, thiếu thì nó dừng và in ra đúng lệnh cần chạy trước.
+- **Thiếu dữ liệu, hai công cụ cổng xử sự khác nhau — và đó là cố ý.**
+  `check_gd1.py` chỉ *cảnh báo* khi không có `data/processed/`, để A nghiệm thu được
+  trên máy chưa chạy tiền xử lý. `check_gd2.py` thì *trượt* khi thiếu
+  `data/features/`, kèm bảng tiến độ nói còn thiếu tệp nào. Cảnh báo không phải là
+  đạt — nó nghĩa là mục đó **chưa được kiểm**.
+
 Nguyên tắc quan trọng:
 
 ```text

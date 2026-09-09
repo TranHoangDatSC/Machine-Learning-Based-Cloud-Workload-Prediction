@@ -1,7 +1,30 @@
 # Dac trung. Xem docs/protocol.md muc 8.
+#
+# TEP NAY LA TAI LIEU, KHONG PHAI NGUON THAT.
+# Ban chot cua 19 ten cot va ba quy uoc QD-010 nam o src/cwp/features/spec.py; code
+# khong doc tep nay. Sua o day KHONG doi hanh vi cua bat ky thu gi.
+#
+# tests/test_config.py so tung dong duoi day voi spec.py. Sua mot ben ma khong sua
+# ben kia thi test do — do la ly do tep nay con ton tai thay vi bi xoa.
+#
+# Doi ten cot hay doi quy uoc la DOI GIAO THUC: phai qua docs/decisions.md truoc,
+# roi sua spec.py, roi moi sua tep nay.
+
 lags: [1, 2, 3, 6, 12, 24]
 rolling_windows: [6, 12]
 rolling_stats: [mean, std, min, max]
 diff: true
 calendar: [hour_sin, hour_cos, dow_sin, dow_cos]
 shift_before_rolling: true   # chi dung qua khu
+
+# Ba quy uoc chot o QD-010 — chot vi hai ban hien thuc deu "dung" ma ra so khac nhau.
+# Truoc 2026-09-09 tep nay khong ghi chung, tuc no mo ta thieu dung ba thu da gay
+# lech giua A va B.
+rolling_ddof: 1              # pandas mac dinh 1, numpy mac dinh 0
+dow_epoch_offset: 4          # ((t // 86400) + 4) % 7 -> 0 la Chu Nhat
+grid_seconds: 300            # phai khop config/preprocess.yaml
+
+# Do sau cua so dac trung. Nguon that cho tien xu ly la
+# config/preprocess.yaml: row_validity.max_lag — hai ben phai bang nhau, va
+# tests/test_config.py ghim dieu do.
+max_lag: 24

@@ -269,7 +269,8 @@ Chốt vì hai bản hiện thực đều đúng đặc tả mà vẫn ra số k
 
 - **`ddof = 1`** cho `roll_std_*` và cho hệ số biến thiên. pandas mặc định 1, numpy
   mặc định 0.
-- **Gốc `dow`:** epoch 1970-01-01 là thứ Năm, `((t // 86400) + 4) % 7` → 0 là thứ Hai.
+- **Gốc `dow`:** epoch 1970-01-01 là thứ Năm, `((t // 86400) + 4) % 7` → **0 là Chủ
+  Nhật**. (Nhãn sửa 2026-09-09, công thức giữ nguyên — xem đính chính ở QĐ-010.)
 - **Cụm `NaN` chạm mép cửa sổ không nội suy**, và không ngoại suy để hai bên khớp.
 
 ### Đặc trưng lịch — mốc thời gian E3 là tương đối

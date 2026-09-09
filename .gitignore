@@ -9,6 +9,7 @@ data/raw/**/*.tar
 data/raw/**/*.parquet
 data/interim/**
 data/processed/**
+data/features/**
 !data/**/.gitkeep
 
 # ---- Kết quả sinh ra ----
