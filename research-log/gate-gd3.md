@@ -230,13 +230,60 @@ python scripts/check_gd3.py
 pytest tests/ -v
 ```
 
-`check_gd3.py` **chưa viết** — đây là việc còn lại của A trước khi B nộp. Nó phải tự
-động hoá mục 3.2, 3.3, và L1/L4 của mục 3.4; L2 và L3 thì A đọc log và đọc biên fold.
+`check_gd3.py` đọc hai bảng theo **hợp đồng tên tệp và tên cột ở QĐ-014 điểm 4**:
 
-Kèm theo, đúng bài học số 2: **`tests/test_check_gd3.py`** dựng thế giới giả lập rồi
-phá theo các kiểu đã biết — quên purge, gán tập theo `t` thay vì cả `t+h`, mẫu số
-MASE tính trên test, gộp bằng trung bình thay vì trung vị, thêm đặc trưng ngoài mục 8
-— và xác nhận `check_gd3.py` bắt được từng kiểu.
+| Tệp | Cột |
+|---|---|
+| `results/tables/splits_gd3.csv` | `env, h, split, n_dong` |
+| `results/tables/baselines_gd3.csv` | `env, h, model, split, metric, p25, p50, p75, iqr, n_chuoi, n_loai, n_dong_dung, n_dong_test` |
+
+Sai tên tệp hay tên cột thì công cụ không chạy được — B đọc mục này trước khi ghi.
+Tham chiếu của A **chỉ neo `split = test`** (mục 12 báo cáo trên test), nên B được
+phép báo thêm dòng `train`/`val` để tự theo dõi; công cụ lọc trước khi so.
+
+Nó chạy **ba loại phép kiểm**, và ba loại này không thay thế nhau được:
+
+| Loại | Phụ thuộc tính độc lập? | Bắt được gì |
+|---|---|---|
+| **A** — so với `reference_gd3.json` | **có** | lỗi gõ, lệch một dòng, dùng sai cột |
+| **B** — đẳng thức tự thân (B1–B7) | **không** | vi phạm quan hệ mà mọi bản đúng đều phải thoả |
+| **C** — đáp án giải tích (C1–C10) | **không** | **hiểu sai định nghĩa** |
+
+Vì sao phải có cả ba: ở GĐ3 `reference_gd3.py` do cùng agent đã viết code GĐ2 soạn ra
+(QĐ-014 điểm 3), nên "hai bản khớp nhau" là bằng chứng **yếu hơn** GĐ1/GĐ2 — hai bản
+có thể cùng sai một kiểu. Loại B và C giữ nguyên giá trị kể cả khi tính độc lập bằng
+không, nên **đừng bỏ chúng đi cho gọn**.
+
+Kèm theo, đúng bài học số 2: **`tests/test_check_gd3.py`** dựng thế giới giả lập
+(3 môi trường × 3 chuỗi × 2304 bucket, NaN đặt có chủ đích) rồi phá chín kiểu và xác
+nhận công cụ bắt được từng kiểu:
+
+| Kiểu phá | Phép kiểm phải đỏ |
+|---|---|
+| gán tập theo `t`, quên `t+h` | B1 + loại A số dòng |
+| mẫu số MASE tính trên test | loại A, cột `mase` |
+| gộp bằng trung bình thay vì trung vị | loại A, 45 chỉ số p50 |
+| seasonal naive lấp giá trị thiếu | loại A, `n_dong_dung` |
+| thêm đặc trưng ngoài mục 8 | B7 |
+| RMSE < MAE | B2 |
+| SMAPE(0,0) trả NaN | C5 |
+| MASE khi `d = 0` trả `inf` | C9 |
+
+Cộng hai trạng thái phải **xanh**: thế giới đúng, và thế giới đúng có thêm dòng
+`train`/`val` thừa trong bảng baseline.
+
+Ba lỗi mà chính test này phát hiện trong bản đầu của công cụ, ghi lại để không tái
+phạm:
+
+1. Loại A không lọc `split` — mỗi tổ hợp có ba dòng nên công cụ báo "thiếu dòng",
+   tức **trượt oan** mà nguyên nhân rất khó lần.
+2. B1 viết bằng dấu `=`. Đẳng thức `tổng = hợp_lệ − n_chuỗi × 2 × h` chỉ đúng khi mọi
+   dòng sát ranh giới đều hợp lệ; dữ liệu thật có NaN gần ranh giới thì mất ít hơn
+   `2h`. Đã đổi thành bất đẳng thức `1 ≤ mất ≤ n_chuỗi × 2 × h` — vẫn bắt được kiểu
+   quên purge (mất **0** dòng) mà không báo oan.
+3. C9/C10 kiểm bằng `not isfinite`. `inf` cũng không hữu hạn, nên một bản chia cho 0
+   rồi trả `inf` sẽ **lọt** — mà `inf` trôi vào trung vị thì bôi đen cả cột. Đã đổi
+   thành `isnan`.
 
 ---
 
@@ -257,21 +304,47 @@ MASE tính trên test, gộp bằng trung bình thay vì trung vị, thêm đặ
 
 ---
 
-## 6. Hai điểm còn mơ hồ
+## 6. Hai điểm mơ hồ — đã chốt bằng QĐ-014
 
-**1. Rolling-origin 5 fold chia thế nào cho chính xác.** protocol mục 9 nói *"5 fold
-trên phần train cộng validation"* nhưng không nói fold trượt theo bước bao nhiêu, và
-train của mỗi fold có mở rộng dần (expanding) hay giữ độ dài cố định (sliding).
+Cả hai đã có lời giải, ghi ở `docs/decisions.md` QĐ-014. Giữ lại phần mô tả để đọc
+được vì sao chọn như vậy.
 
-Chưa chặn ai: rolling-origin chỉ dùng để **chọn siêu tham số**, và kết quả cuối cùng
-đo trên test cố định. Nhưng B phải **chốt một cách và ghi ra**, rồi dùng nhất quán.
-Đề xuất: expanding, 5 điểm gốc chia đều trên phần validation, purge `h` dòng ở mỗi
-mối nối. A chốt khi B hỏi.
+**1. Rolling-origin 5 fold chia thế nào.** protocol mục 9 nói *"5 fold trên phần train
+cộng validation"* nhưng không nói fold trượt bước bao nhiêu, và train mỗi fold có mở
+rộng dần (expanding) hay giữ độ dài cố định (sliding).
 
-**2. SVR trên mẫu con.** Mục 11 ghi *"Chỉ chạy trên mẫu con nếu quá chậm"*. Nếu phải
-lấy mẫu con thì **cách lấy mẫu phải ghi rõ và phải phân tầng theo CV** (QĐ-012), chứ
-không lấy ngẫu nhiên — nếu không, SVR sẽ được đánh giá trên một quần thể khác với sáu
-model kia và bảng so sánh mất nghĩa.
+→ **QĐ-014 điểm 1: expanding, 5 fold, chia đều vùng validation.** Vùng validation
+`[1612, 1957)` rộng 345 bucket, chia 5 được 69 bucket mỗi fold:
+
+| Fold | Train | Validation |
+|---|---|---|
+| 0 | `[0, 1612)` | `[1612, 1681)` |
+| 1 | `[0, 1681)` | `[1681, 1750)` |
+| 2 | `[0, 1750)` | `[1750, 1819)` |
+| 3 | `[0, 1819)` | `[1819, 1888)` |
+| 4 | `[0, 1888)` | `[1888, 1957)` |
+
+Luật purge của QĐ-013 điểm 2 áp **trong từng fold**: dòng thuộc train của fold khi cả
+`t` và `t+h` nằm trong train của fold đó, tương tự cho validation. Test `[1957, 2304)`
+**không fold nào chạm tới**.
+
+Chọn expanding vì hai lẽ: cửa sổ chỉ có 8 ngày nên sliding sẽ làm train của fold cuối
+ngắn tới mức vô nghĩa; và expanding khớp với cách hệ thống thật hoạt động — càng về
+sau càng có nhiều lịch sử.
+
+**2. SVR trên mẫu con.** Mục 11 ghi *"Chỉ chạy trên mẫu con nếu quá chậm"*.
+
+→ **QĐ-014 điểm 2: lấy mẫu con trên DÒNG huấn luyện, không trên chuỗi.** Phân tầng
+theo ba tầng CV của QĐ-012, `random_state = 42`, **cùng một mẫu con cho mọi horizon**.
+Tập test giữ **100%** — bảy model phải được chấm trên đúng cùng bộ dòng, nếu không
+bảng so sánh mất nghĩa.
+
+Vì sao lấy theo dòng chứ không theo chuỗi: bỏ bớt chuỗi là đổi **quần thể**, và mọi
+kết luận mức chuỗi (trung vị theo chuỗi, phân tầng CV) sẽ không so được với sáu model
+kia. Bỏ bớt dòng chỉ làm SVR học từ ít mẫu hơn — đó là một bất lợi *của SVR*, được
+khai báo minh bạch, chứ không phải một quần thể khác.
+
+Log GĐ3 phải ghi rõ tỉ lệ mẫu con thực dùng, hoặc ghi "không cần lấy mẫu con".
 
 ---
 

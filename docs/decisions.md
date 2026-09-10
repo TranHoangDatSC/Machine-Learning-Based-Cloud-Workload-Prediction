@@ -845,3 +845,154 @@ con số gộp. Trung vị theo chuỗi cho mỗi máy một phiếu bằng nhau
 3. `config/split.yaml` khai `boundary: bucket` và `purge_straddling: true`.
 4. Bản hiện thực của B phải ra **cùng con số** ở ba baseline; lệch là có lỗi ở một
    trong hai bên, không phải nhiễu — baseline không có yếu tố ngẫu nhiên nào.
+
+---
+
+## QĐ-014 — Rolling-origin, mẫu con SVR, và bù cho chỗ tính độc lập bị yếu
+
+**Ngày:** 2026-09-10 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** `gate-gd3.md` mục 6 để ngỏ hai điểm, và mục 1 ghi một cảnh báo về tính
+độc lập. Cả ba đều nên chốt **trước** khi B viết dòng code GĐ3 đầu tiên, vì cả ba đều
+ảnh hưởng tới con số cuối.
+
+### 1. Rolling-origin — expanding, 5 fold chia đều phần validation
+
+Vùng dùng cho chọn siêu tham số là **train + validation**, tức bucket `[0, 1957)`.
+Phần validation `[1612, 1957)` dài đúng **345 bucket**, chia hết cho 5 được **69**.
+
+| Fold | train | validation |
+|---:|---|---|
+| 1 | `[0, 1612)` | `[1612, 1681)` |
+| 2 | `[0, 1681)` | `[1681, 1750)` |
+| 3 | `[0, 1750)` | `[1750, 1819)` |
+| 4 | `[0, 1819)` | `[1819, 1888)` |
+| 5 | `[0, 1888)` | `[1888, 1957)` |
+
+**Expanding**, không phải sliding: train của fold sau chứa trọn train của fold trước.
+
+Ba ràng buộc:
+
+- Mỗi fold vẫn áp **luật purge** của QĐ-013 điểm 2: một dòng thuộc train của fold khi
+  cả `t` và `t+h` nằm trong khoảng train của fold đó; tương tự cho validation.
+- **Test `[1957, 2304)` không được chạm ở bất kỳ fold nào.**
+- Fold nào cũng train trên quá khứ và đánh giá trên tương lai của chính nó — không
+  fold nào có validation nằm trước train.
+
+**Vì sao expanding chứ không sliding.** Sliding giữ độ dài train cố định nên mỗi fold
+vứt đi phần đầu chuỗi. Với cửa sổ chỉ 8 ngày thì dữ liệu là thứ khan hiếm nhất, và
+không có lý do nào nghi ngờ dữ liệu cũ mất giá trị trong 8 ngày. Expanding cũng khớp
+với cách model cuối cùng được huấn luyện — trên toàn bộ train + validation.
+
+### 2. Mẫu con của SVR — lấy mẫu **dòng huấn luyện**, không lấy mẫu chuỗi
+
+protocol mục 11 cho phép SVR chạy trên mẫu con nếu quá chậm. Chốt cách làm:
+
+**Lấy mẫu con của DÒNG HUẤN LUYỆN. Tập test giữ nguyên 100%.**
+
+- Mẫu con phân tầng theo **ba tầng burstiness** của QĐ-012, giữ đúng tỉ lệ ba tầng.
+- `random_state = 42`, và ghi số dòng đã lấy vào `runs/`.
+- Cùng một mẫu con dùng cho cả ba horizon.
+
+**Vì sao lấy mẫu dòng chứ không lấy mẫu chuỗi.** Nếu bỏ bớt chuỗi thì SVR được đánh
+giá trên một **quần thể khác** với sáu model kia, và cột SVR trong bảng so sánh mất
+nghĩa — đúng cái bẫy "hai con số trông so được nhưng đo hai thứ khác nhau" mà
+`tu-bai-cu-den-bai-nay.md` mục 3 phân tích. Lấy mẫu dòng huấn luyện thì SVR chỉ **học
+ít hơn**, còn **đo trên đúng tập test như mọi model khác**. Bảng vẫn so được, và việc
+SVR học ít hơn là một hạn chế **đã khai báo**, không phải một cái bẫy ẩn.
+
+Nếu SVR vẫn quá chậm sau khi lấy mẫu, **bỏ SVR và ghi rõ**, chứ không giảm tập test.
+
+### 3. Tính độc lập của GĐ3 yếu hơn GĐ1 và GĐ2 — bù bằng ba loại phép kiểm
+
+**Nói thẳng vấn đề.** `scripts/reference_gd3.py` do cùng một agent đã viết code B của
+GĐ2 soạn ra. Ở GĐ1 và GĐ2, thước đo và bản hiện thực do hai bên khác nhau viết, nên
+việc chúng khớp là bằng chứng mạnh. Ở GĐ3 thì bằng chứng đó **yếu hơn**: hai bản có
+thể cùng sai một kiểu.
+
+Không sửa được triệt để trong khuôn khổ hiện tại. Cách ít rủi ro nhất là **đừng dựa
+vào một loại bằng chứng duy nhất**. `scripts/check_gd3.py` vì thế kiểm **ba loại**:
+
+| Loại | Phụ thuộc tính độc lập? | Bắt được gì |
+|---|---|---|
+| **A. So với `reference_gd3.json`** | **Có** — yếu ở GĐ3 | Lỗi gõ, lỗi lệch một dòng, dùng sai cột |
+| **B. Đẳng thức tự thân** | **Không** | Vi phạm quan hệ mà *mọi* bản hiện thực đúng đều phải thoả |
+| **C. Đáp án giải tích trên dữ liệu giả lập** | **Không** | Hiểu sai định nghĩa — kiểu lỗi mà hai bản cùng tác giả dễ cùng mắc |
+
+Loại B và C **không quan tâm hai bản có khớp nhau không**, nên chúng giữ nguyên giá
+trị kể cả khi tính độc lập bằng không. Ví dụ:
+
+- **B:** tổng ba tập phải nhỏ hơn tổng dòng hợp lệ **đúng** `n_chuỗi × 2 × h`;
+  `MASE = MAE / d` với đúng `d` đã báo; `RMSE ≥ MAE` luôn đúng theo bất đẳng thức
+  Jensen; `SMAPE ∈ [0, 200]`.
+- **C:** trên một môi trường giả lập tính tay được, MAE của naive phải bằng đúng con
+  số suy ra từ công thức, R² của một dự đoán hằng bằng đúng `−SS/SS_tot`.
+
+**Ghi lại để sau này biết:** nếu có điều kiện, phần hiện thực GĐ3 nên do **một phiên
+khác** làm, và phiên đó **không đọc `reference_gd3.py`**. Khi ấy loại A lấy lại được
+sức mạnh vốn có. Nếu không có điều kiện thì loại B và C là chỗ dựa chính, và log GĐ3
+phải **ghi rõ tính độc lập đã yếu** thay vì để người đọc sau này tưởng nó mạnh như hai
+giai đoạn trước.
+
+### 4. Hợp đồng tên tệp đầu ra của GĐ3
+
+`check_gd3.py` cần biết đọc ở đâu. Chốt hai tệp:
+
+**`results/tables/splits_gd3.csv`** — cột `env, h, split, n_dong`.
+
+**`results/tables/baselines_gd3.csv`** — cột `env, h, model, split, metric, p25, p50,
+p75, iqr, n_chuoi, n_loai, n_dong_dung, n_dong_test`.
+
+`model` nhận `naive | ma6 | seasonal`; `metric` nhận `mae | rmse | smape | mase | r2`;
+`split` ở bảng baseline luôn là `test`.
+
+**Hệ quả.**
+
+1. `scripts/check_gd3.py` và `tests/test_check_gd3.py` hiện thực ba loại phép kiểm ở
+   điểm 3.
+2. `gate-gd3.md` mục 6 khép lại; mục 4 trỏ tới hợp đồng tên tệp ở điểm 4.
+3. `brief-gd3-b.md` Bước 1 nhận bảng 5 fold; Bước 5 nhận luật lấy mẫu SVR.
+4. `config/split.yaml` khai `cv.mode: expanding` và `cv.n_splits: 5`.
+
+### Đính chính QĐ-014 — 2026-09-10, sau khi viết `tests/test_check_gd3.py`
+
+Test của chính công cụ kiểm tìm ra ba chỗ bản đầu sai. Ghi lại vì hai chỗ đầu là loại
+lỗi làm **trượt oan**, khó chẩn đoán hơn lỗi cho qua nhầm.
+
+**1. B1 phải là bất đẳng thức, không phải đẳng thức.** Điểm 3 ở trên viết *"tổng ba
+tập phải nhỏ hơn tổng dòng hợp lệ **đúng** `n_chuỗi × 2 × h`"*. Sai. Đẳng thức đó chỉ
+đúng khi **mọi** dòng sát hai ranh giới đều hợp lệ. Dữ liệu thật có NaN gần ranh giới
+thì những dòng ấy đã bị luật cửa sổ loại từ trước, nên purge lấy đi *ít hơn* `2h` mỗi
+chuỗi — và công cụ sẽ báo trượt một bản hiện thực hoàn toàn đúng.
+
+Đổi thành `1 ≤ (hợp_lệ − tổng) ≤ n_chuỗi × 2 × h`. Hướng bắt lỗi không mất gì: quên
+purge thì mất **0** dòng, cận dưới `≥ 1` tóm được ngay. Con số chính xác vẫn do loại A
+ghim bằng 27 số dòng; B1 chỉ là lưới thứ hai không cần tham chiếu.
+
+**2. Bảng baseline được phép có dòng `train`/`val`.** Điểm 4 viết *"`split` ở bảng
+baseline luôn là `test`"*. Nới ra: B được phép báo thêm `train`/`val` để tự theo dõi,
+và **công cụ phải lọc `split == "test"` trước khi so** — tham chiếu của A chỉ neo test.
+Bản đầu không lọc, nên mỗi tổ hợp có ba dòng và công cụ báo "thiếu dòng". Hai phép
+kiểm `B4` (R² ≤ 1) và `B5` (p25 ≤ p50 ≤ p75) thì cố ý **không** lọc: hai bất đẳng thức
+ấy phải giữ ở bất kỳ tập nào.
+
+**3. Ca "phải trả NaN" phải hỏi `isnan`, không hỏi `not isfinite`.** `inf` cũng không
+hữu hạn. Một bản chia `MAE` cho `d = 0` rồi trả `inf` sẽ **lọt** qua phép kiểm viết
+bằng `isfinite` — rồi `inf` trôi vào trung vị và bôi đen cả cột. Đây đúng là loại lỗi
+mà loại C sinh ra để bắt, nên để nó lọt thì loại C mất hẳn tác dụng ở ca đó.
+
+**Thêm B7 — ma trận đặc trưng vẫn đúng 22 cột.** `check_gd2.py` đã kiểm điều này khi
+đóng GĐ2, nhưng GĐ3 có thể sinh lại `data/features/`, và khi ấy không còn phép kiểm
+nào chặn việc thêm một cột ngoài mục 8. B7 đọc schema parquet (không đọc dữ liệu) nên
+gần như không tốn gì.
+
+**Ghi lại để lưu ý sau này.** `tests/test_check_gd3.py` chứa sẵn một bản `metrics.py`
+để loại C có cái mà gọi, nghĩa là năm công thức chỉ số **có mặt trong tệp B đọc được**.
+Chấp nhận, vì QĐ-013 điểm 4 vốn đã đặc tả cả năm công thức lẫn từng ca biên bằng lời —
+chép prose ra code không phải chỗ lỗi ẩn náu. Chỗ lỗi ẩn là *áp dụng*: lấy dòng nào,
+mẫu số tính trên tập nào, gộp thế nào — và những chỗ đó vẫn được che kín. Nếu sau này
+muốn siết, đưa bản mồi ấy ra một tệp riêng ngoài `tests/`.
+
+**Trạng thái bốn hệ quả:** cả bốn đã làm xong ngày 2026-09-10. `check_gd3.py` chạy
+được ở trạng thái B chưa bắt đầu (báo thiếu, in tiến độ 0/8, không đổ vỡ);
+`tests/test_check_gd3.py` 12/12 xanh, phá chín kiểu đều bị bắt.

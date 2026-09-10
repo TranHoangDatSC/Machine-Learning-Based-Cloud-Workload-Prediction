@@ -10,11 +10,27 @@ test: 0.15
 # Gan theo t thoi la RO RI: dong cuoi tap train se co target roi vao val hoac test.
 boundary: bucket
 purge_straddling: true
+# QD-014 diem 1. Vung validation [1612, 1957) rong 345 bucket, chia 5 duoc 69 moi fold.
+# Luat purge o tren ap TRONG TUNG FOLD. Test [1957, 2304) khong fold nao cham toi.
 cv:
   method: rolling_origin
+  mode: expanding              # KHONG dung sliding: cua so chi 8 ngay, train cua fold
+                               # cuoi se ngan toi muc vo nghia. Expanding cung khop
+                               # cach he thong that chay: cang ve sau cang nhieu lich su.
   n_splits: 5
+  val_bucket_per_fold: 69
+  bien_fold: [1612, 1681, 1750, 1819, 1888, 1957]   # code ra bo so khac la hieu sai
 horizons: [1, 6, 12]
 strategy: direct
+
+# QD-014 diem 2. Chi kich hoat neu SVR qua cham; sau model kia luon chay 100%.
+svr_subsample:
+  lay_tren: dong_huan_luyen    # KHONG lay tren chuoi: bo bot chuoi la doi QUAN THE,
+                               # moi ket luan muc chuoi se khong so duoc voi 6 model kia
+  stratify_by: cv_tier         # ba tang cua QD-012, giu nguyen ti le
+  random_state: 42
+  dung_chung_moi_horizon: true
+  test_giu_nguyen: true        # bay model phai cham tren dung cung bo dong
 
 normalize_modes: [N0, N1, N2]   # thi nghiem B, xem muc 14
 fit_stats_on: train_only        # chong ro ri

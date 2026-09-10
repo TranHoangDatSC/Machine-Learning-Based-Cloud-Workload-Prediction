@@ -98,11 +98,20 @@ QUY ƯỚC BẮT BUỘC, chốt ở QĐ-013:
 
 3. Tuyệt đối không shuffle.
 
-Thêm một hàm rolling-origin 5 fold trên phần train + validation, cũng purge h dòng
-ở mỗi mối nối. Chốt một cách chia và ghi rõ trong docstring; đề xuất: expanding
-window, 5 điểm gốc chia đều trên phần validation.
+4. Rolling-origin 5 fold, EXPANDING, chot o QD-014 diem 1. Vung validation
+   [1612, 1957) rong 345 bucket, chia 5 duoc 69 bucket moi fold:
 
-Trả về mặt nạ bool hoặc chỉ số, không trả về bản sao dữ liệu.
+     fold 0: train [0, 1612)   validation [1612, 1681)
+     fold 1: train [0, 1681)   validation [1681, 1750)
+     fold 2: train [0, 1750)   validation [1750, 1819)
+     fold 3: train [0, 1819)   validation [1819, 1888)
+     fold 4: train [0, 1888)   validation [1888, 1957)
+
+   Luat purge o diem 2 ap TRONG TUNG FOLD: dong thuoc train cua fold khi ca t va
+   t+h nam trong train cua fold do, tuong tu cho validation.
+   Test [1957, 2304) KHONG fold nao cham toi.
+
+Tra ve mat na bool hoac chi so, khong tra ve ban sao du lieu.
 ```
 
 ### Lệnh
@@ -111,8 +120,15 @@ pytest tests/test_splits.py -v
 ```
 
 ### Phải thấy
-Test xanh, và **quan trọng hơn**: một phép kiểm khẳng định với mọi dòng train thì
-`t + h < 1612`. Không có phép kiểm đó thì chưa đủ.
+Test xanh, và **quan trọng hơn**, ba phép kiểm này phải có mặt:
+
+1. Với mọi dòng train thì `t + h < 1612`. Không có phép kiểm đó thì chưa đủ.
+2. Với mọi fold `i`, `max(t + h)` của train fold `i` **nhỏ hơn** `min(t)` của
+   validation fold `i`.
+3. Không dòng nào của bất kỳ fold nào có `t ≥ 1957`. Test phải sạch tuyệt đối.
+
+Con số để tự đối chiếu: năm biên fold là `1612, 1681, 1750, 1819, 1888, 1957`. Nếu
+code ra bộ số khác thì đã hiểu sai QĐ-014 điểm 1, sửa code chứ không sửa bảng.
 
 ---
 
@@ -280,9 +296,17 @@ TEST CHI CHAM MOT LAN, khi da chot toan bo model (muc 9).
 Moi lan chay sinh mot thu muc runs/<timestamp>/ chua: snapshot config, seed, phien
 ban thu vien, sieu tham so da chon, va ket qua tho.
 
-SVR co the qua cham. Neu phai lay mau con thi mau con PHAI PHAN TANG THEO CV theo
-QD-012, khong lay ngau nhien — neu khong thi SVR duoc danh gia tren mot quan the
-khac voi sau model kia va bang so sanh mat nghia. Ghi ro cach lay mau.
+SVR co the qua cham. Luat lay mau con chot o QD-014 diem 2:
+
+  - Lay mau tren DONG HUAN LUYEN, KHONG lay tren chuoi. Bo bot chuoi la doi quan
+    the, va moi ket luan muc chuoi (trung vi theo chuoi, phan tang CV) se khong so
+    duoc voi sau model kia. Bo bot dong chi lam SVR hoc tu it mau hon — do la bat
+    loi CUA SVR, khai bao minh bach, khong phai mot quan the khac.
+  - Phan tang theo ba tang CV cua QD-012, giu nguyen ti le ba tang.
+  - random_state = 42, va DUNG MOT MAU CON cho ca ba horizon.
+  - Tap test giu 100%. Bay model phai duoc cham tren dung cung bo dong.
+
+Ghi ro ti le mau con thuc dung vao log, hoac ghi "khong can lay mau con".
 ```
 
 ### Lệnh
