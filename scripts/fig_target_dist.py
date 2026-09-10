@@ -2,7 +2,10 @@
 
     python scripts/fig_target_dist.py
 
-Sinh `results/figures/fig_target_dist.{png,pdf}` và tệp caption đi kèm.
+Sinh vào `results/figures/gd2/`: ba tệp `.png` **mỗi tệp đúng một hình**
+(`01_ecdf-truc-tuyen-tinh`, `02_ecdf-truc-symlog`, `03_bang-phan-vi`),
+`gd2_phan-phoi-cpu.pdf` gộp cả ba kèm trang diễn giải, và
+`fig_target_dist.caption.md`.
 
 **Quần thể vẽ — QĐ-011 điểm 2.** Phân phối gộp của `y` trên các chuỗi được giữ,
 trong cửa sổ 8 ngày. **Không phải** cột `target` của ma trận đặc trưng.

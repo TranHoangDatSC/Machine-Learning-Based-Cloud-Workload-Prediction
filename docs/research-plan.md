@@ -167,16 +167,20 @@ các chỉ số còn lại lệch không quá 5%.
 **Tuần 4 · Chủ trì: B, A review**
 
 **B:**
-- [ ] Thống kê mô tả từng môi trường, sau khi đã lọc
-- [ ] Biểu đồ phân phối target ba môi trường trên cùng một hình
-- [ ] ACF/PACF đại diện mỗi môi trường
-- [ ] Phân tích burstiness: hệ số biến thiên theo từng chuỗi
-- [ ] `src/cwp/features/` — lag, rolling, calendar theo protocol mục 8
-- [ ] Kiểm tra rò rỉ: xác nhận không đặc trưng nào chạm vào tương lai
+- [x] Thống kê mô tả từng môi trường, sau khi đã lọc
+- [x] Biểu đồ phân phối target ba môi trường trên cùng một hình
+- [x] ACF/PACF đại diện mỗi môi trường
+- [x] Phân tích burstiness: hệ số biến thiên theo từng chuỗi
+- [x] `src/cwp/features/` — lag, rolling, calendar theo protocol mục 8
+- [x] Kiểm tra rò rỉ: xác nhận không đặc trưng nào chạm vào tương lai
 
 **A:**
-- [ ] Duyệt hình, chọn 2–3 hình đưa vào paper
-- [ ] Xác nhận bộ đặc trưng khớp protocol
+- [x] Duyệt hình — 2026-09-10. Chọn hình vào paper: chép từ `results/figures/gd2/`
+      sang `paper/figures/` khi viết bài
+- [x] Xác nhận bộ đặc trưng khớp protocol — `check_gd2.py` ĐẠT, vân tay 19 đặc trưng
+      khớp bản độc lập ở cả ba môi trường
+
+**GĐ2 ĐÓNG 2026-09-10.** Kết quả cổng: `research-log/gate-gd2.md` mục 5.
 
 **Điều kiện qua cổng:** có hình phân phối target ba môi trường — đây là hình quan
 trọng nhất của paper, nó dựng nền cho toàn bộ lập luận ở RQ3.

@@ -190,6 +190,12 @@ trên mẫu ngẫu nhiên của dữ liệu thô. Số đo trên toàn bộ là 
 | CV trung vị | 0,4974 | 0,5369 | 0,2859 |
 | CV IQR | 0,8448 | 1,1543 | 0,0956 |
 
+**Nhịp một giờ, ở cả ba môi trường.** ACF nhô lên tại **24/24 bội số của 12 bucket**
+trong dải lag 12–288; mức trội trung vị so với hai lag láng giềng là +0,0618 (E1),
++0,0314 (E2), +0,0075 (E3). Đây là quan sát về **dữ liệu**, thuộc phần Dữ liệu của
+paper, và là căn cứ đo được cho việc giữ `lag_12` và `lag_24` trong bộ đặc trưng ở
+protocol mục 8. Xem QĐ-012 điểm 5.
+
 Hai điều phải nói kèm mỗi khi trích bảng này:
 
 1. **ACF lag 288 của E3 = 0,5956 đo trên tập đã bỏ 14,65% số cặp**, vì E3 thiếu
@@ -238,7 +244,18 @@ không phải rủi ro giả định.
    E3 dài hơn 2 bucket nên không được nội suy. ACF của E3 vì thế bỏ 9,76% số cặp ở
    lag 1 và **14,65% ở lag 288** — con số 0,5956 phải luôn đi kèm tỉ lệ này.
 
-9. **Đặc trưng lịch tính theo UTC.** `b0` của E2 rơi đúng 00:00 giờ Amsterdam mùa hè
+9. **CV bị chặn cứng bởi thang đo, và chặn siết khác nhau ở mỗi môi trường.** CPU%
+   nằm trong [0, 100] nên một chuỗi có trung bình `m` không thể có `CV` vượt
+   `√((100−m)/m)`. Đo trên 1.535 chuỗi: **0 chuỗi vi phạm**. Chặn siết rất chặt ở
+   vùng tải cao — E3 chạy quanh 40% nên CV của nó không thể vượt 1,22, trong khi E1
+   và E2 chạy quanh 2,7% nên chặn của chúng tới 6,0. Hệ quả: so CV **thô** giữa các
+   môi trường là so hai đại lượng bị chặn khác nhau. Theo tỉ lệ chạm chặn thì E3
+   dùng **0,233** lần chặn còn E1 chỉ **0,094** — tức E3 dùng gấp hơn hai lần khoảng
+   biến động mà mức tải của nó cho phép. Câu "E3 ít bursty hơn" chỉ đúng với CV thô.
+   Đây là cơ chế **khác** với trần 100 ở mục 7: trần kiểm duyệt các *điểm*, chặn này
+   giới hạn *thống kê phân tán*. Xem QĐ-012 điểm 3.
+
+10. **Đặc trưng lịch tính theo UTC.** `b0` của E2 rơi đúng 00:00 giờ Amsterdam mùa hè
    (UTC+2), nên "một ngày" trong dữ liệu E1/E2 bắt đầu ở giờ UTC 22. Mọi phát biểu
    về giờ trong bài phải ghi rõ là **giờ UTC**, không phải giờ vận hành. Với E3 thì
    mốc thời gian là tương đối và `dow` không diễn giải được — xem QĐ-010.

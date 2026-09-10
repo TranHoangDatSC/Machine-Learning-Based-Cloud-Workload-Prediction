@@ -310,7 +310,17 @@ mang nghĩa *"giờ kể từ lúc bắt đầu trace"*, **pha chưa biết**, v
 giải được theo lịch tuần**. Không bịa ngày bắt đầu cho Alibaba.
 
 Lệch pha hằng số vô hại với TN-A vì model tự học được pha, nhưng chí mạng với TN-B.
-Vì vậy **TN-B chạy hai biến thể, có và không có 4 đặc trưng lịch**. Giữ chúng lại là
+Vì vậy **TN-B chạy hai biến thể, có và không có 4 đặc trưng lịch**.
+
+> **E1 và E2 không có chu kỳ ngày — QĐ-012 điểm 4, đo ở GĐ2 Bước 6.** ACF của chúng
+> không bao giờ xuống âm đáng kể, và mức nhô tại lag 288 (+0,068 và +0,069 so với hai
+> lag láng giềng) xấp xỉ đúng mức nhô của **nhịp một giờ** — mà 288 = 24 × 12 cũng là
+> bội số của 12. Nghĩa là giá trị tại lag 288 của E1/E2 giải thích hết bằng nhịp giờ,
+> không cần giả định thêm chu kỳ ngày nào. Chỉ E3 có sóng ngày thật.
+>
+> Dự báo cho GĐ4: biến thể "bỏ lịch" gần như **không đổi gì với E1 và E2**, chỉ ảnh
+> hưởng E3. Quan sát đúng như vậy là **xác nhận**, không phải phát hiện mới; nếu bỏ
+> lịch mà E1/E2 đổi nhiều thì phải đi tìm nguyên nhân khác. Giữ chúng lại là
 có cơ sở: ACF tại lag 288 (24 giờ) của E3 là 0,60 so với 0,13 của E1 và E2 — chu kỳ
 ngày của E3 rất rõ và đọc được kể cả khi pha chưa biết.
 
@@ -341,6 +351,18 @@ học.
 **Chia theo thời gian. Tuyệt đối không shuffle.**
 
 Với mỗi chuỗi, theo trục thời gian: 70% train, 15% validation, 15% test.
+
+> **Hai quy ước chốt ở QĐ-013, bổ sung 2026-09-10.** Câu trên chưa đủ chặt để hai bản
+> hiện thực độc lập ra cùng con số.
+>
+> 1. **Ranh giới tính theo bucket**, không theo số dòng hợp lệ: train `[0, 1612)`,
+>    validation `[1612, 1957)`, test `[1957, 2304)` — offset so với `b0`. Cửa sổ 8
+>    ngày là toàn cục theo môi trường (mục 7) nên đây là một lát cắt thời gian giống
+>    hệt nhau ở mọi chuỗi.
+> 2. **Một dòng thuộc tập `S` khi cả `t` và `t+h` nằm trong `S`.** Dòng vắt qua ranh
+>    giới bị **loại**. Gán theo `t` thôi là rò rỉ: dòng cuối tập train sẽ có target
+>    rơi vào validation hoặc test. Giá phải trả là `số_chuỗi × 2 × h` dòng, dưới 1,1%
+>    ở `h = 12`.
 
 Chọn siêu tham số **chỉ trên validation**. Test chỉ chạm vào một lần duy nhất, khi
 đã chốt toàn bộ mô hình.
@@ -373,6 +395,38 @@ lệ và phổ biến trên dữ liệu dạng này.
 **Chiến lược huấn luyện:** global model — một model học trên nhiều chuỗi của cùng
 một môi trường, không phải mỗi chuỗi một model.
 
+### Seasonal naive lấy giá trị từ đâu — ghi chú hiện thực
+
+> Bổ sung 2026-09-10, sau khi rà sẵn sàng GĐ3.
+
+`ŷ = y_{t-288}` **không tính được từ `data/features/`**: bộ 19 đặc trưng ở mục 8 sâu
+nhất chỉ tới `lag_24`, không có `lag_288`. Phải nối ngược về `data/processed/{env}.parquet`
+theo khoá `(series_id, bucket - 288)`.
+
+Điều đó **không** kéo theo việc phải sửa luật dòng hợp lệ. Đo được tỉ lệ dòng có sẵn
+`y_{t-288}`, chia theo tập của mục 9:
+
+| | train | validation | **test** |
+|---|---:|---:|---:|
+| E1 | 83,03% | 100,00% | **100,00%** |
+| E2 | 82,59% | 99,99% | **100,00%** |
+| E3 | 81,37% | 99,98% | **99,57%** |
+
+Phần thiếu nằm gần như trọn trong **train**, vì 288 bucket đầu của mỗi chuỗi rơi vào
+12,5% đầu của cửa sổ 8 ngày. Trên **test** — nơi mọi con số của paper được tính —
+seasonal naive xác định được ở gần như toàn bộ dòng.
+
+Ba điều bắt buộc khi hiện thực:
+
+- **Không** thêm `lag_288` vào bộ đặc trưng. Thêm một đặc trưng ngoài mục 8 là đổi
+  giao thức; và không model nào cần nó, chỉ baseline này cần.
+- **Không** siết luật dòng hợp lệ thành `t ≥ b0 + 288`. Làm thế sẽ đổi cả chín neo số
+  dòng đã kiểm chéo ở GĐ1 và GĐ2 — cái giá quá lớn cho một baseline.
+- **728 dòng test của E3** (0,43%) không có `y_{t-288}`. Phải xử lý **hiện** chứ không
+  lặng lẽ: hoặc loại chúng khỏi chỉ số của riêng seasonal naive và ghi rõ tỉ lệ, hoặc
+  tính mọi model trên đúng tập con chung. Chọn cách nào cũng được, miễn **ghi ra** và
+  dùng nhất quán cho cả ba môi trường.
+
 ## 12. Chỉ số đánh giá
 
 | Chỉ số | Dùng vì |
@@ -391,6 +445,18 @@ MASE lấy naive một bước trên tập train làm mẫu số. Đây là ch�
 Gộp kết quả nhiều chuỗi bằng **trung vị** kèm IQR, không dùng trung bình, vì phân
 phối lệch nặng.
 
+> **Ba định nghĩa chốt ở QĐ-013, bổ sung 2026-09-10.**
+>
+> - **Cách gộp:** tính chỉ số **riêng cho từng chuỗi trước**, rồi lấy trung vị và IQR
+>   trên tập chuỗi. Không gộp mọi dòng của mọi chuỗi vào một dãy rồi tính một chỉ số —
+>   cách đó cho chuỗi tải cao chi phối con số gộp, cùng cơ chế đã làm ACF lag 1 của E1
+>   nở từ 0,6674 lên 0,9586 ở GĐ2.
+> - **MASE:** mẫu số là trung bình `|y_t − y_{t−1}|` trên phần **train** của chính
+>   chuỗi đó, chỉ lấy cặp mà cả hai đầu không NaN, và **không phụ thuộc horizon**.
+>   Chuỗi có mẫu số bằng 0 thì loại khỏi phần gộp và báo số bị loại.
+> - **SMAPE:** `100 × mean(|y−ŷ| / ((|y|+|ŷ|)/2))`, số hạng `0/0` tính là **0**.
+>   **R²:** chuỗi có `SS_tot = 0` thì loại khỏi phần gộp và báo số bị loại.
+
 ## 13. Thí nghiệm A — trong cùng môi trường
 
 Train và test trên cùng một môi trường.
@@ -398,6 +464,34 @@ Train và test trên cùng một môi trường.
 Tổ hợp: 3 môi trường x 7 model x 3 horizon.
 
 Trả lời RQ1 và RQ2.
+
+### Phân tầng burstiness khi báo cáo — QĐ-012
+
+> Bổ sung 2026-09-10.
+
+Ngoài bảng gộp, mọi bảng kết quả còn phải tách theo **ba tầng burstiness**, chia bằng
+**tam phân vị của CV tính riêng trong từng môi trường**:
+
+| Môi trường | thấp / vừa | vừa / cao |
+|---|---:|---:|
+| E1 | 0,256 | 0,849 |
+| E2 | 0,285 | 0,943 |
+| E3 | 0,258 | 0,321 |
+
+**Không dùng một ngưỡng CV tuyệt đối chung cho ba môi trường.** Hai lý do đo được:
+tương quan giữa CV và mức tải **đổi dấu** giữa Bitbrains (ρ = +0,375 và +0,249) và
+Alibaba (ρ = −0,692), nên ngưỡng chung chọn ra hai nhóm máy khác loại; và tam phân vị
+của E3 chỉ rộng 0,06, nằm gọn trong tầng thấp nhất của E1.
+
+Mỗi bảng phân tầng báo kèm cột **`ti_le_cham_chan`** = `CV / √((100−m)/m)`, để phân
+biệt một chuỗi ít bursty do bản chất với một chuỗi ít bursty do đã cụng trần thang đo.
+
+**CV là biến báo cáo, không phải đặc trưng.** `results/tables/cv_gd2.csv` tính CV trên
+toàn bộ cửa sổ 8 ngày, tức có cả phần rơi vào validation và test. Dùng để nhóm chuỗi
+khi đọc bảng thì không sao. Nhưng dùng làm **đặc trưng**, làm **trọng số huấn luyện**,
+hay làm **tiêu chí chọn model theo tầng** thì đó là rò rỉ — khi ấy bắt buộc tính lại
+CV **chỉ trên cửa sổ train** của từng chuỗi, đúng nguyên tắc đã áp cho thống kê chuẩn
+hoá N1 ở mục 14.
 
 ## 14. Thí nghiệm B — xuyên môi trường
 
@@ -428,12 +522,17 @@ Khi báo cáo, mọi dự đoán phải **đưa ngược về thang CPU% gốc**
 
 Phân phối target lệch rất mạnh: trung vị E1 và E2 khoảng 1%, E3 khoảng 37%.
 
-**Đã đo trên dữ liệu thật** (833 chuỗi E3 sau lọc, horizon 1, trung vị): một **hằng
-số** bằng mức tải trung bình của E1 áp lên E3 cho MAE = **28,64**. Không model, không
-đặc trưng, không huấn luyện. Trong đó 63,4% sai số chỉ là chênh lệch mức tải. Để so
-sánh, naive persistence trong chính E3 cho MAE = 5,76.
+**Đã đo trên dữ liệu thật** — **498 chuỗi E3 của quần thể nghiên cứu**, horizon 1,
+MAE trung vị theo chuỗi: một **hằng số** bằng mức tải trung bình của E1 áp lên E3 cho
+MAE = **26,90**. Không model, không đặc trưng, không huấn luyện. Trong đó **62,6%** sai
+số chỉ là chênh lệch mức tải. Để so sánh, naive persistence trong chính E3 cho
+MAE = **4,35** — tốt hơn 6,2 lần.
 
-Nghĩa là nếu chạy N0 thô và thu được MAE khoảng 28, con số đó **không nói lên điều gì**
+> **Số cũ đo trên 833 chuỗi, sửa 2026-09-10 theo QĐ-012 điểm 6.** Bản trước ghi
+> 28,64 / 63,4% / 5,76, đo trước khi QĐ-009 đóng băng mẫu 500 máy. Lập luận không đổi,
+> và mạnh hơn một chút. Bảng đối chiếu đầy đủ ở QĐ-012.
+
+Nghĩa là nếu chạy N0 thô và thu được MAE khoảng 27, con số đó **không nói lên điều gì**
 về chất lượng model — một hằng số cũng đạt được. Kết luận "cross-environment
 generalization thất bại" khi đó đúng nhưng rỗng.
 

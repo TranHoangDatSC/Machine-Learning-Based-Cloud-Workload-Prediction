@@ -4,15 +4,13 @@
 **Giai đoạn:** GĐ2
 **Thời lượng:** ~6 giờ (Bước 1–8 của `research-log/brief-gd2-b.md`, trọn giai đoạn)
 
-> **Trạng thái: tám bước đã chạy hết, GĐ2 CHƯA qua cổng.**
+> **Trạng thái: GĐ2 ĐÓNG — ĐẠT ngày 2026-09-10.**
 >
-> `scripts/check_gd2.py` báo **ĐẠT**, 12/12 sản phẩm. Nhưng đó là phần cổng **tự động
-> hoá được** (mục 3.2, R2–R4, bẫy mốc thời gian, vân tay đặc trưng). Điều kiện qua
-> cổng thật ở `gate-gd2.md` mục 3.5 là **hình phân phối**, và **A duyệt bằng mắt**.
-> Hình đã có nhưng chưa ai duyệt, nên **chưa được đọc là xong GĐ2**.
+> `scripts/check_gd2.py` ĐẠT 12/12, và A đã **duyệt hình bằng mắt** ngày 2026-09-10 —
+> đó là điều kiện qua cổng thật ở `gate-gd2.md` mục 3.5. Kết quả cổng đầy đủ ở mục 5
+> của tệp đó.
 >
-> Bốn việc đang chờ A quyết, ghi ở mục Vướng mắc — không việc nào chặn, nhưng V1
-> (cách phân tầng theo CV) nên chốt trước khi GĐ3 bắt đầu.
+> Bốn việc treo V1–V4 đã chốt thành **QĐ-012**.
 >
 > Giữa Bước 3 và Bước 4 có một đợt rà soát toàn dự án trước khi viết paper, sinh ra
 > **QĐ-011**. Kết quả ở `research-log/2026-09-09-ra-soat-truoc-paper.md`; Bước 4 làm
@@ -223,7 +221,7 @@ sinh**, kèm ghi chú "sửa tay ở đây là tạo ra bản thứ hai không a
 
 ## Bước 5 — hình phân phối (điều kiện qua cổng)
 
-`python scripts/fig_target_dist.py` → `results/figures/fig_target_dist{,_paper}.{png,pdf}`
+`python scripts/fig_target_dist.py` → `results/figures/gd2/01–03.png` + `gd2_phan-phoi-cpu.pdf`
 và `fig_target_dist.caption.md`.
 
 ### Chọn ECDF, và vì sao không chọn hai phương án kia
@@ -250,7 +248,7 @@ Sửa lại sau khi A yêu cầu tách rạch ròi (xem mục "Tách hình" ở 
 - **`.pdf` — tập hợp các hình đó**, cộng một trang diễn giải ở đầu và chú thích dưới
   từng hình. Để đọc và để duyệt.
 
-Caption đầy đủ nằm ở `results/figures/fig_target_dist.caption.md`, gồm cả câu caption
+Caption đầy đủ nằm ở `results/figures/gd2/fig_target_dist.caption.md`, gồm cả câu caption
 ngắn để dán thẳng xuống dưới hình.
 
 ### Ba việc hình phải làm, và cách kiểm
@@ -302,7 +300,7 @@ Rút gọn còn "Bảng phân vị".
 
 ## Bước 6 — ACF và PACF
 
-`python scripts/fig_acf.py --env all` → `results/figures/fig_acf.{png,pdf}` và
+`python scripts/fig_acf.py --env all` → `results/figures/gd2/04–07.png`, `gd2_acf-pacf.pdf` và
 `results/tables/acf_gd2.csv` (ACF, PACF, tỉ lệ cặp bị bỏ cho từng lag 0–300).
 
 ### Xử lý NaN — trả lời câu phiếu hỏi
@@ -430,7 +428,7 @@ về đúng lag 288.
 
 ## Bước 7 — burstiness
 
-`python scripts/fig_burstiness.py --env all` → `results/figures/fig_burstiness.{png,pdf}`,
+`python scripts/fig_burstiness.py --env all` → `results/figures/gd2/08–11.png`, `gd2_burstiness.pdf`,
 `results/tables/cv_gd2.csv` (một dòng mỗi chuỗi, 1.535 dòng, dùng lại được để phân
 tầng ở GĐ3) và `cv_gd2_summary.csv`.
 
@@ -620,7 +618,23 @@ mục 8 nay ghi "0 là Chủ Nhật", kèm đính chính có ngày và bảng ba
    "Vì sao giữ ở tầng đặc trưng".
 4. ~~Tám phát hiện của đợt rà soát trước paper~~ → **xong**, chốt thành QĐ-011.
 
-### Còn cần A quyết — không chặn gì, nhưng nên chốt trước GĐ3
+### Đã chốt hết — QĐ-012, ngày 2026-09-10
+
+| | Kết quả | Ghi vào đâu |
+|---|---|---|
+| **V1** | A **đồng ý** đề nghị: phân tầng theo phân vị CV trong từng môi trường | QĐ-012 điểm 1–2, protocol mục 13, `config/split.yaml` |
+| **V2** | Chặn CV thành **Giới hạn số 9** của data card | QĐ-012 điểm 3, `data-card.md` |
+| **V3** | Dự báo cho GĐ4 ghi ngay cạnh chỗ QĐ-010 chốt hai biến thể | QĐ-012 điểm 4, protocol mục 8 |
+| **V4** | Nhịp một giờ thuộc phần **Dữ liệu** | QĐ-012 điểm 5, `data-card.md` |
+
+Kèm theo, QĐ-012 điểm 2 chốt thêm một chỗ **chưa ai hỏi nhưng sẽ thành rò rỉ**: CV
+trong `cv_gd2.csv` tính trên toàn bộ cửa sổ 8 ngày nên nó **biết tương lai**. Dùng để
+nhóm chuỗi khi đọc bảng thì không sao; dùng làm đặc trưng, trọng số huấn luyện, hay
+tiêu chí chọn model theo tầng thì bắt buộc phải tính lại chỉ trên cửa sổ train.
+
+Nội dung gốc của bốn mục giữ nguyên bên dưới để tra cứu.
+
+---
 
 **V1. Cách phân tầng theo CV ở GĐ3.** Đo được hai lý do khiến ngưỡng CV tuyệt đối
 dùng chung cho ba môi trường sẽ hỏng: ρ(CV, mức tải) **đổi dấu** giữa Bitbrains

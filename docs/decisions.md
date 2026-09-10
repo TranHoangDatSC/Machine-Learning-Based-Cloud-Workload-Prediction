@@ -640,3 +640,208 @@ giờ vận hành thật của trung tâm dữ liệu Hà Lan là UTC+2, và v�
    cạnh mọi con số ACF của E3 (14,65% ở lag 288).
 6. Phần Limitations của paper nhận thêm ba mục: hiệu ứng chọn lọc của bộ lọc
    `gan_chet`, kiểm duyệt tại trần 100 của E1/E2, và tỉ lệ thiếu 9,29% của E3.
+
+---
+
+## QĐ-012 — Phân tầng theo CV ở GĐ3, và ba khai báo đóng lại từ GĐ2
+
+**Ngày:** 2026-09-10 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** GĐ2 chạy hết tám bước và để lại bốn việc chờ quyết (V1–V4 ở
+`research-log/2026-09-09-gd2-dac-trung.md`). V1 chặn GĐ3 vì nó quyết định cách đọc
+kết quả TN-A; ba việc còn lại là khai báo, không chặn gì.
+
+### 1. Phân tầng theo CV: dùng **phân vị trong từng môi trường**, không dùng ngưỡng chung
+
+Chia ba tầng burstiness bằng **tam phân vị CV tính riêng cho mỗi môi trường**. Ngưỡng
+đo được trên quần thể nghiên cứu:
+
+| Môi trường | Ngưỡng thấp/vừa | Ngưỡng vừa/cao |
+|---|---:|---:|
+| E1 | 0,256 | 0,849 |
+| E2 | 0,285 | 0,943 |
+| E3 | 0,258 | 0,321 |
+
+**Lý do bác ngưỡng tuyệt đối dùng chung.** Hai thứ đo được, không phải phỏng đoán:
+
+- **Tương quan giữa CV và mức tải đổi dấu giữa các môi trường.** Spearman ρ là
+  **+0,375 (E1), +0,249 (E2), −0,692 (E3)**. Ở Bitbrains, VM tải cao thì bursty hơn;
+  ở Alibaba thì ngược lại. Một ngưỡng CV chung vì thế chọn ra **hai nhóm máy khác
+  loại** ở hai môi trường, và mọi so sánh theo tầng sẽ trộn hai thứ vào nhau.
+- **Tam phân vị của E3 chỉ rộng 0,06** (0,258–0,321) và nằm gọn bên trong tầng thấp
+  nhất của E1. Ngưỡng chung sẽ dồn gần như toàn bộ E3 vào một tầng, và tầng đó rỗng
+  nghĩa so sánh.
+
+**Kèm theo, bắt buộc.** Mỗi bảng phân tầng phải báo cả cột `ti_le_cham_chan` — tỉ lệ
+`CV / √((100−m)/m)` — để biết một chuỗi "ít bursty" là do bản chất hay do đã cụng
+trần thang đo. Cột này đã có sẵn trong `results/tables/cv_gd2.csv`.
+
+### 2. CV là biến **báo cáo**, không phải đặc trưng, không phải tiêu chí chọn model
+
+Chốt luôn để tránh một chỗ rò rỉ chưa xảy ra.
+
+`cv_gd2.csv` tính CV trên **toàn bộ cửa sổ 8 ngày**, tức có cả phần rơi vào validation
+và test. Dùng nó để **phân tầng khi báo cáo kết quả** thì không sao: đó là một cách
+nhóm các chuỗi lại để đọc bảng, không phải một đầu vào của model.
+
+Nhưng nếu GĐ3 hay GĐ4 muốn dùng CV làm **đặc trưng**, làm **trọng số huấn luyện**,
+hay làm **tiêu chí chọn model theo tầng**, thì con số hiện tại là **rò rỉ** — nó biết
+tương lai. Khi đó **bắt buộc tính lại CV chỉ trên cửa sổ train của từng chuỗi**, đúng
+nguyên tắc đã áp cho thống kê chuẩn hoá N1 ở mục 14.
+
+### 3. Chặn `CV ≤ √((100−m)/m)` vào Limitations — V2
+
+CPU% bị chặn trong `[0, 100]`, nên một chuỗi có trung bình `m` không thể có phương sai
+vượt `m(100 − m)`. Suy ra CV bị chặn cứng bởi **thang đo**, không phải bởi dữ liệu.
+Đo trên 1.535 chuỗi: **0 chuỗi vi phạm**, và rìa chéo của đám điểm ở
+`results/figures/gd2/09_cv-so-voi-muc-tai.png` trùng khít đường chặn.
+
+Đây là cơ chế **khác** với trần 100 ở QĐ-011 điểm 3: trần kiểm duyệt các *điểm*, chặn
+này giới hạn *thống kê phân tán*. Hệ quả đảo ngược cách đọc:
+
+| | E1 | E2 | E3 |
+|---|---:|---:|---:|
+| Mức tải trung vị | 2,71 | 2,57 | 40,15 |
+| ⇒ chặn CV tại mức đó | 6,00 | 6,16 | **1,22** |
+| CV trung vị thực tế | 0,497 | 0,537 | 0,286 |
+| **CV / chặn** | 0,094 | 0,104 | **0,233** |
+
+So với mức biến động mà thang đo cho phép ở mức tải của chính nó, **E3 dùng gấp hơn
+hai lần E1/E2**. Câu "E3 ít bursty hơn" chỉ đúng với CV thô, và phải nói kèm chỗ này.
+
+### 4. E1 và E2 **không có chu kỳ ngày** — V3, ảnh hưởng cách đọc TN-B
+
+Đo ở GĐ2 Bước 6: ACF của E1 và E2 không bao giờ xuống âm đáng kể (nhỏ nhất 0,0028 và
+−0,0057), và mức nhô tại lag 288 (+0,068 và +0,069 so với hai lag láng giềng) **xấp xỉ
+đúng mức nhô của nhịp một giờ** — mà 288 = 24 × 12 cũng là một bội số của 12. Nghĩa là
+giá trị tại lag 288 của chúng giải thích hết bằng nhịp giờ, không cần giả định thêm
+chu kỳ ngày nào. Chỉ E3 có sóng ngày thật: cắt 0 tại lag 74, đáy −0,4191 tại lag 139
+(nửa ngày), đỉnh 0,5956 tại lag 288.
+
+**Hệ quả cho GĐ4.** QĐ-010 chốt TN-B chạy hai biến thể, có và không có 4 đặc trưng
+lịch. Kết quả Bước 6 dự báo biến thể "bỏ lịch" sẽ **gần như không đổi gì với E1 và
+E2** mà chỉ ảnh hưởng E3. Nếu quan sát được đúng như vậy thì đó là **xác nhận**, không
+phải phát hiện mới; nếu bỏ lịch mà E1/E2 đổi nhiều thì phải đi tìm nguyên nhân khác.
+
+### 5. Nhịp một giờ vào phần Dữ liệu — V4
+
+ACF nhô lên tại **24/24 bội số của 12 bucket** trong dải lag 12–288, ở **cả ba** môi
+trường. Mức trội trung vị: +0,0618 (E1), +0,0314 (E2), +0,0075 (E3). Đây là quan sát
+về **dữ liệu**, không phải về model, nên thuộc phần Dữ liệu; và nó là căn cứ đo được
+cho việc giữ `lag_12` và `lag_24` trong bộ đặc trưng của mục 8.
+
+### 6. Đính chính số ở mục 14 — đo lại trên quần thể nghiên cứu
+
+`docs/protocol.md` mục 14 và `docs/giai-thich-chuan-hoa.md` trích bốn con số đo trên
+**833 chuỗi Alibaba**, tức trước khi QĐ-009 đóng băng mẫu 500 máy. Quần thể nghiên cứu
+hiện tại chỉ có **498 chuỗi**. Đo lại trên `data/features/E3_h1.parquet`, MAE trung vị
+theo chuỗi:
+
+| Phép đo | 833 chuỗi (cũ) | **498 chuỗi (quần thể nghiên cứu)** |
+|---|---:|---:|
+| (a) hằng số bằng mức tải trung bình của E1 | 28,64 | **26,90** |
+| (b) hằng số bằng mức tải trung bình của E3 | 10,48 | **10,06** |
+| (c) naive persistence trong E3 | 5,76 | **4,35** |
+| Phần sai số chỉ là chênh mức tải, `(a−b)/a` | 63,4% | **62,6%** |
+| Naive tốt hơn "kết quả transfer" bao nhiêu lần | 5× | **6,2×** |
+
+**Lập luận giữ nguyên, và mạnh hơn một chút.** Một hằng số vẫn đạt MAE ≈ 27 khi
+"transfer" E1 sang E3; gần hai phần ba sai số đó vẫn chỉ là chênh lệch mức tải; và
+naive persistence trong chính E3 nay tốt hơn 6,2 lần chứ không phải 5 lần. Chỉ các con
+số được thay.
+
+**Hệ quả.**
+
+1. `docs/protocol.md` mục 13 nhận mục con về phân tầng CV; mục 14 sửa bốn con số.
+2. `docs/giai-thich-chuan-hoa.md` nhận khối đính chính, giữ nguyên số cũ để đối chiếu.
+3. `docs/data-card.md` Limitations nhận thêm mục về chặn CV.
+4. `config/split.yaml` khai `stratify_by: cv_percentile_within_env`.
+5. GĐ3 báo cáo kết quả theo ba tầng burstiness, kèm cột `ti_le_cham_chan`.
+
+---
+
+## QĐ-013 — Năm quy ước của GĐ3 mà mục 9 và 12 chưa nói rõ
+
+**Ngày:** 2026-09-10 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** Dựng cổng GĐ3 thì lộ ra: mục 9 viết *"70% train, 15% validation, 15%
+test"* và mục 12 liệt năm chỉ số, nhưng cả hai đều thiếu định nghĩa đủ chặt để hai
+bản hiện thực độc lập ra cùng con số. Đúng cái bẫy QĐ-010 đã gặp ở GĐ2 — mỗi bên
+"đúng" theo cách hiểu của mình rồi số lệch nhau mà không ai sai.
+
+Chốt trước, **trước khi có dòng code GĐ3 nào**, để cổng có neo.
+
+### 1. Ranh giới chia tính theo **bucket**, không theo số dòng
+
+70% của **cửa sổ 2.304 bucket**, không phải 70% của số dòng hợp lệ.
+
+| Tập | Khoảng offset so với `b0` | Số bucket | Tỉ lệ |
+|---|---|---:|---:|
+| train | `[0, 1612)` | 1.612 | 69,97% |
+| validation | `[1612, 1957)` | 345 | 14,97% |
+| test | `[1957, 2304)` | 347 | 15,06% |
+
+`n_train = floor(0,70 × 2304) = 1612`, `n_val = floor(0,15 × 2304) = 345`, phần còn
+lại là test.
+
+**Lý do.** Cửa sổ 8 ngày là **toàn cục theo môi trường** (mục 7), nên ranh giới theo
+bucket là một lát cắt thời gian **giống hệt nhau ở mọi chuỗi**. Chia theo số dòng hợp
+lệ thì mỗi chuỗi cắt ở một mốc lịch khác nhau — chuỗi nhiều NaN sẽ có test bắt đầu
+muộn hơn — và khi đó "chia theo thời gian" không còn đúng nghĩa.
+
+### 2. Một dòng thuộc tập nào: cả `t` **và** `t+h` phải cùng tập
+
+Dòng có gốc dự đoán `t` và horizon `h` thuộc tập `S` khi **cả `t` và `t+h` đều nằm
+trong `S`**. Dòng vắt qua ranh giới bị **loại** (purge).
+
+**Lý do — đây là chống rò rỉ, không phải chuyện thẩm mỹ.** Nếu gán theo `t` thôi thì
+một dòng train ở cuối tập train có target `y_{t+h}` rơi vào validation hoặc test.
+Huấn luyện trên dòng đó là cho model nhìn thấy nhãn của tương lai thuộc tập đánh giá.
+
+Giá phải trả nhỏ: mất tối đa `h` dòng mỗi ranh giới mỗi chuỗi, tức dưới 1,1% ở `h=12`.
+
+### 3. Mẫu số của MASE
+
+`MASE = MAE / d`, với `d` = **trung bình `|y_t − y_{t−1}|` trên phần train của chính
+chuỗi đó**, chỉ lấy các cặp `(t−1, t)` mà **cả hai** đều không NaN.
+
+Hai điều kèm theo:
+- Mẫu số tính **chỉ trên train**, đúng nguyên tắc chống rò rỉ đã áp cho N1 ở mục 14.
+- Mẫu số **không phụ thuộc horizon** — cùng một `d` dùng cho cả `h = 1, 6, 12`, nên
+  MASE ở ba horizon so được với nhau.
+- Chuỗi có `d = 0` (train phẳng hoàn toàn) thì MASE không xác định: **loại chuỗi đó
+  khỏi phần gộp MASE** và báo số chuỗi bị loại. Không thay bằng 0, không thay bằng
+  epsilon.
+
+### 4. SMAPE và R²
+
+`SMAPE = 100 × mean( |y − ŷ| / ((|y| + |ŷ|) / 2) )`, và khi `|y| + |ŷ| = 0` thì số
+hạng đó **bằng 0** (dự đoán đúng tuyệt đối tại một điểm bằng 0).
+
+Chỗ này quan trọng với dự án: E1 và E2 có trung vị dưới 2% và rất nhiều điểm gần 0,
+nên quy ước xử lý mẫu số nhỏ quyết định con số cuối. QĐ-006 đã bỏ MAPE vì lý do này;
+SMAPE vẫn giữ được nhưng phải chốt cách xử lý `0/0`.
+
+`R² = 1 − SS_res / SS_tot` với `SS_tot` tính trên **target của chính chuỗi đó trong
+tập đang đánh giá**. Chuỗi có `SS_tot = 0` thì R² không xác định: **loại khỏi phần
+gộp** và báo số chuỗi bị loại.
+
+### 5. Gộp kết quả nhiều chuỗi: trung vị của chỉ số **theo từng chuỗi**
+
+Mục 12 đã nói *"gộp bằng trung vị kèm IQR"*. Chốt thêm cho hết mơ hồ: tính chỉ số
+**riêng cho từng chuỗi trước**, rồi lấy trung vị và IQR **trên tập chuỗi**. Không gộp
+mọi dòng của mọi chuỗi vào một dãy rồi tính một chỉ số.
+
+**Lý do — đã đo được ở GĐ2.** Gộp mọi điểm trước rồi mới tính làm ACF lag 1 của E1 nở
+từ 0,6674 lên 0,9586, vì nó trộn phương sai *giữa* các chuỗi vào. Chỉ số lỗi cũng
+vướng cùng một cơ chế: chuỗi tải cao đóng góp sai số tuyệt đối lớn hơn và sẽ chi phối
+con số gộp. Trung vị theo chuỗi cho mỗi máy một phiếu bằng nhau.
+
+**Hệ quả.**
+
+1. `scripts/reference_gd3.py` hiện thực đúng năm quy ước này và sinh
+   `results/tables/reference_gd3.json` — neo của cổng GĐ3.
+2. `docs/protocol.md` mục 9 và 12 nhận mục con trỏ về đây.
+3. `config/split.yaml` khai `boundary: bucket` và `purge_straddling: true`.
+4. Bản hiện thực của B phải ra **cùng con số** ở ba baseline; lệch là có lỗi ở một
+   trong hai bên, không phải nhiễu — baseline không có yếu tố ngẫu nhiên nào.

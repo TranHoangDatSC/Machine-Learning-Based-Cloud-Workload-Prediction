@@ -3,6 +3,13 @@ shuffle: false               # TUYET DOI KHONG DOI
 train: 0.70
 val: 0.15
 test: 0.15
+
+# QD-013 diem 1-2. Ranh gioi tinh theo BUCKET cua cua so 2304, khong theo so dong.
+#   train [0, 1612)  val [1612, 1957)  test [1957, 2304)
+# Mot dong thuoc tap S khi CA t VA t+h nam trong S; dong vat qua ranh gioi bi LOAI.
+# Gan theo t thoi la RO RI: dong cuoi tap train se co target roi vao val hoac test.
+boundary: bucket
+purge_straddling: true
 cv:
   method: rolling_origin
   n_splits: 5
@@ -11,3 +18,18 @@ strategy: direct
 
 normalize_modes: [N0, N1, N2]   # thi nghiem B, xem muc 14
 fit_stats_on: train_only        # chong ro ri
+
+# Phan tang khi BAO CAO ket qua TN-A. Xem docs/protocol.md muc 13 va QD-012.
+# Nguong tuyet doi dung chung cho ba moi truong la SAI: tuong quan giua CV va muc tai
+# doi dau giua Bitbrains (+0,375 / +0,249) va Alibaba (-0,692), va tam phan vi cua E3
+# chi rong 0,06 nen se bi don het vao mot tang.
+stratify:
+  by: cv
+  method: percentile_within_env   # KHONG dung nguong tuyet doi chung
+  n_strata: 3
+  report_column: ti_le_cham_chan  # CV / sqrt((100-m)/m), phan biet it bursty that
+                                  # voi it bursty vi da cung tran thang do
+  # CV trong results/tables/cv_gd2.csv tinh tren TOAN BO cua so 8 ngay.
+  # Dung de nhom chuoi khi doc bang thi khong sao. Dung lam DAC TRUNG hay tieu chi
+  # CHON MODEL thi la ro ri -> phai tinh lai chi tren cua so train.
+  chi_dung_de_bao_cao: true

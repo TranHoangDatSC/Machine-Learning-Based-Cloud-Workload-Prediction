@@ -31,16 +31,28 @@ tế là 38%. Sai khoảng 27 điểm ở **mọi** dự đoán, bất kể mode
 Câu hỏi đặt ra: con số MAE lớn khi transfer có thật sự nói lên điều gì về chất lượng
 model không?
 
-Bốn phép đo dưới đây chạy trên 833 chuỗi Alibaba đã lọc, horizon 1 bước, lấy trung
-vị. Script: `research-log/scratch/demo-chuan-hoa.py`. Số liệu gốc lưu trong
-`research-log/2026-09-05-giang-muc-14.md` phòng khi `scratch/` bị dọn.
+Bốn phép đo dưới đây chạy trên Alibaba, horizon 1 bước, MAE trung vị theo chuỗi.
 
-| # | Bộ dự đoán | Học được gì | MAE trên E3 |
-|---|---|---|---|
-| **a** | Hằng số bằng mức tải trung bình của **E1** | **Không gì cả** | **28,64** |
-| b | Hằng số bằng mức tải trung bình của chính E3 | Không gì cả | 10,48 |
-| c | Naive persistence trong E3 (`ŷ = y_t`) | Không gì cả | 5,76 |
-| d | Naive persistence sau z-score, map ngược | Không gì cả | 5,76 |
+> **Cột số đã đổi — 2026-09-10, theo QĐ-012 điểm 6.** Bản gốc đo trên **833 chuỗi**,
+> tức trước khi QĐ-009 đóng băng mẫu 500 máy. Quần thể nghiên cứu hiện tại là **498
+> chuỗi**, và bảng dưới đây đo lại trên `data/features/E3_h1.parquet`. Giữ cả hai cột
+> để đối chiếu. **Lập luận không đổi, và mạnh hơn một chút.**
+
+| # | Bộ dự đoán | Học được gì | MAE — 833 chuỗi (cũ) | **MAE — 498 chuỗi (nay)** |
+|---|---|---|---:|---:|
+| **a** | Hằng số bằng mức tải trung bình của **E1** | **Không gì cả** | 28,64 | **26,90** |
+| b | Hằng số bằng mức tải trung bình của chính E3 | Không gì cả | 10,48 | **10,06** |
+| c | Naive persistence trong E3 (`ŷ = y_t`) | Không gì cả | 5,76 | **4,35** |
+| d | Naive persistence sau z-score, map ngược | Không gì cả | 5,76 | **4,35** |
+
+Script gốc: `research-log/scratch/demo-chuan-hoa.py`; số liệu gốc lưu trong
+`research-log/2026-09-05-giang-muc-14.md` phòng khi `scratch/` bị dọn. Cột mới sinh
+lại được từ `data/features/E3_h1.parquet` — `y_t` tái lập bằng `lag_1 + diff_1`.
+
+Ba con số dẫn xuất cũng đổi theo: phần sai số chỉ là chênh mức tải **63,4% → 62,6%**,
+và naive tốt hơn "kết quả transfer" **5× → 6,2×**. Dưới đây dùng số cũ trong phần diễn
+giải để khỏi phải viết lại toàn bộ lập luận; chênh lệch không đổi kết luận nào, nhưng
+**khi trích vào paper thì lấy cột 498 chuỗi**.
 
 ### Đọc bảng này
 

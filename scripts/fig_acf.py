@@ -2,7 +2,10 @@
 
     python scripts/fig_acf.py --env all
 
-Sinh `results/figures/fig_acf.{png,pdf}` và `results/tables/acf_gd2.csv`.
+Sinh vào `results/figures/gd2/`: bốn tệp `.png` **mỗi tệp đúng một hình**
+(`04_acf-lag48`, `05_pacf-lag48`, `06_acf-lag300`, `07_ti-le-cap-bo`) và
+`gd2_acf-pacf.pdf` gộp cả bốn kèm trang diễn giải. Bảng số ở
+`results/tables/acf_gd2.csv`.
 
 ## Xử lý NaN — chỗ dễ sai nhất của bước này
 
@@ -10,8 +13,10 @@ Chuỗi đã căn lưới **còn NaN**: cụm dài hơn 2 điểm không đượ
 E3 thiếu tới 9,29% điểm. Hai cái bẫy:
 
 1. `statsmodels.acf` và họ hàng **không nhận NaN**.
-2. `dropna()` trước khi tính thì **co trục thời gian lại** — sau khi nén, "lag 1" có
-   thể là hai điểm cách nhau 2 giờ thật, và ACF đo được sẽ cao giả tạo.
+2. `dropna()` trước khi tính thì **co trục thời gian lại** — sau khi nén, cái được
+   dán nhãn "lag 1" thực ra trộn cả những cặp cách nhau nhiều hơn 1 bước thật, có
+   khi tới 2 giờ. Vì ACF **giảm** theo lag, số đo bị kéo **xuống**, không phải lên.
+   Đo trên chính E3: dropna cho ACF lag 1 thấp hơn 0,034 và lag 12 thấp hơn 0,106.
 
 Cách làm ở đây: tương quan tại lag `k` tính **chỉ trên các cặp `(t, t+k)` mà cả hai
 đều không NaN**, giữ nguyên khoảng cách thời gian thật. Không nén, không nội suy
@@ -436,11 +441,13 @@ def dien_giai(do) -> list[tuple[str, str]]:
         ("Vì sao không dùng hàm ACF có sẵn",
          "Chuỗi đã căn lưới vẫn còn NaN vì cụm thiếu dài hơn 2 điểm không được nội "
          "suy, và E3 thiếu tới 9,29% điểm. Hàm ACF thông thường không nhận NaN. Nếu "
-         "bỏ NaN đi rồi mới tính thì trục thời gian bị CO LẠI — sau khi nén, hai "
-         "điểm cạnh nhau có thể cách nhau 2 giờ thật, và ACF đo được sẽ cao giả tạo. "
-         "Ở đây tương quan tại lag k chỉ dùng các cặp (t, t+k) mà cả hai đầu đều có "
-         "số thật, giữ nguyên khoảng cách thời gian. Hình 4 báo tỉ lệ cặp bị bỏ ở "
-         "mỗi lag, và con số đó phải đi kèm mọi phát biểu về E3."),
+         "bỏ NaN đi rồi mới tính thì trục thời gian bị CO LẠI: sau khi nén, cái được "
+         "dán nhãn \"lag 1\" thực ra trộn cả những cặp cách nhau nhiều hơn một bước "
+         "thật, có khi tới 2 giờ. Vì ACF giảm dần theo lag nên số đo bị kéo XUỐNG — "
+         "đo trên chính E3, dropna cho ACF lag 1 thấp hơn 0,034 và lag 12 thấp hơn "
+         "0,106. Ở đây tương quan tại lag k chỉ dùng các cặp (t, t+k) mà cả hai đầu "
+         "đều có số thật, giữ nguyên khoảng cách thời gian. Hình 4 báo tỉ lệ cặp bị "
+         "bỏ ở mỗi lag, và con số đó phải đi kèm mọi phát biểu về E3."),
         ("\"Đại diện\" nghĩa là gì",
          "Mỗi môi trường có hàng trăm chuỗi, mỗi chuỗi một đường ACF riêng. Đường vẽ "
          "ở đây là TRUNG VỊ của các đường đó tại từng lag, không phải một chuỗi được "

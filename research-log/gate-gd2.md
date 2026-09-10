@@ -1,9 +1,9 @@
 # Hồ sơ cổng GĐ2
 
 **Người giữ cổng:** A
-**Trạng thái:** **MỞ — B vào làm được ngay.** Thước đo, lệnh nghiệm thu và QĐ-010 đều
-đã xong. Phiếu giao việc: `research-log/brief-gd2-b.md`.
-**Cập nhật:** 2026-09-09
+**Trạng thái:** **ĐÓNG — ĐẠT ngày 2026-09-10.** Kết quả ở mục 5. Bốn việc treo đã
+chốt thành QĐ-012. Phiếu giao việc: `research-log/brief-gd2-b.md`.
+**Cập nhật:** 2026-09-10
 **Giai đoạn:** Khám phá dữ liệu và bộ đặc trưng (`docs/research-plan.md` GĐ2)
 
 Tài liệu này định nghĩa A kiểm gì khi B báo xong GĐ2. Cùng khuôn với `gate-gd1.md`:
@@ -312,18 +312,77 @@ ca "chưa làm thì báo thiếu, không đổ vỡ". **9 test, tất cả xanh.
 
 ## 5. Kết quả cổng
 
-Điền khi nghiệm thu.
+Nghiệm thu ngày **2026-09-10**, máy `DESKTOP-J03IDG1`.
 
 | Mục | Kết quả | Ghi chú |
 |---|---|---|
-| 3.1 Sản phẩm | | |
-| 3.2 Bộ đặc trưng | | |
-| 3.3 Rò rỉ R1–R4 | | |
-| 3.4 Ba cái bẫy | | |
-| 3.5 Hình phân phối | | |
+| 3.1 Sản phẩm | **ĐẠT** | `src/cwp/features/` 4 module; `tests/test_features.py` 38 test; `results/tables/` 5 bảng; `results/figures/gd2/` 11 hình + 3 PDF; hình sinh bằng script, không phải ô notebook; log GĐ2 đầy đủ |
+| 3.2 Bộ đặc trưng | **ĐẠT** | Đúng 19 đặc trưng, đúng tên QĐ-010, 22 cột. Vân tay mean+std của cả 19 khớp `reference_gd2.json` ở cả ba môi trường, ngưỡng 1e-6 |
+| 3.3 Rò rỉ R1–R4 | **ĐẠT** | Cả bốn tự động hoá. Thêm: phá code 7 kiểu, **7/7 bị bắt** (`scripts/pha_features.py`) |
+| 3.4 Ba cái bẫy | **ĐẠT** | Mốc thời gian E3 tương đối — cảnh báo đúng theo QĐ-010; bucket tuyệt đối; ACF loại theo cặp, tỉ lệ bỏ báo ở mọi lag |
+| 3.5 Hình phân phối | **ĐẠT** | A duyệt bằng mắt 2026-09-10. ECDF hai trục, ba đường đọc được, không đường nào ép sát mép; trần 100 có chú thích; bảng phân vị kèm bên |
 
-**Kết luận:**
-**Ngày duyệt:**
+**Kết luận: ĐẠT — GĐ2 ĐÓNG.**
+**Ngày duyệt: 2026-09-10** (A duyệt hình; `check_gd2.py` ĐẠT 12/12; `pytest tests/`
+148 passed, 1 skipped).
+
+### 5.1 Đối chiếu với bản hiện thực độc lập của A
+
+Con số then chốt của cổng này. Mọi chỉ số so được đều khớp:
+
+| Nhóm | Số chỉ số | Nguồn đối chiếu | Kết quả |
+|---|---:|---|---|
+| Số dòng ma trận đặc trưng | 9 | `catalog.parquet` (neo GĐ1) | lệch **0 dòng** |
+| Vân tay 19 đặc trưng (mean + std) | 114 | `reference_gd2.json` | khớp, ngưỡng 1e-6 |
+| ACF + tỉ lệ cặp bị bỏ | 30 | `reference_gd2.json` | lệch **0,0000** |
+| CV p25/p50/p75/IQR | 12 | `reference_gd2.json` | lệch **0,00000** |
+| Thống kê mô tả mean/p50/std | 9 | mục 2.2 của tệp này | lệch **0,0000%** |
+
+Thêm một phép kiểm không có trong danh sách: **79.200 ô** của ma trận đặc trưng
+(400 dòng × 22 cột × 9 tệp) đối chiếu trực tiếp với `data/processed/` bằng một hiện
+thực numpy viết riêng — **sai 0 ô**, ngoài sai số dấu phẩy động ≤ 5e-7 của `roll_std`
+ở cửa sổ gần hằng.
+
+### 5.2 Tính đúng của hình — kiểm bằng đáp án giải tích
+
+Khớp với A chỉ chứng minh hai bên đồng ý. Ngày 2026-09-10 kiểm thêm bằng dữ liệu có
+nghiệm đóng:
+
+- **ACF/PACF trên AR(1)** với `φ = +0,8 / +0,5 / −0,6`: ACF lệch `φ^k` tối đa 0,0049;
+  PACF ra đúng `φ` ở bậc 1 và `|·| ≤ 0,0039` từ bậc 2. **AR(2)** `(0,6; −0,3)`: PACF
+  cắt đúng sau bậc 2.
+- **Định nghĩa ACF**: dạng Pearson theo cặp so với dạng sách giáo khoa (một trung
+  bình chung) lệch **≤ 0,0034** trên 710 chuỗi E1 không NaN — không phải vấn đề
+  so sánh.
+- **Cách xử lý NaN**: trên AR(1) đục lỗ 13,2% theo cụm, cách theo cặp lệch 0,0038 còn
+  `dropna` lệch 0,0132.
+- **Hình vẽ đúng dữ liệu nó khai**: đọc ngược toạ độ từ `Line2D`/`PathCollection` so
+  với CSV nguồn — cả 11 hình khớp.
+- **Chặn CV** `√((100−m)/m)`: dựng phân phối hai điểm cho `m = 2/40/90` ra đúng
+  `m(100−m)`; **0/1.535 chuỗi vượt chặn**.
+
+Chi tiết: `research-log/2026-09-10-chot-qd012-va-ra-soat-gd2.md`.
+
+### 5.3 Sửa trong quá trình nghiệm thu
+
+Không con số nào của GĐ2 sai. Bốn chỗ tài liệu đã sửa:
+
+1. **Nhãn `dow` trong QĐ-010** — "0 là thứ Hai" thành "0 là Chủ Nhật". Công thức giữ
+   nguyên; `tests/test_features.py` ghim ba mốc để nhãn không trôi lại.
+2. **Tám phát hiện của đợt rà trước paper** — chốt thành **QĐ-011**, trong đó nặng
+   nhất là data card mô tả quần thể **trước lọc** mà không nói ra, và ghi phương pháp
+   `ffill` đã bị QĐ-008 bãi bỏ.
+3. **Protocol mục 14 trích số đo trên 833 chuỗi E3** trong khi quần thể nghiên cứu chỉ
+   có 498 — đo lại, lập luận mạnh hơn (naive tốt hơn 6,2× thay vì 5×). QĐ-012 điểm 6.
+4. **Chiều thiên lệch của `dropna` ghi ngược** — tài liệu nói ACF "cao giả tạo", đo ra
+   thì thấp đi (−0,034 ở lag 1 của E3). Sửa ở `scripts/fig_acf.py`.
+
+### 5.4 Bốn việc treo — đã chốt hết ở QĐ-012
+
+Phân tầng theo phân vị CV trong từng môi trường (V1); chặn CV vào Limitations (V2);
+E1/E2 không có chu kỳ ngày, dự báo cho GĐ4 (V3); nhịp một giờ vào phần Dữ liệu (V4).
+Kèm một chỗ rò rỉ **chưa xảy ra** đã chặn trước: CV tính trên toàn cửa sổ nên chỉ được
+dùng để **báo cáo**, không được làm đặc trưng hay tiêu chí chọn model.
 
 ---
 

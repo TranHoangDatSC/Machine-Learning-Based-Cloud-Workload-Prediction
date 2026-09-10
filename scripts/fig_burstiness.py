@@ -2,8 +2,11 @@
 
     python scripts/fig_burstiness.py --env all
 
-Sinh `results/figures/fig_burstiness.{png,pdf}`, `results/tables/cv_gd2.csv`
-(một dòng mỗi chuỗi, dùng lại được để phân tầng ở GĐ3) và `cv_gd2_summary.csv`.
+Sinh vào `results/figures/gd2/`: bốn tệp `.png` **mỗi tệp đúng một hình**
+(`08_cv-ecdf`, `09_cv-so-voi-muc-tai`, `10_cv-trung-vi-iqr`, `11_cv-bang-so`) và
+`gd2_burstiness.pdf` gộp cả bốn kèm trang diễn giải. Bảng số ở
+`results/tables/cv_gd2.csv` (một dòng mỗi chuỗi, dùng lại để phân tầng ở GĐ3 theo
+QĐ-012) và `cv_gd2_summary.csv`.
 
 ## Định nghĩa
 
