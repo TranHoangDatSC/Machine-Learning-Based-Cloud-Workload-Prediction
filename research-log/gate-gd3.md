@@ -410,8 +410,13 @@ sách tính toán này, ML không vượt naive trên E1 và E2"* — chứ khô
 về năng lực của họ thuật toán.
 
 Điều này **không** làm lung lay kết luận chính: `lr` và `ridge` thua naive tới 2,3–2,6
-lần trên E1/E2, khoảng cách đó không phải do lưới. Nhưng với `rf`, `xgb`, `svr` — vốn
-đã sát naive — thì nới lưới là việc đáng làm nếu còn thời gian ở GĐ5.
+lần trên E1/E2, khoảng cách đó không phải do lưới, và `lr` thì không có siêu tham số
+nào để nới. Chỉ `rf`, `xgb`, `svr` là sát naive đủ để lưới có thể đổi kết cục.
+
+**Đã chốt bằng QĐ-015: khai báo lưới, KHÔNG chạy lại ở GĐ3.** Nới lưới lúc này là nới
+*sau khi đã biết ML thua* — cùng họ với điều mục 17 cam kết không làm. Muốn kiểm độ
+vững thì làm ở GĐ5, khai báo lưới mới **trước** khi chạy và **báo cáo cả hai** kết
+quả. Hai điểm B nêu trong mục Vướng mắc của log GĐ3 vì thế đã đóng.
 
 ### 5.5 Một quan sát cần theo dõi, chưa phải lỗi
 

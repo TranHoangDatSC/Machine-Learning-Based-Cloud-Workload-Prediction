@@ -996,3 +996,73 @@ muốn siết, đưa bản mồi ấy ra một tệp riêng ngoài `tests/`.
 **Trạng thái bốn hệ quả:** cả bốn đã làm xong ngày 2026-09-10. `check_gd3.py` chạy
 được ở trạng thái B chưa bắt đầu (báo thiếu, in tiến độ 0/8, không đổ vỡ);
 `tests/test_check_gd3.py` 12/12 xanh, phá chín kiểu đều bị bắt.
+
+---
+
+## QĐ-015 — Đếm 8 model, và khai báo lưới siêu tham số sau khi GĐ3 chạy xong
+
+**Ngày:** 2026-09-11 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** B nêu hai điểm trong log GĐ3 (`2026-09-10-gd3-thi-nghiem-a.md`, mục
+Vướng mắc) và đề nghị A quyết trước khi coi GĐ3 là xong.
+
+### 1. "7 model" ở mục 13 so với 8 model ở mục 11
+
+Mục 13 ghi *"3 môi trường x 7 model x 3 horizon"*, mục 11 liệt kê tám model. B chạy
+và báo cả tám.
+
+**Nguyên nhân:** bảng ở mục 11 có **7 dòng** nhưng **8 model** — dòng *"Linear
+Regression, Ridge"* chứa hai model trong một ô. Con số 7 là đếm dòng bảng.
+
+**Quyết định:** sửa **mục 13** thành `3 × 8 × 3 = 72`. Không sửa mục 11.
+
+Vì sao sửa mục 13 chứ không cắt mục 11 xuống 7: mục 11 liệt kê đích danh năm model ML
+(Linear, Ridge, RF, XGBoost, SVR) và `research-plan.md` GĐ3 cũng vậy; cắt xuống 7 sẽ
+phải bỏ một model đã chạy xong, tức vứt kết quả thật để chiều một con số gõ nhầm.
+Sửa mục 13 không đụng tới bất kỳ sản phẩm nào: `check_gd3.py` không đọc con số này,
+`tests/test_config.py` không kiểm nó, và chín bảng kết quả giữ nguyên.
+
+### 2. Lưới siêu tham số không nằm trong giao thức
+
+Mục 11 liệt kê model nhưng không chốt lưới. B tự chọn theo chi phí đo được và khai ở
+`src/cwp/models/registry.py`.
+
+**Quyết định: khai báo lưới đã dùng, KHÔNG chạy lại.** Lưới ghi vào mục 11; nguồn
+thật vẫn là `registry.py`, tài liệu chỉ để đọc.
+
+| Model | Lưới | Chốt ở biên trên |
+|---|---|---:|
+| `ridge` | `alpha ∈ {0,01 … 100}` | 4/9 |
+| `rf` | `max_depth ∈ {8, 16}`, 50 cây | **7/9** |
+| `xgb` | `(4,300) · (8,300) · (8,600)` | **6/9** |
+| `svr` | `C ∈ {1, 10}`, mẫu con 10.000 | **7/9** |
+
+**Vì sao không nới lưới rồi chạy lại — đây là phần quan trọng của quyết định này.**
+
+Nới lưới lúc này là nới **sau khi đã biết ML thua naive trên E1 và E2**. Đó đúng là
+loại hành vi mục 17 cam kết không làm: *"Không đổi metric sau khi thấy kết quả"*,
+*"Không đổi ngưỡng lọc để có bảng đẹp hơn"*. Lưới siêu tham số cùng một họ — nó là
+tham số của thí nghiệm, và sửa nó để đổi kết luận thì bảng kết quả mất giá trị chứng
+minh, y như chuyện `sample_machines` ở QĐ-009 và đoạn code chỉnh mẫu cho khớp
+`gan_chet == 1`.
+
+Đổi lại, **hạn chế phải được nêu thẳng**: siêu tham số chốt rơi vào biên trên của lưới
+ở 7/9 tổ hợp với `rf` và `svr`, 6/9 với `xgb`; và `rf` chỉ chạy 50 cây vì riêng phần
+dò siêu tham số của nó đã mất hơn 3 giờ. Nên phát biểu đúng là *"với lưới này và ngân
+sách này, ML không vượt naive trên E1 và E2"*.
+
+**Điều này không lung lay kết luận chính.** `lr` và `ridge` thua naive **2,3–2,6 lần**
+trên E1 và E2 — khoảng cách đó không phải do lưới, và `lr` thì không có siêu tham số
+nào để nới. Chỉ `rf`, `xgb`, `svr` là sát naive đủ để lưới có thể đổi kết cục.
+
+**Nếu muốn kiểm độ vững thì làm ở GĐ5**, theo đúng ba điều kiện: khai báo lưới mới
+**trước** khi chạy, giữ nguyên mọi thứ khác, và **báo cáo cả hai kết quả** chứ không
+thay thế bảng cũ.
+
+**Hệ quả.**
+
+1. `docs/protocol.md` mục 11 thêm mục "Lưới siêu tham số"; mục 13 sửa `7 → 8`.
+2. Không sản phẩm nào phải sinh lại. Chín bảng GĐ3 và `runs/20260910-154617_*` giữ
+   nguyên.
+3. Phần Limitations của paper nêu: lưới hẹp, chốt ở biên trên, `rf` 50 cây.
+4. GĐ5 có thể thêm một mục kiểm độ vững về lưới, nếu còn thời gian.

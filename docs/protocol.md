@@ -395,6 +395,38 @@ lệ và phổ biến trên dữ liệu dạng này.
 **Chiến lược huấn luyện:** global model — một model học trên nhiều chuỗi của cùng
 một môi trường, không phải mỗi chuỗi một model.
 
+**Đếm cho đúng: bảng trên có 7 dòng nhưng 8 model** — dòng *"Linear Regression,
+Ridge"* chứa hai. Xem mục 13 và QĐ-015.
+
+### Lưới siêu tham số — QĐ-015
+
+> Bổ sung 2026-09-11, khai báo sau khi GĐ3 chạy xong.
+
+Giao thức bản đầu không chốt lưới nào. Lưới thực dùng ở GĐ3 do B chọn theo chi phí đo
+được; **nguồn thật là `src/cwp/models/registry.py`**, bảng dưới chỉ để đọc:
+
+| Model | Lưới | Ghi chú |
+|---|---|---|
+| `lr` | — | không có siêu tham số |
+| `ridge` | `alpha ∈ {0,01 · 0,1 · 1 · 10 · 100}` | |
+| `rf` | `max_depth ∈ {8, 16}` | **50 cây**, `min_samples_leaf = 5` |
+| `xgb` | `(depth 4, 300) · (depth 8, 300) · (depth 8, 600)` | |
+| `svr` | `C ∈ {1, 10}` | RBF, mẫu con 10.000 dòng (QĐ-014 điểm 2) |
+
+Chọn trên **validation**, rolling-origin 5 fold expanding theo QĐ-014 điểm 1.
+
+**Hạn chế bắt buộc nêu trong paper.** Siêu tham số chốt rơi vào **biên trên** của lưới
+ở phần lớn tổ hợp: `rf` 7/9, `svr` 7/9, `xgb` 6/9, `ridge` 4/9. Khi lựa chọn nằm ở mép
+lưới thì tối ưu thật có thể nằm ngoài — nghĩa là ML đang bị giới hạn bởi **lưới và
+ngân sách tính toán**, không phải bởi dữ liệu.
+
+Vì vậy phát biểu đúng của RQ1 là: *"với lưới này và ngân sách này, ML không vượt naive
+trên E1 và E2"* — không phải một kết luận về năng lực của họ thuật toán.
+
+**Không nới lưới rồi chạy lại ở GĐ3.** Nới lưới *sau khi đã thấy ML thua* rơi đúng vào
+điều mục 17 cam kết không làm. Nếu muốn kiểm tra độ vững thì làm ở GĐ5, **khai báo
+lưới mới trước khi chạy**, và **báo cáo cả hai kết quả** chứ không thay thế.
+
 ### Seasonal naive lấy giá trị từ đâu — ghi chú hiện thực
 
 > Bổ sung 2026-09-10, sau khi rà sẵn sàng GĐ3.
@@ -461,7 +493,12 @@ phối lệch nặng.
 
 Train và test trên cùng một môi trường.
 
-Tổ hợp: 3 môi trường x 7 model x 3 horizon.
+Tổ hợp: **3 môi trường × 8 model × 3 horizon = 72**.
+
+> **Đính chính 2026-09-11 (QĐ-015).** Bản cũ ghi *"7 model"*. Đó là đếm **số dòng**
+> của bảng ở mục 11, mà dòng *"Linear Regression, Ridge"* chứa **hai** model. Đếm
+> đúng là 8: ba baseline + `lr`, `ridge`, `rf`, `xgb`, `svr`. GĐ3 đã chạy và báo cáo
+> đủ tám.
 
 Trả lời RQ1 và RQ2.
 
