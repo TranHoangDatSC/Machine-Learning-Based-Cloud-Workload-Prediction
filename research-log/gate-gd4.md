@@ -235,7 +235,7 @@ pytest tests/ -v
 |---|---|
 | **C** — đáp án giải tích | C1 cửa sổ `mu`/`sd`, **C2 đổi `y` sau 1612 thì `mu`/`sd` không đổi**, C3–C5 ba bất biến, C6 chuỗi `sd = 0`, C7 sai phân |
 | **A** — so tham chiếu | thống kê N1, ba bất biến trên dữ liệu thật, 27 ma trận đặc trưng |
-| **B** — đẳng thức tự thân | B1 N0 khớp neo GĐ2, B2 N1 ≡ N0, B3 N2 làm biến mất dòng đầu của mọi chuỗi, B4 đủ 108 tổ hợp, B5–B8 bất đẳng thức chỉ số, B9 `n_chuoi + n_loai`, **B10 baseline giống nhau ở ba chế độ** |
+| **B** — đẳng thức tự thân | B1 N0 khớp neo GĐ2, B2 N1 ≡ N0, B3 N2 làm biến mất dòng đầu của mọi chuỗi, **B11** ma trận N1 khớp `mu`/`sd` đã khai, **B12** 4 đặc trưng lịch giống nhau ở ba chế độ, B4 đủ 108 tổ hợp, B5–B8 bất đẳng thức chỉ số, B9 `n_chuoi + n_loai`, **B10 baseline giống nhau ở ba chế độ** |
 
 `tests/test_check_gd4.py` dựng thế giới giả lập rồi **phá 16 kiểu**, bắt được cả 16,
 cộng hai trạng thái phải xanh (thế giới đúng; thế giới đúng có thêm model ngoài bộ bắt
@@ -283,6 +283,36 @@ lỗ hổng. Đo trên sản phẩm thật: **0/735, 0/302, 0/498 chuỗi vi ph�
 ở N2, tức **mã hoá sẵn đúng cái lỗi**. Nay ma trận giả lập mang `series_id` và `bucket`
 thật, ca phá mô phỏng bắc cầu bằng `_ma_tran(..., bac_cau=True)`, và có thêm một ca
 xanh khẳng định *"mất đúng một dòng mỗi chuỗi vẫn ĐẠT"*. Tổng **17 kiểu phá, 19 test**.
+
+---
+
+### B11 và B12 — hai lỗ hổng `pha_gd4.py` tìm ra trên dữ liệu thật
+
+> Thêm 2026-09-11, cùng đợt với bản sửa B3.
+
+Chạy tám bản phá trên dữ liệu thật (`scripts/pha_gd4.py`) làm lộ ra **hai lỗi lọt qua
+toàn bộ cổng**, và cả hai cùng một dạng thiếu sót: **không phép kiểm nào nối hai sản
+phẩm của B lại với nhau.**
+
+**Q1 — `mu`/`sd` tính trên toàn chuỗi.** Đây là rò rỉ mà QĐ-016 điểm 1 gọi thẳng là
+*"chỗ dễ sai nhất"*. Nó lọt vì: z-score không đổi số dòng nào nên B1/B2 không thấy;
+C1/C2 kiểm thẳng hàm `thong_ke_train` chứ không kiểm ma trận; và `normalize_gd4.csv`
+do một đường code khác sinh ra nên nó **vẫn đúng**.
+
+→ **B11** nối hai thứ đó: `lag_1` ở N0 là `y[t−1]`, ở N1 là `(y[t−1] − mu)/sd`. Quan
+hệ `y = sd·z + mu` là affine và thừa xác định, nên giải ngược ra `mu`, `sd` từng chuỗi
+rồi so với bảng đã khai. Ngưỡng **1e−10** chọn theo số đo — sai số giải ngược trên sản
+phẩm đúng là 6,0e−13 / 3,9e−13 / 3,9e−14, nên ngưỡng nằm trên nhiễu ~100 lần mà vẫn
+dưới 1e−8 ~100 lần, đủ bắt cả trò cộng epsilon vào `sd`.
+
+**Q5 — chuẩn hoá luôn 4 đặc trưng lịch.** Lọt vì số dòng không đổi và `lag_1` không
+đổi, nên B11 cũng không thấy.
+
+→ **B12** dùng đúng điều QĐ-016 điểm 2 nói: bốn đặc trưng lịch chỉ suy từ `bucket`,
+nên với cùng `(series_id, bucket)` chúng phải bằng nhau **tuyệt đối** ở N0, N1, N2.
+
+Sau khi thêm hai phép kiểm: **8/8 bản phá bị bắt**, và `tests/test_check_gd4.py` lên
+**21 test** với hai ca phá mới.
 
 ---
 

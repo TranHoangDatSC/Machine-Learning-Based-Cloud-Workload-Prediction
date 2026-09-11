@@ -277,7 +277,8 @@ def loai_a_bat_bien(iv: pd.DataFrame, ref: dict, rep: Report):
 
 # ================================================ LOẠI B — đẳng thức tự thân
 
-def loai_b_so_dong(feat_dir: Path, cat: pd.DataFrame, rep: Report):
+def loai_b_so_dong(feat_dir: Path, cat: pd.DataFrame, rep: Report,
+                   nrm: pd.DataFrame | None = None):
     """Quan hệ giữa ba chế độ, không cần tham chiếu — gate mục 2.2 ba phép kiểm."""
     g = "B. Đẳng thức tự thân"
     import pyarrow.parquet as pq
@@ -355,6 +356,93 @@ def loai_b_so_dong(feat_dir: Path, cat: pd.DataFrame, rep: Report):
     rep.add(g, "B3 — ở N2, dòng hợp lệ ĐẦU TIÊN của mỗi chuỗi phải biến mất (còn "
                "nghĩa là sai phân bắc cầu qua ranh giới chuỗi)",
             FAIL if xau else OK, "; ".join(xau[:4]))
+
+    # B11 — ma trận N1 phải được dựng bằng ĐÚNG `mu`/`sd` đã khai ở normalize_gd4.csv.
+    #
+    # Thêm 2026-09-11 sau khi `scripts/pha_gd4.py` cho thấy một lỗ hổng thật: bản phá
+    # "N1 lấy mu/sd trên TOÀN chuỗi" — đúng cái rò rỉ mà QĐ-016 điểm 1 gọi là chỗ dễ
+    # sai nhất — **lọt qua toàn bộ cổng**. Lý do: z-score không đổi số dòng nên B1/B2
+    # không thấy gì; C1/C2 kiểm thẳng hàm `thong_ke_train` chứ không kiểm ma trận; và
+    # `normalize_gd4.csv` do một đường code khác sinh ra nên nó vẫn đúng. Không gì nối
+    # hai sản phẩm đó lại với nhau.
+    #
+    # Cách nối: `lag_1` ở N0 là `y[t-1]`, ở N1 là `(y[t-1] − mu)/sd`. Quan hệ
+    # `y = sd·z + mu` là affine và thừa xác định, nên giải ngược ra `mu`, `sd` của
+    # từng chuỗi rồi so với bảng đã khai. Sai cửa sổ thống kê thì hai bên lệch ngay;
+    # cộng epsilon vào `sd` cũng lệch, vì phép giải ngược chính xác tới ~1e-12.
+    xau = []
+    for env in ENVS:
+        pa, pb = feat_dir / f"{env}_N0_h1.parquet", feat_dir / f"{env}_N1_h1.parquet"
+        if not (pa.exists() and pb.exists()) or nrm is None:
+            continue
+        c = ["series_id", "bucket", "lag_1"]
+        try:
+            a = pd.read_parquet(pa, columns=c).rename(columns={"lag_1": "y"})
+            b = pd.read_parquet(pb, columns=c).rename(columns={"lag_1": "z"})
+        except Exception:
+            continue      # thiếu cột: schema đã bị các phép kiểm khác bắt, đừng nổ ở đây
+        j = a.merge(b, on=["series_id", "bucket"], how="inner")
+        khai = nrm[(nrm["env"] == env) & (nrm["mode"] == "N1")].set_index("series_id")
+
+        n_lech = 0
+        for sid, g2 in j.groupby("series_id", sort=False):
+            z, y = g2["z"].to_numpy(), g2["y"].to_numpy()
+            if z.size < 2 or np.ptp(z) == 0:
+                continue                      # chuỗi hằng: không giải ngược được
+            sd, mu = np.polyfit(z, y, 1)
+            if sid not in khai.index:
+                n_lech += 1
+                continue
+            # Ngưỡng 1e-10 chọn theo số đo, không chọn cho tròn: sai số của phép
+            # giải ngược trên sản phẩm đúng là 6,0e-13 (E1), 3,9e-13 (E2), 3,9e-14
+            # (E3). Ngưỡng nằm trên nhiễu ~100 lần nên không báo oan, và dưới 1e-8
+            # ~100 lần nên bắt được cả trò cộng epsilon vào `sd` mà QĐ-016 cấm.
+            r = khai.loc[sid]
+            if (abs(sd - float(r["sd"])) > 1e-10 * max(1.0, abs(float(r["sd"])))
+                    or abs(mu - float(r["mu"])) > 1e-10 * max(1.0, abs(float(r["mu"])))):
+                n_lech += 1
+        if n_lech:
+            xau.append(f"{env}: {n_lech}/{khai.shape[0]} chuỗi lệch")
+    rep.add(g, "B11 — ma trận N1 dựng bằng đúng `mu`/`sd` đã khai ở normalize_gd4.csv "
+               "(giải ngược từ `lag_1`)", FAIL if xau else OK, "; ".join(xau[:4]))
+
+    # B12 — bốn đặc trưng lịch phải GIỐNG HỆT nhau ở cả ba chế độ.
+    #
+    # Thêm 2026-09-11, cùng đợt với B11 và vì cùng một lý do: `scripts/pha_gd4.py`
+    # bản phá Q5 — "chuẩn hoá luôn cả 4 đặc trưng lịch" — **lọt qua toàn bộ cổng**.
+    # Số dòng không đổi, `lag_1` không đổi nên B11 cũng không thấy.
+    #
+    # QĐ-016 điểm 2: bốn đặc trưng lịch **giữ nguyên**, vì chúng đã nằm trong [−1, 1]
+    # và không mang thang tải. Chúng chỉ suy từ `bucket`, nên với cùng một
+    # `(series_id, bucket)` chúng phải bằng nhau TUYỆT ĐỐI ở N0, N1, N2.
+    CAL = ["hour_sin", "hour_cos", "dow_sin", "dow_cos"]
+    xau = []
+    for env in ENVS:
+        p0 = feat_dir / f"{env}_N0_h1.parquet"
+        if not p0.exists():
+            continue
+        try:
+            goc = (pd.read_parquet(p0, columns=["bucket"] + CAL)
+                   .drop_duplicates("bucket").set_index("bucket"))
+        except Exception:
+            continue
+        for mode in ("N1", "N2"):
+            p = feat_dir / f"{env}_{mode}_h1.parquet"
+            if not p.exists():
+                continue
+            try:
+                kia = (pd.read_parquet(p, columns=["bucket"] + CAL)
+                       .drop_duplicates("bucket").set_index("bucket"))
+            except Exception:
+                continue
+            chung = goc.index.intersection(kia.index)
+            lech = [c for c in CAL
+                    if not np.array_equal(goc.loc[chung, c].to_numpy(),
+                                          kia.loc[chung, c].to_numpy())]
+            if lech:
+                xau.append(f"{env} {mode}: lệch ở {lech}")
+    rep.add(g, "B12 — bốn đặc trưng lịch giống hệt nhau ở cả ba chế độ (QĐ-016 điểm 2: "
+               "giữ nguyên, không chuẩn hoá)", FAIL if xau else OK, "; ".join(xau[:4]))
 
 
 def loai_b_transfer(tr: pd.DataFrame, cat: pd.DataFrame, rep: Report):
@@ -515,7 +603,7 @@ def main() -> int:
     loai_a_thong_ke(nz, ref, rep)
     loai_a_bat_bien(iv, ref, rep)
     loai_a_so_dong(feat_dir, ref, rep)
-    loai_b_so_dong(feat_dir, cat, rep)
+    loai_b_so_dong(feat_dir, cat, rep, nz)
 
     if tr_path.exists():
         tr = pd.read_csv(tr_path)

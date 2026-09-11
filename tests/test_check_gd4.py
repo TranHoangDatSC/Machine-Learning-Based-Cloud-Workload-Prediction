@@ -81,7 +81,24 @@ def _so_dong_moi_chuoi(env: str) -> list[int]:
     return [NEO // n + (i < NEO % n) for i in range(n)]
 
 
-def _ma_tran(env: str, mode: str, bac_cau: bool = False) -> pd.DataFrame:
+def _mu_sd(env: str, i: int) -> tuple[float, float]:
+    """Giống hệt `_bang_normalize` — hai chỗ phải khớp thì B11 mới có nghĩa."""
+    lech = np.linspace(-1, 1, N_CHUOI[env])
+    return 10.0 + lech[i], 2.0 + lech[i] / 10
+
+
+def _lich(b: np.ndarray) -> dict[str, np.ndarray]:
+    """Bốn đặc trưng lịch suy từ `bucket` — QĐ-016 điểm 2 đòi GIỮ NGUYÊN ở cả ba chế độ."""
+    s = b.astype("int64") * 300
+    gio, thu = (s // 3600) % 24, ((s // 86400) + 4) % 7
+    return {"hour_sin": np.sin(2 * np.pi * gio / 24),
+            "hour_cos": np.cos(2 * np.pi * gio / 24),
+            "dow_sin": np.sin(2 * np.pi * thu / 7),
+            "dow_cos": np.cos(2 * np.pi * thu / 7)}
+
+
+def _ma_tran(env: str, mode: str, bac_cau: bool = False,
+             sai_mu_sd: bool = False, sai_lich: bool = False) -> pd.DataFrame:
     """Ma trận đặc trưng tí hon, có `series_id` và `bucket` thật.
 
     N2 bỏ dòng ĐẦU của mỗi chuỗi — `z` cần thêm một điểm lịch sử. `bac_cau=True` mô
@@ -96,8 +113,20 @@ def _ma_tran(env: str, mode: str, bac_cau: bool = False) -> pd.DataFrame:
                 b = b[1:]                     # mất dòng hợp lệ đầu tiên
             if i == 0 and du > 0:
                 b = b[:-du]                   # E3 mất thêm vì chạm lỗ hổng
-        dong.append(pd.DataFrame({"series_id": f"{env}_{i}", "bucket": b,
-                                  "x": np.zeros(len(b))}))
+        # `lag_1` thật, để B11 giải ngược được `mu`/`sd`. Giá trị trải đều nên phép
+        # khớp affine điều kiện tốt; N1 là (y - mu)/sd với đúng mu, sd của `_bang_normalize`.
+        mu, sd = _mu_sd(env, i)
+        z = np.linspace(-2.0, 2.0, len(b))
+        y = mu + sd * z
+        lag1 = y if mode != "N1" else (z if not sai_mu_sd else (y - (mu + 1.0)) / sd)
+        cot = {"series_id": f"{env}_{i}", "bucket": b, "lag_1": lag1,
+               "x": np.zeros(len(b)), **_lich(b)}
+        if sai_lich:
+            for c in ("hour_sin", "hour_cos", "dow_sin", "dow_cos"):
+                v = cot[c]
+                sd_c = v.std(ddof=1)
+                cot[c] = (v - v.mean()) / sd_c if sd_c > 0 else v
+        dong.append(pd.DataFrame(cot))
     return pd.concat(dong, ignore_index=True)
 
 
@@ -326,6 +355,35 @@ def test_N2_mat_dung_mot_dong_moi_chuoi_van_DAT(the_gioi):
     """Mất đúng `n_chuỗi` dòng là trường hợp ĐÚNG phổ biến nhất — không được báo đỏ."""
     ma, out = chay(the_gioi)
     assert ma == 0, f"mất đúng một dòng mỗi chuỗi mà báo trượt:\n{out}"
+
+
+def test_pha_N1_dung_mu_sd_khac_bang_da_khai_thi_B11_do(the_gioi):
+    """Ma trận N1 dựng bằng `mu`/`sd` khác với `normalize_gd4.csv`.
+
+    Đây là hình dạng của rò rỉ nguy hiểm nhất ở GĐ4: lấy thống kê trên toàn chuỗi
+    hoặc trên cửa sổ test. Số dòng không đổi nên B1/B2 không thấy gì, và bảng
+    `normalize_gd4.csv` vẫn đúng vì nó do đường code khác sinh ra — không gì nối hai
+    sản phẩm lại, cho tới khi có B11. Xem `scripts/pha_gd4.py` bản phá P4/P5.
+    """
+    _ma_tran("E1", "N1", sai_mu_sd=True).to_parquet(
+        the_gioi["feat"] / "E1_N1_h1.parquet", index=False)
+    ma, out = chay(the_gioi)
+    assert ma != 0
+    assert "B11" in out
+
+
+def test_pha_chuan_hoa_ca_dac_trung_lich_thi_B12_do(the_gioi):
+    """QĐ-016 điểm 2: bốn đặc trưng lịch GIỮ NGUYÊN ở cả ba chế độ.
+
+    Chúng chỉ suy từ `bucket` nên phải bằng nhau tuyệt đối giữa N0/N1/N2. Bản phá này
+    (`Q5` của `scripts/pha_gd4.py`) **lọt qua toàn bộ cổng** cho tới khi có B12: số
+    dòng không đổi, `lag_1` không đổi nên B11 cũng không thấy.
+    """
+    _ma_tran("E1", "N1", sai_lich=True).to_parquet(
+        the_gioi["feat"] / "E1_N1_h1.parquet", index=False)
+    ma, out = chay(the_gioi)
+    assert ma != 0
+    assert "B12" in out
 
 
 def test_pha_baseline_khac_nhau_giua_ba_che_do_thi_B10_do(the_gioi):
