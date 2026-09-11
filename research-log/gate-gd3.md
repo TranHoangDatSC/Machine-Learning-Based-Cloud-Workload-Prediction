@@ -289,18 +289,19 @@ phạm:
 
 ## 5. Kết quả cổng
 
-Nghiệm thu **2026-09-10**, máy `DESKTOP-J03IDG1`, `pytest tests/` = **275 passed,
+Nghiệm thu **2026-09-11**, máy `DESKTOP-J03IDG1`, `pytest tests/` = **277 passed,
 1 skipped**.
 
-Nghiệm thu hai vòng. Vòng một (2026-09-10) trượt vì thiếu sản phẩm; vòng hai
-(2026-09-11) sau khi B chạy nốt `rf`, `svr` và Bước 6.
+Nghiệm thu hai vòng. Vòng một (2026-09-10) trượt vì thiếu sản phẩm, lúc đó `pytest`
+là 275; vòng hai (2026-09-11) sau khi B chạy nốt `rf`, `svr`, Bước 6, và thêm hai test
+T5 cho mẫu con SVR — thành 277.
 
 | Mục | Kết quả | Ghi chú |
 |---|---|---|
 | 3.1 Sản phẩm | **ĐẠT** | Đủ 8 model × 9 tổ hợp; `tang_gd3.csv`, `wilcoxon_gd3.csv`, `ml_vs_naive_gd3.csv`, 10 hình + PDF; log đầy đủ |
 | 3.2 Bộ máy đánh giá | **ĐẠT** | 27 số dòng, 9 mẫu số MASE, ngưỡng tầng, tỉ lệ bỏ của seasonal — khớp tuyệt đối |
 | 3.3 Ba baseline | **ĐẠT** | 45 chỉ số p50 khớp, **sau khi sửa lỗi ở tham chiếu của A** — xem 5.1 |
-| 3.4 Rò rỉ L1–L4 | **ĐẠT** | 18 test L1/L3/L4 xanh; L2: 15 lần chạm test = đúng số tổ hợp `(env, h, model ML)` mới |
+| 3.4 Rò rỉ L1–L4 | **ĐẠT** | 18 test L1/L3/L4 xanh; L2: **55 lần chạm test trên 45 tổ hợp** `(env, h, model ML)`, cộng dồn 5 run — xem 5.6 |
 | 3.5 ML so với naive | **ĐẠT** | Bảng đủ, Wilcoxon + Holm trên 252 cặp, và **chỗ ML thua được báo cáo thẳng** |
 
 **Kết luận: ĐẠT.** `python scripts/check_gd3.py` thoát 0; `pytest tests/` **277 passed,
@@ -315,12 +316,23 @@ naive không, ở horizon nào' kèm kiểm định thống kê"* — đã tho�
 B báo 27 ô R² của E1 lệch tham chiếu và **từ chối sửa code cho khớp**, kèm đề nghị A
 quyết. Truy nguyên xác nhận B đúng hoàn toàn.
 
-Chuỗi **`E1_830`** có 347 dòng test mang **đúng một giá trị** `1,1333333333333333`.
-Về toán học `SS_tot = 0` nên QĐ-013 điểm 4 bảo loại chuỗi. Nhưng
-`ȳ = sum/n` của 347 bản sao một số không biểu diễn được chính xác ra
-`1,1333333333333329`, nên `sum((y−ȳ)²) = 6,84 × 10⁻²⁹ > 0`. Bản của A kiểm
+Chuỗi **`E1_830`** có **346** dòng test mang **đúng một giá trị** `1,1333333333333333`
+(346 là số bị ép bởi số học: mục 2.2 ghi E1 `h = 1` có 254.310 dòng test, chia 735
+chuỗi ra đúng 346,0). Về toán học `SS_tot = 0` nên QĐ-013 điểm 4 bảo loại chuỗi. Nhưng
+`ȳ = sum/n` của 346 bản sao một số không biểu diễn được chính xác ra
+`1,133333333333333`, nên `sum((y−ȳ)²) = 1,71 × 10⁻²⁹ > 0`. Bản của A kiểm
 `sstot > 0` nên **chấm R² = 1,0** — điểm tuyệt đối cho một chuỗi hằng mà naive đoán
 trúng tầm thường, và giá trị đó đẩy trung vị cả cột lên.
+
+> **Đính chính 2026-09-11.** Bản đầu của mục này ghi *347 dòng* và
+> `ss_tot = 6,84 × 10⁻²⁹`. Hai con số đó đi với nhau và đều **đúng cho n = 347** — tức
+> phép chẩn đoán sinh ra chúng đã cắt cửa sổ test `[1957, 2304)` **chưa áp luật purge**
+> (với `h = 1`, purge bỏ đúng một bucket). Bản thân `reference_gd3.py` thì cắt đúng, nên
+> `reference_gd3.json` không bị ảnh hưởng — 45/45 chỉ số khớp bản của B.
+>
+> Chính chỗ này lại là lập luận mạnh nhất cho `min == max`: **cùng một số 0 toán học
+> hiện ra thành `1,7e−29` hay `6,8e−29` tuỳ cách cắt và cách cộng dồn.** Không có
+> ngưỡng epsilon nào đúng cho mọi cách hiện thực; chỉ có phép so chính xác là đúng.
 
 Bốn chuỗi hằng còn lại của E1 (`E1_172, E1_295, E1_543, E1_807`) mang hằng số biểu
 diễn được chính xác nên tổng bình phương ra đúng 0 và bị loại bình thường. Chỉ
@@ -391,17 +403,40 @@ với *"tốt hơn trên bao nhiêu chuỗi"* — và khi chúng lệch nhau th�
 
 ### 5.4 Sản phẩm Bước 5 và Bước 6 — đã đủ
 
-Lần chạy cuối `runs/20260910-154617_experiments_gd3`, 271,7 phút, đủ **8 model × 3
-môi trường × 3 horizon**. RF chiếm phần lớn chi phí (14.466 s trên tổng ~21.700 s).
+Bảng công bố là **hợp của 5 lần chạy**; snapshot đầy đủ và **khớp bảng công bố từng ô**
+là `runs/20260910-202500_experiments_gd3` (lần chạy lại `svr` sau khi B sửa mẫu con).
+
+> **Đính chính 2026-09-11.** Bản đầu trỏ vào `runs/20260910-154617_experiments_gd3`.
+> Snapshot đó cũng đủ 72 tổ hợp nhưng **lệch bảng công bố 30 ô** — toàn bộ `svr` ở
+> `h = 6` và `h = 12`, vì nó chụp **trước** khi mẫu con SVR được sửa (QĐ-014 điểm 2).
+> Ví dụ E2 `h = 12`: snapshot cũ `0,3732`, bảng công bố `0,3950`. Protocol mục 16 đòi
+> mọi số trong paper truy ngược được về một thư mục `runs/` cụ thể, nên con trỏ phải là
+> `20260910-202500`.
+
+RF chiếm phần lớn chi phí máy (14.466 s trên tổng ~21.700 s của lần chạy 154617).
 
 **Hạn chế phải ghi vào paper: siêu tham số chốt nằm ở BIÊN TRÊN của lưới.**
 
-| Model | Lưới | Số tổ hợp chốt ở biên trên |
-|---|---|---:|
-| `rf` | `max_depth ∈ {8, 16}` | **7 / 9** |
-| `svr` | `C ∈ {1, 10}` | **7 / 9** |
-| `xgb` | `depth ∈ {4, 8}`, `n_estimators ∈ {300, 600}` | **6 / 9** |
-| `ridge` | `alpha ∈ {0,01 … 100}` | 4 / 9 |
+| Model | Lưới | Chốt ở biên **trên** | Chốt ở biên **dưới** | Chạm biên bất kỳ |
+|---|---|---:|---:|---:|
+| `rf` | `max_depth ∈ {8, 16}` | **7 / 9** | 2 / 9 | 9 / 9 |
+| `svr` | `C ∈ {1, 10}` | **7 / 9** | 2 / 9 | 9 / 9 |
+| `xgb` — trục `depth` | `{4, 8}` | **6 / 9** | 3 / 9 | 9 / 9 |
+| `xgb` — trục `n_estimators` | `{300, 600}` | 1 / 9 | **8 / 9** | 9 / 9 |
+| `ridge` | `alpha ∈ {0,01 … 100}` | 4 / 9 | **5 / 9** | **9 / 9** |
+
+> **Đính chính 2026-09-11.** Bản đầu chỉ đếm biên **trên** và ghi `ridge` 4/9, `xgb`
+> 6/9. Hai chỗ đó nói **nhẹ đi** so với sự thật:
+>
+> - `ridge` chốt `alpha = 0,01` ở 5/9 tổ hợp còn lại, tức **biên dưới**. Cộng lại,
+>   `ridge` chạm mép lưới ở **9/9** — lưới alpha hẹp ở *cả hai* đầu, không phải chỉ
+>   đầu trên.
+> - `xgb` 6/9 là của trục `depth`. Trên trục số cây thì ngược hẳn: 8/9 chọn **300**,
+>   giá trị *thấp*, chỉ 1/9 chọn 600. Nghĩa là số cây **không** phải chỗ bị lưới chặn,
+>   và nới nó gần như chắc chắn không đổi được gì.
+>
+> Với hai model quan trọng nhất, `rf` và `svr`, lưới chỉ có **hai** ứng viên nên mọi
+> lựa chọn đều nằm ở mép — đó là hạn chế thật, và nó nặng hơn con số 7/9 gợi ra.
 
 Khi lựa chọn rơi vào mép lưới thì tối ưu thật có thể nằm ngoài, nghĩa là ML đang bị
 **giới hạn bởi lưới**, không phải bởi dữ liệu. Cộng thêm việc B khai rõ `rf` chỉ chạy
@@ -409,9 +444,15 @@ Khi lựa chọn rơi vào mép lưới thì tối ưu thật có thể nằm ng
 sách tính toán này, ML không vượt naive trên E1 và E2"* — chứ không phải một kết luận
 về năng lực của họ thuật toán.
 
-Điều này **không** làm lung lay kết luận chính: `lr` và `ridge` thua naive tới 2,3–2,6
-lần trên E1/E2, khoảng cách đó không phải do lưới, và `lr` thì không có siêu tham số
-nào để nới. Chỉ `rf`, `xgb`, `svr` là sát naive đủ để lưới có thể đổi kết cục.
+Điều này **không** làm lung lay kết luận chính: `lr` và `ridge` thua naive
+**1,23–2,57 lần** trên E1/E2 tuỳ horizon (1,23–1,35× ở `h = 1`, lên tới 2,33–2,57× ở
+`h = 12`), khoảng cách đó không phải do lưới, và `lr` thì **không có siêu tham số nào**
+để nới. Chỉ `rf`, `xgb`, `svr` là sát naive đủ để lưới có thể đổi kết cục.
+
+> **Đính chính 2026-09-11.** Bản đầu ghi *"2,3–2,6 lần"*, đó là con số của riêng
+> `h = 12`. Dải đúng trên cả ba horizon là **1,23–2,57**. Lập luận không đổi — thậm chí
+> ở mức hẹp nhất, 1,23×, vẫn quá xa để một lưới `alpha` khác khép lại, và `lr` thì
+> không có gì để nới.
 
 **Đã chốt bằng QĐ-015: khai báo lưới, KHÔNG chạy lại ở GĐ3.** Nới lưới lúc này là nới
 *sau khi đã biết ML thua* — cùng họ với điều mục 17 cam kết không làm. Muốn kiểm độ
@@ -426,6 +467,39 @@ val so với **0,4077** trên test (h=1). E2 và E3 không có khoảng cách n�
 Không phải rò rỉ — nó giải thích vì sao `mae_p50_val` của xgb (0,168) thấp hơn nhiều
 so với MAE test (0,397). Nhưng nó có nghĩa là siêu tham số của E1 được chọn trên một
 vùng thời gian không đại diện. Nên ghi vào Limitations, và cân nhắc ở GĐ4.
+
+### 5.6 L2 — test bị chạm bao nhiêu lần, và vì sao hơn một lần
+
+> Bổ sung 2026-09-11. Mục 3.4 L2 dặn *"Hỏi B thẳng: đã chạy test bao nhiêu lần, và nếu
+> hơn một lần thì vì sao."* Đây là câu trả lời, đếm tự động từ `runs/*/meta.json` —
+> `run_experiments.py` gọi `predict` trên dòng test ở đúng một hàm và hàm đó tự đếm.
+
+| Thư mục run | Số lần | Phạm vi |
+|---|---:|---|
+| `20260910-144955` | 9 | E1, ba horizon × `lr`/`ridge`/`xgb` |
+| `20260910-151730` | 18 | E2 + E3, ba horizon × `lr`/`ridge`/`xgb` |
+| `20260910-153929` | 4 | `svr`, bốn tổ hợp đầu |
+| `20260910-154617` | 15 | `rf` + `svr`, phần còn lại |
+| `20260910-202500` | 9 | `svr`, chạy lại cả chín sau khi sửa mẫu con |
+| **Cộng** | **55** | trên **45** tổ hợp `(env, h, model ML)` |
+
+Chênh 10 lần, và cả 10 đều giải thích được:
+
+- **9 lần** là **chạy lại toàn bộ `svr`** sau khi B phát hiện mẫu con không dùng chung
+  cho ba horizon như QĐ-014 điểm 2 đòi (chỉ trùng 2,9% giữa `h=1` và `h=6`). Đây là
+  chạy lại vì **hiện thực sai so với quyết định đã chốt**, không phải chọn lần đẹp hơn:
+  số cũ bị **thay hẳn**, không bên nào được giữ lại để so, và hướng kết luận RQ1 không
+  đổi.
+- **1 lần** là `E1_h1_svr` bị chấm hai lần trong sự cố hai tiến trình chạy song song
+  tối 2026-09-10. Cùng seed, cùng siêu tham số, cùng mẫu con nên ra cùng kết quả.
+
+Ngoài ra B khai thêm **2 lần chạm test đã bị loại bỏ**: một lần chạy thử đường ống trên
+`E2 h=12` với `lr` và `ridge`, ghi vào thư mục tạm ngoài repo. B có nhìn ba con số đó
+và khẳng định không dùng chúng để đổi bất kỳ lựa chọn nào — lưới siêu tham số đã chốt
+từ trước và không sửa sau. **Khai báo chủ động một việc bất lợi cho mình là đúng tinh
+thần mục 17**; A ghi nhận và chấp nhận.
+
+Không lần nào test được dùng để **chọn** gì: `do_lua_chon()` không nhận mặt nạ test.
 
 ---
 

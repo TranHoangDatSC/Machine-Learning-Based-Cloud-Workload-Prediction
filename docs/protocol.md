@@ -415,10 +415,22 @@ Giao thức bản đầu không chốt lưới nào. Lưới thực dùng ở G�
 
 Chọn trên **validation**, rolling-origin 5 fold expanding theo QĐ-014 điểm 1.
 
-**Hạn chế bắt buộc nêu trong paper.** Siêu tham số chốt rơi vào **biên trên** của lưới
-ở phần lớn tổ hợp: `rf` 7/9, `svr` 7/9, `xgb` 6/9, `ridge` 4/9. Khi lựa chọn nằm ở mép
-lưới thì tối ưu thật có thể nằm ngoài — nghĩa là ML đang bị giới hạn bởi **lưới và
-ngân sách tính toán**, không phải bởi dữ liệu.
+**Hạn chế bắt buộc nêu trong paper.** Siêu tham số chốt nằm ở **mép lưới** ở gần như
+mọi tổ hợp. Đếm đủ cả hai đầu (đính chính 2026-09-11, bản đầu chỉ đếm biên trên):
+
+| Model | Biên trên | Biên dưới | Chạm mép |
+|---|---:|---:|---:|
+| `rf` (`max_depth`) | 7/9 | 2/9 | 9/9 |
+| `svr` (`C`) | 7/9 | 2/9 | 9/9 |
+| `xgb` (`depth`) | 6/9 | 3/9 | 9/9 |
+| `xgb` (`n_estimators`) | 1/9 | 8/9 | 9/9 |
+| `ridge` (`alpha`) | 4/9 | 5/9 | 9/9 |
+
+`rf` và `svr` chỉ có hai ứng viên nên mọi lựa chọn tất yếu ở mép. Khi lựa chọn nằm ở
+mép thì tối ưu thật có thể nằm ngoài — nghĩa là ML đang bị giới hạn bởi **lưới và ngân
+sách tính toán**, không phải bởi dữ liệu. Ngoại lệ đáng chú ý: trục `n_estimators` của
+`xgb` nghiêng hẳn về giá trị **thấp** (8/9 chọn 300), nên nới số cây gần như chắc chắn
+không đổi được gì.
 
 Vì vậy phát biểu đúng của RQ1 là: *"với lưới này và ngân sách này, ML không vượt naive
 trên E1 và E2"* — không phải một kết luận về năng lực của họ thuật toán.

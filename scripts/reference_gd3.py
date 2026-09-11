@@ -177,7 +177,10 @@ def chi_so_theo_chuoi(y: np.ndarray, yhat: np.ndarray, m: np.ndarray,
 
         # Chuỗi hằng nhận biết bằng `min == max`, KHÔNG bằng `sstot > 0`.
         # `sum((a − ā)²)` của 346 bản sao một số không biểu diễn được chính xác cho
-        # ra 6,8e−29 chứ không phải 0, vì ā = sum/n không rơi đúng vào chính số đó.
+        # ra 1,7e−29 chứ không phải 0, vì ā = sum/n không rơi đúng vào chính số đó.
+        # (Con số 6,8e−29 ở bản chú thích đầu là của n = 347 — phép chẩn đoán lúc đó
+        # cắt cửa sổ test mà quên purge. Hai giá trị khác nhau cho cùng một số 0 toán
+        # học chính là lý do không được so với 0 bằng ngưỡng.)
         # Bản cũ vì thế chấm R² = 1,0 cho chuỗi hằng E1_830 — một điểm tuyệt đối cho
         # thứ mà naive đoán trúng tầm thường. B bắt được lỗi này khi đối chiếu; xem
         # research-log/2026-09-10-gd3-thi-nghiem-a.md và gate-gd3.md mục 5.

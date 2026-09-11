@@ -191,22 +191,31 @@ trọng nhất của paper, nó dựng nền cho toàn bộ lập luận ở RQ3
 **Tuần 5–6 · Chủ trì: B**
 
 **B:**
-- [ ] `src/cwp/models/baselines.py` — naive, moving average, seasonal naive
-- [ ] `src/cwp/evaluation/metrics.py` — MAE, RMSE, SMAPE, MASE, R²
-- [ ] `src/cwp/evaluation/splits.py` — rolling-origin, khẳng định không shuffle
-- [ ] **Chạy baseline trước tiên.** Mọi con số về sau so với nó
-- [ ] Linear, Ridge, Random Forest, XGBoost, SVR
-- [ ] Ba horizon: 1, 6, 12
-- [ ] Mỗi lần chạy sinh một thư mục `runs/`
-- [ ] Bảng kết quả vào `results/tables/`
+- [x] `src/cwp/models/baselines.py` — naive, moving average, seasonal naive
+- [x] `src/cwp/evaluation/metrics.py` — MAE, RMSE, SMAPE, MASE, R²
+- [x] `src/cwp/evaluation/splits.py` — rolling-origin, khẳng định không shuffle
+- [x] **Chạy baseline trước tiên.** Mọi con số về sau so với nó — 27 số MAE khớp
+      tuyệt đối neo của A, chạy xong trước khi viết dòng code model nào
+- [x] Linear, Ridge, Random Forest, XGBoost, SVR — đủ 5, cộng 3 baseline = 8 model
+- [x] Ba horizon: 1, 6, 12 — đủ 72 tổ hợp `(env, model, h)`
+- [x] Mỗi lần chạy sinh một thư mục `runs/` — 5 thư mục; snapshot khớp bảng công bố
+      từng ô là `runs/20260910-202500_experiments_gd3`
+- [x] Bảng kết quả vào `results/tables/` — 9 bảng, kèm bản tách theo ba tầng burstiness
 
 **A:**
-- [ ] Kiểm tra: có model nào thua naive không, và ở đâu
-- [ ] Kiểm tra: chênh lệch giữa các model có qua Wilcoxon không
+- [x] Kiểm tra: có model nào thua naive không, và ở đâu — **có, phần lớn**: E1 không
+      model ML nào vượt ở bất kỳ horizon nào; E2 chỉ `svr` ở `h = 6` và `h = 12`; chỉ
+      E3 là ML vượt ở cả ba. Ở **tầng bursty nhất, mọi model đều thua naive**
+- [x] Kiểm tra: chênh lệch giữa các model có qua Wilcoxon không — 252 cặp, Holm–
+      Bonferroni trong từng `(env, h)`; hướng lấy từ **trung vị của hiệu**, không phải
+      hiệu hai trung vị (hai đại lượng này ngược dấu ở 8 cặp)
+
+**GĐ3 ĐÓNG 2026-09-11.** Kết quả cổng: `research-log/gate-gd3.md` mục 5. Chốt thêm
+QĐ-015 (đếm 8 model, khai báo lưới siêu tham số, không nới lưới sau khi đã thấy ML thua).
 
 **Điều kiện qua cổng:** trả lời được "ML có vượt naive không, ở horizon nào" kèm
 kiểm định thống kê. Nếu ML không vượt ở `h=1` thì **đó là finding**, ghi lại và đi
-tiếp, không được ép model.
+tiếp, không được ép model. — **Đã thoả, và câu trả lời đúng là "phần lớn là không".**
 
 ---
 

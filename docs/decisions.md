@@ -1030,12 +1030,19 @@ Mục 11 liệt kê model nhưng không chốt lưới. B tự chọn theo chi p
 **Quyết định: khai báo lưới đã dùng, KHÔNG chạy lại.** Lưới ghi vào mục 11; nguồn
 thật vẫn là `registry.py`, tài liệu chỉ để đọc.
 
-| Model | Lưới | Chốt ở biên trên |
-|---|---|---:|
-| `ridge` | `alpha ∈ {0,01 … 100}` | 4/9 |
-| `rf` | `max_depth ∈ {8, 16}`, 50 cây | **7/9** |
-| `xgb` | `(4,300) · (8,300) · (8,600)` | **6/9** |
-| `svr` | `C ∈ {1, 10}`, mẫu con 10.000 | **7/9** |
+| Model | Lưới | Biên **trên** | Biên **dưới** | Chạm biên bất kỳ |
+|---|---|---:|---:|---:|
+| `ridge` | `alpha ∈ {0,01 … 100}` | 4/9 | **5/9** | **9/9** |
+| `rf` | `max_depth ∈ {8, 16}`, 50 cây | **7/9** | 2/9 | 9/9 |
+| `xgb` — `depth ∈ {4, 8}` | | **6/9** | 3/9 | 9/9 |
+| `xgb` — `n_estimators ∈ {300, 600}` | | 1/9 | **8/9** | 9/9 |
+| `svr` | `C ∈ {1, 10}`, mẫu con 10.000 | **7/9** | 2/9 | 9/9 |
+
+> **Đính chính 2026-09-11.** Bản đầu của bảng này chỉ đếm biên **trên** và ghi `ridge`
+> 4/9, `xgb` 6/9. Cả hai nói **nhẹ đi**: `ridge` chốt `alpha = 0,01` — tức biên **dưới**
+> — ở 5/9 tổ hợp còn lại, nên nó chạm mép lưới **9/9**; còn 6/9 của `xgb` là của trục
+> `depth`, trên trục số cây thì 8/9 chọn giá trị **thấp** (300). Hệ quả thực dụng: nới
+> `n_estimators` gần như chắc chắn vô ích, còn nới `alpha` phải nới **cả hai đầu**.
 
 **Vì sao không nới lưới rồi chạy lại — đây là phần quan trọng của quyết định này.**
 
@@ -1046,14 +1053,20 @@ tham số của thí nghiệm, và sửa nó để đổi kết luận thì bả
 minh, y như chuyện `sample_machines` ở QĐ-009 và đoạn code chỉnh mẫu cho khớp
 `gan_chet == 1`.
 
-Đổi lại, **hạn chế phải được nêu thẳng**: siêu tham số chốt rơi vào biên trên của lưới
-ở 7/9 tổ hợp với `rf` và `svr`, 6/9 với `xgb`; và `rf` chỉ chạy 50 cây vì riêng phần
-dò siêu tham số của nó đã mất hơn 3 giờ. Nên phát biểu đúng là *"với lưới này và ngân
-sách này, ML không vượt naive trên E1 và E2"*.
+Đổi lại, **hạn chế phải được nêu thẳng**: với `rf` và `svr` lưới chỉ có **hai** ứng
+viên nên **mọi** lựa chọn đều nằm ở mép (biên trên 7/9, biên dưới 2/9); `ridge` chạm
+mép 9/9 vì lưới hẹp ở cả hai đầu; và `rf` chỉ chạy 50 cây vì riêng phần dò siêu tham số
+của nó đã mất hơn 3 giờ. Nên phát biểu đúng là *"với lưới này và ngân sách này, ML
+không vượt naive trên E1 và E2"*.
 
-**Điều này không lung lay kết luận chính.** `lr` và `ridge` thua naive **2,3–2,6 lần**
-trên E1 và E2 — khoảng cách đó không phải do lưới, và `lr` thì không có siêu tham số
-nào để nới. Chỉ `rf`, `xgb`, `svr` là sát naive đủ để lưới có thể đổi kết cục.
+**Điều này không lung lay kết luận chính.** `lr` và `ridge` thua naive **1,23–2,57 lần**
+trên E1 và E2 tuỳ horizon — 1,23–1,35× ở `h = 1`, lên tới 2,33–2,57× ở `h = 12`. Ngay ở
+mức hẹp nhất, 1,23×, khoảng cách đó vẫn quá xa để một lưới `alpha` khác khép lại, và
+`lr` thì **không có siêu tham số nào** để nới. Chỉ `rf`, `xgb`, `svr` là sát naive đủ
+để lưới có thể đổi kết cục.
+
+> **Đính chính 2026-09-11.** Bản đầu ghi *"2,3–2,6 lần"* — đó là con số của riêng
+> `h = 12`, không phải của cả ba horizon.
 
 **Nếu muốn kiểm độ vững thì làm ở GĐ5**, theo đúng ba điều kiện: khai báo lưới mới
 **trước** khi chạy, giữ nguyên mọi thứ khác, và **báo cáo cả hai kết quả** chứ không
@@ -1062,7 +1075,9 @@ thay thế bảng cũ.
 **Hệ quả.**
 
 1. `docs/protocol.md` mục 11 thêm mục "Lưới siêu tham số"; mục 13 sửa `7 → 8`.
-2. Không sản phẩm nào phải sinh lại. Chín bảng GĐ3 và `runs/20260910-154617_*` giữ
-   nguyên.
+2. Không sản phẩm nào phải sinh lại. Chín bảng GĐ3 giữ nguyên. Snapshot khớp bảng
+   công bố từng ô là **`runs/20260910-202500_experiments_gd3`** — *không* phải
+   `20260910-154617_*` như bản đầu ghi: snapshot ấy chụp **trước** khi mẫu con SVR được
+   sửa nên lệch 30 ô (toàn bộ `svr` ở `h = 6` và `h = 12`).
 3. Phần Limitations của paper nêu: lưới hẹp, chốt ở biên trên, `rf` 50 cây.
 4. GĐ5 có thể thêm một mục kiểm độ vững về lưới, nếu còn thời gian.

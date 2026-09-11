@@ -423,9 +423,13 @@ sai ở 27 ô còn lại. Chỉ có phép kiểm loại C (đáp án giải tíc
 
 ## Việc tiếp theo
 
-- [ ] A chốt con số model ở mục 13
-- [ ] A duyệt lưới siêu tham số và mức 50 cây của RF
-- [ ] GĐ4 — Thí nghiệm B, ba chế độ chuẩn hoá (mục 14)
+- [x] A chốt con số model ở mục 13 — **QĐ-015**: 7 là đếm *số dòng bảng* ở mục 11,
+      dòng "Linear Regression, Ridge" chứa hai model. Sửa mục 13 thành `3 × 8 × 3 = 72`
+- [x] A duyệt lưới siêu tham số và mức 50 cây của RF — **QĐ-015**: khai báo lưới đã
+      dùng, **không chạy lại**; nới lưới sau khi đã thấy ML thua là cùng họ với điều
+      mục 17 cam kết không làm. Hạn chế vào Limitations
+- [ ] GĐ4 — Thí nghiệm B, ba chế độ chuẩn hoá (mục 14). **Chưa mở**: còn thiếu
+      `gate-gd4.md`, `brief-gd4-b.md`, `scripts/reference_gd4.py` và QĐ-016
 
 ## File sinh ra
 
