@@ -51,9 +51,18 @@ kiểm cửa sổ 25 điểm thay vì `rolling`.
 tính ra **khớp tuyệt đối** chín neo đã kiểm chéo ở GĐ2 và GĐ3 — dù đường đi khác hẳn.
 
 > **Cảnh báo về tính độc lập, như QĐ-014 điểm 3.** Giữ nguyên giá trị chỉ khi phiên
-> viết `src/cwp/preprocess/normalize.py` **không đọc tệp này**. Tốt nhất là hai phiên
-> khác nhau. `E1_830` ở GĐ3 là bằng chứng sống cho chuyện hai bản cùng sai một kiểu:
-> chúng khớp nhau ở 378/405 ô mà cả hai vẫn sai ở 27 ô còn lại.
+> viết `src/cwp/preprocess/normalize.py` **không đọc tệp này**. `E1_830` ở GĐ3 là bằng
+> chứng sống cho chuyện hai bản cùng sai một kiểu: chúng khớp nhau ở 378/405 ô mà cả
+> hai vẫn sai ở 27 ô còn lại.
+
+**Đã chốt 2026-09-11: GĐ4 làm hai phiên tách bạch.** Phiên A viết thước đo, hồ sơ cổng,
+phiếu và công cụ kiểm; phiên hiện thực là **phiên khác**, không đọc bốn tệp liệt kê ở
+`brief-gd4-b.md` Bước 0. Đây là lần đầu dự án làm được điều QĐ-014 điểm 3 khuyến nghị
+mà GĐ3 không làm được.
+
+Kèm một chỗ siết cụ thể: bản mồi `normalize.py` mà loại C cần đã được **tách khỏi
+`tests/`** ra `scripts/_moi_normalize_gd4.py`, đúng cách QĐ-014 đề xuất. Ở GĐ3 bản mồi
+`metrics.py` nằm ngay trong `tests/test_check_gd3.py` và đó là điểm yếu đã khai báo.
 
 ---
 

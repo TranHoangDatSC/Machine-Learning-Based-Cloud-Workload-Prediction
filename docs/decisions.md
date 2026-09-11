@@ -1209,3 +1209,26 @@ cùng chuỗi, cùng dòng, cùng chỉ số.
 3. `config/split.yaml` đã khai `normalize_modes: [N0, N1, N2]` và
    `fit_stats_on: train_only`; QĐ này nói rõ *train của ai*.
 4. `research-log/gate-gd4.md` và `research-log/brief-gd4-b.md` neo vào đây.
+
+### Bổ sung 2026-09-11 — GĐ4 làm hai phiên tách bạch
+
+QĐ-014 điểm 3 khuyến nghị *"phần hiện thực nên do một phiên khác làm, và phiên đó không
+đọc thước đo"*, nhưng GĐ3 không làm được — hậu quả là `E1_830`: hai bản cùng viết
+`ss_tot == 0`, khớp nhau ở 378/405 ô mà **cả hai cùng sai** ở 27 ô còn lại. Loại A khi
+ấy không bắt được gì; chỉ loại C mới bắt được kiểu lỗi đó.
+
+**GĐ4 làm được.** Phiên A ngày 2026-09-11 viết thước đo, hồ sơ cổng, phiếu giao việc và
+công cụ kiểm; phiên hiện thực là **phiên khác**, và không đọc bốn tệp:
+
+| Tệp | Vì sao |
+|---|---|
+| `scripts/reference_gd4.py` | thước đo độc lập |
+| `results/tables/reference_gd4.json` | đáp án |
+| `scripts/_moi_normalize_gd4.py` | một bản `normalize.py` đúng, trọn vẹn |
+| `scripts/check_gd4.py` | **chạy được, không đọc** — loại C bày cách dựng ba bất biến |
+
+Kèm một chỗ siết mà QĐ-014 đã đề xuất và GĐ3 chưa làm: bản mồi `normalize.py` của loại
+C **tách khỏi `tests/`** ra `scripts/_moi_normalize_gd4.py`, có banner cảnh báo ở dòng
+đầu. Ở GĐ3, bản mồi `metrics.py` nằm ngay trong `tests/test_check_gd3.py`.
+
+Nhờ đó loại A của GĐ4 lấy lại **đầy đủ** sức mạnh mà GĐ1 và GĐ2 từng có.

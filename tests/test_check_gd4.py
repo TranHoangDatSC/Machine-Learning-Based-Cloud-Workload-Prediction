@@ -14,11 +14,14 @@ Thế giới giả lập cố ý dùng số **nhỏ** (100 dòng mỗi tổ hợ
 chỉ đọc `metadata.num_rows` và các bảng CSV, nên kích thước thật không cần thiết, còn
 test thì chạy trong vài giây.
 
-> **Một điểm yếu đã biết, ghi lại như QĐ-014 đã ghi cho GĐ3.** Tệp này chứa sẵn một
-> bản `normalize.py` đúng để loại C có cái mà gọi, nghĩa là ba phép biến đổi **có mặt
-> trong một tệp B đọc được**. Chấp nhận, vì QĐ-016 vốn đã đặc tả cả ba công thức lẫn
-> từng ca biên bằng lời — chép prose ra code không phải chỗ lỗi ẩn náu. Chỗ lỗi ẩn là
-> *áp dụng*: lấy cửa sổ nào, map ngược ở đâu, gộp thế nào.
+> **Bản mồi đã được tách ra khỏi `tests/` — 2026-09-11.** Loại C cần một bản
+> `normalize.py` đúng để gọi trong thế giới giả lập. Ở GĐ3, bản mồi tương đương nằm
+> ngay trong `tests/test_check_gd3.py`, và QĐ-014 ghi lại điểm yếu đó kèm cách sửa:
+> *"nếu sau này muốn siết, đưa bản mồi ấy ra một tệp riêng ngoài tests/"*.
+>
+> GĐ4 siết, vì ở đây bản mồi là **trọn vẹn** thứ mà phiên hiện thực phải tự viết. Nó
+> nằm ở `scripts/_moi_normalize_gd4.py`, có banner cảnh báo, và có tên trong danh sách
+> "không được đọc" ở `brief-gd4-b.md` Bước 0.
 """
 
 import json
@@ -50,47 +53,10 @@ MAT_N2_E3 = 2       # E3 mất 2 dòng ở N2 vì sai phân chạm lỗ hổng
 
 # ------------------------------------------------------------ bản mồi normalize
 
-MOI_NORMALIZE = '''\
-"""Bản mồi cho loại C của check_gd4 — xem đầu tests/test_check_gd4.py."""
-
-import numpy as np
-
-N_TRAIN = 1612
-
-
-def thong_ke_train(y):
-    tr = np.asarray(y, dtype="float64")[:N_TRAIN]
-    return float(np.nanmean(tr)), float(np.nanstd(tr, ddof=1))
-
-
-def bien_doi(y, mode):
-    y = np.asarray(y, dtype="float64")
-    if mode == "N0":
-        return y.copy()
-    if mode == "N1":
-        mu, sd = thong_ke_train(y)
-        if not np.isfinite(sd) or sd == 0.0:
-            return np.full_like(y, np.nan)
-        return (y - mu) / sd
-    if mode == "N2":
-        d = np.full_like(y, np.nan)
-        d[1:] = y[1:] - y[:-1]
-        return d
-    raise ValueError(mode)
-
-
-def map_nguoc(yhat, y, mode):
-    yhat = np.asarray(yhat, dtype="float64")
-    y = np.asarray(y, dtype="float64")
-    if mode == "N0":
-        return yhat
-    if mode == "N1":
-        mu, sd = thong_ke_train(y)
-        return yhat * sd + mu
-    if mode == "N2":
-        return y + yhat
-    raise ValueError(mode)
-'''
+# Bản mồi cho loại C nằm ở `scripts/_moi_normalize_gd4.py` — ngoài `tests/` có
+# chủ ý, xem banner trong tệp đó và QĐ-014.
+MOI_NORMALIZE = (ROOT / "scripts" / "_moi_normalize_gd4.py").read_text(
+    encoding="utf-8")
 
 
 # ------------------------------------------------------------- dựng thế giới

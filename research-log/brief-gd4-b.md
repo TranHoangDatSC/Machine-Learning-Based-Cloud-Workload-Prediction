@@ -69,10 +69,24 @@ khi động vào GĐ4.
 `mode` nhận `N0 \| N1 \| N2`; `lich` nhận `co \| khong` (biến thể có/không 4 đặc trưng
 lịch, mục 8 đòi riêng cho TN-B).
 
-> **Không đọc `scripts/reference_gd4.py`.** Đó là thước đo độc lập của A. Cũng đừng mở
-> `results/tables/reference_gd4.json` trước khi code chạy xong lần đầu. Cơ chế này đã
-> bắt được **mọi** lỗi của dự án — và ba lần liền lỗi nằm ở phía A, nên nó bảo vệ cả
-> hai bên.
+### Bốn tệp KHÔNG được đọc
+
+Đây là điều kiện để loại A của cổng GĐ4 còn giá trị. Cơ chế thước đo độc lập đã bắt
+được **mọi** lỗi của dự án — và ba lần liền lỗi nằm ở phía A, nên nó bảo vệ cả hai bên.
+
+| Tệp | Vì sao |
+|---|---|
+| `scripts/reference_gd4.py` | thước đo độc lập của A |
+| `results/tables/reference_gd4.json` | đáp án — mở được **sau** khi code chạy xong lần đầu |
+| `scripts/_moi_normalize_gd4.py` | **một bản `normalize.py` đúng, trọn vẹn** |
+| `scripts/check_gd4.py` | **chạy thoải mái, đừng ĐỌC** — loại C của nó chỉ ra cách kiểm |
+
+Chỗ cuối cần phân biệt rõ: **chạy `check_gd4.py` là việc bạn được khuyến khích làm liên
+tục**, ngay từ Bước 1. Chỉ đừng mở mã nguồn của nó ra đọc, vì loại C bày sẵn cách dựng
+ba bất biến — mà dựng được ba bất biến đúng là một phần bài tập.
+
+`scripts/_moi_normalize_gd4.py` là chỗ dễ vấp nhất: nó nằm trong `scripts/` và `pytest`
+có chạm tới nó. Nó có banner cảnh báo ở dòng đầu. Thấy banner thì đóng lại.
 
 ---
 
