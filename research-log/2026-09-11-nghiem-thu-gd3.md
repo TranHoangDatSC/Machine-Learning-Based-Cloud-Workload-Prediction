@@ -118,8 +118,8 @@ nếu để B tự hiểu thì hai bản hiện thực đều "đúng đặc t�
 - [x] A: chốt các điểm mơ hồ của mục 14 thành **QĐ-016** — 2026-09-11, năm quy ước
 - [x] A: dựng `gate-gd4.md`, `brief-gd4-b.md`, `scripts/reference_gd4.py` — 2026-09-11.
       Thước đo đã chạy, ra `results/tables/reference_gd4.json`
-- [ ] A: viết `scripts/check_gd4.py` + `tests/test_check_gd4.py` trước khi B nộp —
-      `gate-gd4.md` mục 4 ghi rõ là chưa có
+- [x] A: viết `scripts/check_gd4.py` + `tests/test_check_gd4.py` — 2026-09-11, phá 16
+      kiểu bắt được cả 16. **Loại C chạy được từ Bước 1**, B không phải đợi tới Bước 7
 - [ ] B: làm `brief-gd4-b.md` từ Bước 0, **không còn gì chặn**
 - [ ] GĐ5: cân nhắc kiểm độ vững về lưới siêu tham số, nếu còn thời gian
 
@@ -220,6 +220,11 @@ Ba đẳng thức này chạy được **trước khi có bất kỳ model nào*
 - `research-log/gate-gd3.md` — điền mục 5, kết luận ĐẠT
 - `docs/decisions.md` — thêm QĐ-015
 - `docs/protocol.md` — mục 11 thêm lưới siêu tham số, mục 13 sửa 7 → 8
+
+**Mở cổng GĐ4, 2026-09-11:** `docs/decisions.md` QĐ-016 · `docs/protocol.md` mục 14
+(con trỏ QĐ-016 + ghi chú hai cơ sở của con số 26,90) · `scripts/reference_gd4.py` ·
+`results/tables/reference_gd4.json` · `scripts/check_gd4.py` ·
+`tests/test_check_gd4.py` · `research-log/gate-gd4.md` · `research-log/brief-gd4-b.md`.
 
 **Sửa thêm 2026-09-11 (đính chính, xem mục trên):** `research-log/gate-gd3.md` (6 chỗ,
 thêm mục 5.6), `docs/decisions.md` QĐ-015, `docs/protocol.md` mục 11,

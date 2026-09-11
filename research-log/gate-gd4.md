@@ -17,8 +17,8 @@ ghi trước, lệnh nghiệm thu tự động.
    — và ở ba giai đoạn liền, lỗi hoá ra nằm ở **thước đo của A**, không phải sản phẩm
    của B (GĐ1 đếm điểm nội suy, GĐ2 `dropna`, GĐ3 chuỗi `E1_830`). Phép so này không
    phải để B chứng minh mình khớp A; nó để **chỗ lệch nào cũng bị truy tới cùng**.
-2. **Công cụ kiểm phải có test của chính nó.** `check_gd4.py` cần một
-   `tests/test_check_gd4.py` dựng thế giới giả lập rồi phá, như ba lần trước.
+2. **Công cụ kiểm phải có test của chính nó.** `tests/test_check_gd4.py` dựng thế
+   giới giả lập rồi phá **16 kiểu**, bắt được cả 16 — như ba lần trước.
 3. **Rào chắn "đừng code hướng về con số"** vào mọi prompt.
 4. **Mới ở GĐ4:** rào chắn *"đừng để chuẩn hoá làm số đẹp lên"*. Xem mục 0b.
 
@@ -220,12 +220,23 @@ python scripts/check_gd4.py
 pytest tests/ -v
 ```
 
-> `scripts/check_gd4.py` và `tests/test_check_gd4.py` **chưa viết** lúc phát hành hồ sơ
-> này. A phải làm trước khi B nộp, theo đúng khuôn `check_gd3.py`: ba loại phép kiểm
-> (A so tham chiếu, B đẳng thức tự thân, C đáp án giải tích), và test của chính công cụ
-> phá đủ các kiểu.
+**Đã có, 2026-09-11.** `scripts/check_gd4.py` chạy ba loại phép kiểm:
 
-Hợp đồng tên tệp đầu ra chốt ở `brief-gd4-b.md` Bước 0.
+| Loại | Gồm |
+|---|---|
+| **C** — đáp án giải tích | C1 cửa sổ `mu`/`sd`, **C2 đổi `y` sau 1612 thì `mu`/`sd` không đổi**, C3–C5 ba bất biến, C6 chuỗi `sd = 0`, C7 sai phân |
+| **A** — so tham chiếu | thống kê N1, ba bất biến trên dữ liệu thật, 27 ma trận đặc trưng |
+| **B** — đẳng thức tự thân | B1 N0 khớp neo GĐ2, B2 N1 ≡ N0, B3 N2 không mất dòng ở E1/E2, B4 đủ 108 tổ hợp, B5–B8 bất đẳng thức chỉ số, B9 `n_chuoi + n_loai`, **B10 baseline giống nhau ở ba chế độ** |
+
+`tests/test_check_gd4.py` dựng thế giới giả lập rồi **phá 16 kiểu**, bắt được cả 16,
+cộng hai trạng thái phải xanh (thế giới đúng; thế giới đúng có thêm model ngoài bộ bắt
+buộc). Chạy được ở trạng thái **B chưa bắt đầu**: báo thiếu, in tiến độ 0/7, không đổ vỡ.
+
+Loại C chạy **kể cả khi B chưa sinh bảng nào** — nó chỉ cần `cwp/preprocess/normalize.py`.
+Nên B dùng được ngay từ Bước 1 làm phản hồi tức thì, không phải đợi tới Bước 7.
+
+Hợp đồng tên tệp đầu ra chốt ở `brief-gd4-b.md` Bước 0; hợp đồng **API** của
+`normalize.py` ở Bước 1.
 
 ---
 

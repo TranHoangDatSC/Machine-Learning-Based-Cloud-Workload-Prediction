@@ -53,7 +53,8 @@ python scripts/check_gd1.py && python scripts/check_gd2.py && python scripts/che
 pytest tests/ -q
 ```
 
-**Phải thấy** ba dòng ĐẠT và `277 passed, 1 skipped`. Cả ba cổng cũ phải còn ĐẠT trước
+**Phải thấy** ba dòng ĐẠT và `295 passed, 1 skipped` (277 của GĐ3 cộng 18 test
+của `check_gd4.py`). Cả ba cổng cũ phải còn ĐẠT trước
 khi động vào GĐ4.
 
 **Hợp đồng tên tệp — chốt ở đây, `check_gd4.py` đọc theo đúng tên này:**
@@ -121,9 +122,24 @@ Them mot test nua, quan trong khong kem: doi gia tri y o bucket >= 1612 roi tinh
 mu va sd — HAI CON SO PHAI KHONG DOI. Do la phep kiem truc tiep cho quy uoc 1.
 ```
 
+### Hợp đồng API — `check_gd4.py` loại C gọi thẳng ba hàm này
+
+```python
+from cwp.preprocess.normalize import thong_ke_train, bien_doi, map_nguoc
+
+thong_ke_train(y)            # y: mảng 1 chiều 2304 điểm của MỘT chuỗi
+                             # -> (mu, sd), tính trên [0, 1612), ddof = 1
+bien_doi(y, mode)            # mode ∈ {"N0", "N1", "N2"} -> mảng cùng độ dài
+map_nguoc(yhat, y, mode)     # đưa dự đoán về thang CPU% gốc
+```
+
+Ba hàm này là **mức chuỗi đơn**, cố ý: chúng dễ kiểm tay và dễ test. Phần làm việc
+trên bảng dài `data/processed/` bạn xây **lên trên** chúng, đừng viết song song.
+
 ### Lệnh
 ```bash
 pytest tests/test_normalize.py -v
+python scripts/check_gd4.py          # loại C chạy được ngay, không cần bảng nào
 ```
 
 ### Phải thấy
@@ -348,8 +364,10 @@ python scripts/check_gd4.py
 pytest tests/ -v
 ```
 
-> `check_gd4.py` do A viết, **chưa có** lúc phiếu này phát hành. Hỏi A nếu tới Bước 7
-> mà vẫn chưa có.
+> `check_gd4.py` **đã có**. Đừng đợi tới Bước 7 mới chạy: **loại C của nó chạy được
+> ngay từ Bước 1**, chỉ cần `cwp/preprocess/normalize.py` tồn tại — bảy phép kiểm giải
+> tích, trong đó C2 là phép kiểm rò rỉ mạnh nhất của cả giai đoạn. Dùng nó làm phản hồi
+> tức thì thay vì chờ.
 
 ---
 
