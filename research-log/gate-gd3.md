@@ -1,9 +1,9 @@
 # Hồ sơ cổng GĐ3
 
 **Người giữ cổng:** A
-**Trạng thái:** **MỞ — B vào làm được ngay.** Thước đo `scripts/reference_gd3.py` đã
-chạy, năm quy ước đã chốt ở QĐ-013. Phiếu giao việc: `research-log/brief-gd3-b.md`.
-**Cập nhật:** 2026-09-10
+**Trạng thái:** **ĐÓNG — ĐẠT ngày 2026-09-11.** Đủ 8 model × 9 tổ hợp, Bước 6 xong,
+`check_gd3.py` thoát 0, `pytest` 277 passed.
+**Cập nhật:** 2026-09-11 (nghiệm thu lần hai, sau khi B chạy nốt `rf`/`svr`)
 **Giai đoạn:** Thí nghiệm A — trong cùng môi trường (`docs/research-plan.md` GĐ3)
 
 Cùng khuôn với `gate-gd1.md` và `gate-gd2.md`: thước đo độc lập, ngưỡng ghi trước,
@@ -289,18 +289,138 @@ phạm:
 
 ## 5. Kết quả cổng
 
-Điền khi nghiệm thu.
+Nghiệm thu **2026-09-10**, máy `DESKTOP-J03IDG1`, `pytest tests/` = **275 passed,
+1 skipped**.
+
+Nghiệm thu hai vòng. Vòng một (2026-09-10) trượt vì thiếu sản phẩm; vòng hai
+(2026-09-11) sau khi B chạy nốt `rf`, `svr` và Bước 6.
 
 | Mục | Kết quả | Ghi chú |
 |---|---|---|
-| 3.1 Sản phẩm | | |
-| 3.2 Bộ máy đánh giá | | |
-| 3.3 Ba baseline | | |
-| 3.4 Rò rỉ L1–L4 | | |
-| 3.5 ML so với naive | | |
+| 3.1 Sản phẩm | **ĐẠT** | Đủ 8 model × 9 tổ hợp; `tang_gd3.csv`, `wilcoxon_gd3.csv`, `ml_vs_naive_gd3.csv`, 10 hình + PDF; log đầy đủ |
+| 3.2 Bộ máy đánh giá | **ĐẠT** | 27 số dòng, 9 mẫu số MASE, ngưỡng tầng, tỉ lệ bỏ của seasonal — khớp tuyệt đối |
+| 3.3 Ba baseline | **ĐẠT** | 45 chỉ số p50 khớp, **sau khi sửa lỗi ở tham chiếu của A** — xem 5.1 |
+| 3.4 Rò rỉ L1–L4 | **ĐẠT** | 18 test L1/L3/L4 xanh; L2: 15 lần chạm test = đúng số tổ hợp `(env, h, model ML)` mới |
+| 3.5 ML so với naive | **ĐẠT** | Bảng đủ, Wilcoxon + Holm trên 252 cặp, và **chỗ ML thua được báo cáo thẳng** |
 
-**Kết luận:**
-**Ngày duyệt:**
+**Kết luận: ĐẠT.** `python scripts/check_gd3.py` thoát 0; `pytest tests/` **277 passed,
+1 skipped**. Điều kiện qua cổng ở `docs/research-plan.md` — *"trả lời được 'ML có vượt
+naive không, ở horizon nào' kèm kiểm định thống kê"* — đã thoả, và câu trả lời là
+**phần lớn là không** (mục 5.3).
+
+**Ngày duyệt:** 2026-09-11
+
+### 5.1 Lỗi R² của tham chiếu — B đúng, A sai, đã sửa
+
+B báo 27 ô R² của E1 lệch tham chiếu và **từ chối sửa code cho khớp**, kèm đề nghị A
+quyết. Truy nguyên xác nhận B đúng hoàn toàn.
+
+Chuỗi **`E1_830`** có 347 dòng test mang **đúng một giá trị** `1,1333333333333333`.
+Về toán học `SS_tot = 0` nên QĐ-013 điểm 4 bảo loại chuỗi. Nhưng
+`ȳ = sum/n` của 347 bản sao một số không biểu diễn được chính xác ra
+`1,1333333333333329`, nên `sum((y−ȳ)²) = 6,84 × 10⁻²⁹ > 0`. Bản của A kiểm
+`sstot > 0` nên **chấm R² = 1,0** — điểm tuyệt đối cho một chuỗi hằng mà naive đoán
+trúng tầm thường, và giá trị đó đẩy trung vị cả cột lên.
+
+Bốn chuỗi hằng còn lại của E1 (`E1_172, E1_295, E1_543, E1_807`) mang hằng số biểu
+diễn được chính xác nên tổng bình phương ra đúng 0 và bị loại bình thường. Chỉ
+`E1_830` lọt. E2 và E3 không có chuỗi hằng nào trên test nên không bị ảnh hưởng.
+
+**Đã sửa `scripts/reference_gd3.py`** dùng `min == max` — đặc trưng chính xác của
+phương sai bằng 0, không phụ thuộc thứ tự cộng dồn. Sinh lại `reference_gd3.json`;
+`check_gd3.py` chuyển sang **ĐẠT**, `n_chuoi/n_loai` của E1 nay là **730/5**.
+
+> Đây là **lần thứ ba** thước đo của A sai còn sản phẩm của B đúng (GĐ1: lỗi đếm
+> điểm nội suy; GĐ2: `dropna` thay luật cửa sổ; GĐ3: chuỗi này). Cơ chế kiểm chéo
+> không phải để B chứng minh mình khớp A — nó để chỗ lệch nào cũng bị truy tới cùng,
+> bất kể lỗi thuộc bên nào. Cách B xử lý lần này là mẫu mực: báo lệch, truy nguyên,
+> **không** sửa đầu ra cho vừa đáp án, và nói rõ cổng chưa nên coi là ĐẠT.
+
+### 5.2 Nhãn hướng so sánh — lỗi đã phát hiện ở vòng một, B đã sửa
+
+Vòng một A phát hiện `fig_gd3_results.py::kiem_dinh_cap` lấy **p-value từ Wilcoxon
+ghép cặp** (kiểm trung vị của **hiệu**) nhưng lấy **hướng** từ
+`delta_p50 = median(a) − median(b)` (**hiệu của hai trung vị**). Hai đại lượng này
+ngược dấu được, và khi đó bảng khẳng định một chiến thắng có ý nghĩa **sai chiều**.
+Đo trên dữ liệu lúc đó: 4 trong 40 cặp so với naive bị gán sai, cả 4 đều nghiêng về
+phía ML.
+
+**B đã sửa trước khi chạy Bước 6.** Bản hiện tại tính cả hai và tách vai trò:
+
+```python
+"delta_p50": float(np.median(va) - np.median(vb)),   # hiệu hai trung vị — chỉ để báo cáo
+"hieu_p50":  float(np.median(va - vb)),              # trung vị của hiệu — dùng gán hướng
+```
+
+Kiểm lại trên bảng đã sinh: `hieu_p50` khớp trung vị của hiệu tính lại từ
+`per_series_gd3.csv`, và **252/252 cặp gán đúng hướng** (32 cặp không kết luận được
+sau hiệu chỉnh Holm). `ml_vs_naive_gd3.csv` cũng suy `vuot_naive` từ đúng đại lượng
+ghép cặp ở cả 63 dòng.
+
+> **Đính chính của A.** Vòng một A viết rằng `ml_vs_naive_gd3.csv` *"sẽ khẳng định ML
+> vượt naive ở h=1, ngược với dữ liệu"*. Sai — A đọc `kiem_dinh_cap` rồi suy ra cho cả
+> `bang_ml_vs_naive`, mà hàm thứ hai vốn đã dùng đúng thống kê ghép cặp ngay từ đầu.
+> Lỗi chỉ nằm ở cột `tot_hon` của `wilcoxon_gd3.csv`. Phạm vi hẹp hơn A nói.
+
+### 5.3 Trả lời RQ1 — ML phần lớn KHÔNG vượt naive
+
+Wilcoxon signed-rank trên MAE theo chuỗi, hiệu chỉnh Holm–Bonferroni trong từng
+`(env, h)`, hướng lấy từ trung vị của hiệu ghép cặp.
+
+| | Số ô ML vượt naive | Chi tiết |
+|---|---|---|
+| **E1** | **0 / 15** | Không model ML nào vượt naive ở bất kỳ horizon nào |
+| **E2** | **2 / 15** | Chỉ `svr`, ở h=6 và h=12 |
+| **E3** | **11 / 15** | `lr`, `ridge`, `rf` ở h=1; thêm `xgb` ở h=6 và h=12 |
+
+Đây là **finding**, không phải thất bại — `docs/research-plan.md` đã lường trước:
+*"Nếu ML không vượt ở h=1 thì đó là finding, ghi lại và đi tiếp, không được ép model."*
+Và `protocol.md` mục 17 cam kết *"không giấu việc baseline naive thắng model ML"*.
+
+Diễn giải thẳng: trên trace **VM** (E1, E2), persistence ở lưới 5 phút gần như không
+thể vượt — chuỗi gần bước ngẫu nhiên. Trên trace **máy vật lý** (E3), nơi tải của
+nhiều VM cộng lại làm ACF lag 1 lên 0,86 (so với 0,67) và chu kỳ ngày rõ
+(ACF lag 288 = 0,60 so với 0,13), ML **có** chỗ để thắng. Đây là vật liệu trực tiếp
+cho RQ2 và là nền cho RQ3.
+
+Một chi tiết dễ đọc nhầm: `svr` có **tỉ số MAE gộp** thấp hơn naive ở cả sáu ô của
+E1 và E2 (0,78–0,93), trông như thắng đậm. Nhưng thống kê **ghép cặp** chỉ xác nhận
+hai ô. Hai cách đo trả lời hai câu hỏi khác nhau — *"tổng thể tốt hơn bao nhiêu"* so
+với *"tốt hơn trên bao nhiêu chuỗi"* — và khi chúng lệch nhau thì bảng phải nói cả hai,
+đừng chọn cái đẹp hơn.
+
+### 5.4 Sản phẩm Bước 5 và Bước 6 — đã đủ
+
+Lần chạy cuối `runs/20260910-154617_experiments_gd3`, 271,7 phút, đủ **8 model × 3
+môi trường × 3 horizon**. RF chiếm phần lớn chi phí (14.466 s trên tổng ~21.700 s).
+
+**Hạn chế phải ghi vào paper: siêu tham số chốt nằm ở BIÊN TRÊN của lưới.**
+
+| Model | Lưới | Số tổ hợp chốt ở biên trên |
+|---|---|---:|
+| `rf` | `max_depth ∈ {8, 16}` | **7 / 9** |
+| `svr` | `C ∈ {1, 10}` | **7 / 9** |
+| `xgb` | `depth ∈ {4, 8}`, `n_estimators ∈ {300, 600}` | **6 / 9** |
+| `ridge` | `alpha ∈ {0,01 … 100}` | 4 / 9 |
+
+Khi lựa chọn rơi vào mép lưới thì tối ưu thật có thể nằm ngoài, nghĩa là ML đang bị
+**giới hạn bởi lưới**, không phải bởi dữ liệu. Cộng thêm việc B khai rõ `rf` chỉ chạy
+**50 cây** vì chi phí. Nên phát biểu đúng phải là: *"với lưới siêu tham số này và ngân
+sách tính toán này, ML không vượt naive trên E1 và E2"* — chứ không phải một kết luận
+về năng lực của họ thuật toán.
+
+Điều này **không** làm lung lay kết luận chính: `lr` và `ridge` thua naive tới 2,3–2,6
+lần trên E1/E2, khoảng cách đó không phải do lưới. Nhưng với `rf`, `xgb`, `svr` — vốn
+đã sát naive — thì nới lưới là việc đáng làm nếu còn thời gian ở GĐ5.
+
+### 5.5 Một quan sát cần theo dõi, chưa phải lỗi
+
+Trên **E1**, tập validation **dễ hơn hẳn** tập test: MAE của naive là **0,2185** trên
+val so với **0,4077** trên test (h=1). E2 và E3 không có khoảng cách này.
+
+Không phải rò rỉ — nó giải thích vì sao `mae_p50_val` của xgb (0,168) thấp hơn nhiều
+so với MAE test (0,397). Nhưng nó có nghĩa là siêu tham số của E1 được chọn trên một
+vùng thời gian không đại diện. Nên ghi vào Limitations, và cân nhắc ở GĐ4.
 
 ---
 

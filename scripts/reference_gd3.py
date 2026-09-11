@@ -175,8 +175,14 @@ def chi_so_theo_chuoi(y: np.ndarray, yhat: np.ndarray, m: np.ndarray,
         if np.isfinite(d_mase[i]) and d_mase[i] > 0:
             ra["mase"][i] = ra["mae"][i] / d_mase[i]
 
-        sstot = ((a - a.mean()) ** 2).sum()
-        if sstot > 0:
+        # Chuỗi hằng nhận biết bằng `min == max`, KHÔNG bằng `sstot > 0`.
+        # `sum((a − ā)²)` của 346 bản sao một số không biểu diễn được chính xác cho
+        # ra 6,8e−29 chứ không phải 0, vì ā = sum/n không rơi đúng vào chính số đó.
+        # Bản cũ vì thế chấm R² = 1,0 cho chuỗi hằng E1_830 — một điểm tuyệt đối cho
+        # thứ mà naive đoán trúng tầm thường. B bắt được lỗi này khi đối chiếu; xem
+        # research-log/2026-09-10-gd3-thi-nghiem-a.md và gate-gd3.md mục 5.
+        if a.min() != a.max():
+            sstot = ((a - a.mean()) ** 2).sum()
             ra["r2"][i] = 1.0 - ((a - b) ** 2).sum() / sstot
 
     return ra
