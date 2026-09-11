@@ -311,15 +311,50 @@ def loai_b_so_dong(feat_dir: Path, cat: pd.DataFrame, rep: Report):
             "; ".join(xau[:4]) + ("  (lệch nghĩa là có chuỗi sd = 0, hoặc `mu`/`sd` "
                                   "tính trên cửa sổ khác)" if xau else ""))
 
-    # B3 — N2 không được mất dòng ở E1 và E2.
+    # B3 — N2 phải mất ÍT NHẤT một dòng mỗi chuỗi.
+    #
+    # Sửa 2026-09-11. Bản đầu đòi N2 **không mất dòng nào** ở E1/E2 và giải thích
+    # "mất nghĩa là sai phân bắc cầu qua ranh giới chuỗi". Điều đó **ngược**: nó
+    # thưởng cho đúng cái lỗi nó định bắt.
+    #
+    # Chứng minh mọi bản hiện thực ĐÚNG đều phải mất dòng. Gọi `t*` là dòng hợp lệ
+    # đầu tiên của một chuỗi ở N0. N2 đòi thêm `y[t*-25]` và `y[t*+h-1]`.
+    #   - `y[t*+h-1]` là NaN  -> `t*` trượt N2.
+    #   - `y[t*+h-1]` hữu hạn VÀ `y[t*-25]` hữu hạn -> cửa sổ `[t*-25, t*-1]` sạch và
+    #     target `y[(t*-1)+h]` hữu hạn, nên `t*-1` đã hợp lệ ở N0 — mâu thuẫn với việc
+    #     `t*` là dòng đầu.
+    # Vậy `t*` luôn trượt N2: **mất >= số chuỗi**, ở mọi môi trường và mọi horizon.
+    #
+    # Nếu sai phân bắc cầu, `z` ở đầu chuỗi thứ 2 trở đi lấy được giá trị cuối của
+    # chuỗi trước nên không NaN, và tổng mất tụt xuống 1. Đó là thứ phép kiểm này bắt.
+    #
+    # Kiểm bằng **bucket nhỏ nhất của từng chuỗi**, không bằng tổng số dòng mất.
+    # Đếm tổng là điều kiện cần chứ chưa đủ: đo trên dữ liệu thật, bản bắc cầu của E2
+    # mất 306 dòng trong khi E2 có 302 chuỗi — nó vẫn vượt ngưỡng đếm và lọt. Bản bắc
+    # cầu của E1 thì mất 26 so với 735 nên ngưỡng đếm bắt được. Phép kiểm chỉ đúng ở
+    # một môi trường là phép kiểm chưa đúng.
+    #
+    # Với bản đúng: mọi chuỗi đều mất dòng đầu, nên `min(bucket)` ở N2 luôn LỚN HƠN ở
+    # N0. Với bản bắc cầu: chuỗi thứ 2 trở đi giữ nguyên dòng đầu, `min(bucket)` bằng
+    # nhau — lộ ra ngay, bất kể môi trường có bao nhiêu lỗ hổng.
+    #
+    # Chỉ kiểm ở h=1 cho rẻ: lỗi bắc cầu không phụ thuộc horizon.
     xau = []
-    for env in ("E1", "E2"):
-        for h in HORIZONS:
-            a, b = dem(env, "N0", h), dem(env, "N2", h)
-            if a is not None and b is not None and b != a:
-                xau.append(f"{env} h{h}: N2 {b:,} ≠ N0 {a:,}")
-    rep.add(g, "B3 — N2 không mất dòng ở E1/E2 (mất nghĩa là sai phân bắc cầu qua "
-               "ranh giới chuỗi)", FAIL if xau else OK, "; ".join(xau[:4]))
+    for env in ENVS:
+        pa = feat_dir / f"{env}_N0_h1.parquet"
+        pb = feat_dir / f"{env}_N2_h1.parquet"
+        if not (pa.exists() and pb.exists()):
+            continue
+        c = ["series_id", "bucket"]
+        a = pd.read_parquet(pa, columns=c).groupby("series_id")["bucket"].min()
+        b = pd.read_parquet(pb, columns=c).groupby("series_id")["bucket"].min()
+        j = a.to_frame("n0").join(b.to_frame("n2"), how="left")
+        giu_nguyen = int((j["n2"] <= j["n0"]).sum())
+        if giu_nguyen:
+            xau.append(f"{env}: {giu_nguyen}/{len(j)} chuỗi giữ nguyên dòng đầu ở N2")
+    rep.add(g, "B3 — ở N2, dòng hợp lệ ĐẦU TIÊN của mỗi chuỗi phải biến mất (còn "
+               "nghĩa là sai phân bắc cầu qua ranh giới chuỗi)",
+            FAIL if xau else OK, "; ".join(xau[:4]))
 
 
 def loai_b_transfer(tr: pd.DataFrame, cat: pd.DataFrame, rep: Report):

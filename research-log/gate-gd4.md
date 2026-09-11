@@ -235,7 +235,7 @@ pytest tests/ -v
 |---|---|
 | **C** — đáp án giải tích | C1 cửa sổ `mu`/`sd`, **C2 đổi `y` sau 1612 thì `mu`/`sd` không đổi**, C3–C5 ba bất biến, C6 chuỗi `sd = 0`, C7 sai phân |
 | **A** — so tham chiếu | thống kê N1, ba bất biến trên dữ liệu thật, 27 ma trận đặc trưng |
-| **B** — đẳng thức tự thân | B1 N0 khớp neo GĐ2, B2 N1 ≡ N0, B3 N2 không mất dòng ở E1/E2, B4 đủ 108 tổ hợp, B5–B8 bất đẳng thức chỉ số, B9 `n_chuoi + n_loai`, **B10 baseline giống nhau ở ba chế độ** |
+| **B** — đẳng thức tự thân | B1 N0 khớp neo GĐ2, B2 N1 ≡ N0, B3 N2 làm biến mất dòng đầu của mọi chuỗi, B4 đủ 108 tổ hợp, B5–B8 bất đẳng thức chỉ số, B9 `n_chuoi + n_loai`, **B10 baseline giống nhau ở ba chế độ** |
 
 `tests/test_check_gd4.py` dựng thế giới giả lập rồi **phá 16 kiểu**, bắt được cả 16,
 cộng hai trạng thái phải xanh (thế giới đúng; thế giới đúng có thêm model ngoài bộ bắt
@@ -246,6 +246,43 @@ Nên B dùng được ngay từ Bước 1 làm phản hồi tức thì, không p
 
 Hợp đồng tên tệp đầu ra chốt ở `brief-gd4-b.md` Bước 0; hợp đồng **API** của
 `normalize.py` ở Bước 1.
+
+---
+
+### B3 đã bị sửa — công cụ kiểm thưởng cho đúng cái lỗi nó định bắt
+
+> Phát hiện 2026-09-11 khi hiện thực Bước 2. **Lần thứ tư công cụ của A sai.**
+
+Bản đầu của B3 đòi *"N2 không mất dòng ở E1/E2"*, giải thích *"mất nghĩa là sai phân
+bắc cầu qua ranh giới chuỗi"*. Cả hai vế sai, và sai **ngược chiều**.
+
+**Mọi bản hiện thực đúng đều phải mất dòng.** Gọi `t*` là dòng hợp lệ đầu tiên của một
+chuỗi ở N0. N2 đòi thêm `y[t*−25]` và `y[t*+h−1]`. Nếu `y[t*+h−1]` là `NaN` thì `t*`
+trượt ngay; nếu nó hữu hạn **và** `y[t*−25]` cũng hữu hạn thì `t*−1` đã có cửa sổ sạch
+lẫn target hữu hạn, tức `t*` không phải dòng đầu — mâu thuẫn. Vậy `t*` **luôn** trượt
+N2, ở mọi môi trường và mọi horizon.
+
+Bản bắc cầu thì mất **ít hơn**, vì `z` ở đầu chuỗi thứ hai trở đi lấy được giá trị
+cuối của chuỗi trước nên không `NaN`. Đo trên dữ liệu thật:
+
+| | bản ĐÚNG mất | bản BẮC CẦU mất | B3 cũ | B3 mới |
+|---|---:|---:|---|---|
+| E1 | 735 (= số chuỗi) | 26 | đánh trượt bản đúng | phân biệt được |
+| E2 | 607 | 306 | đánh trượt bản đúng | phân biệt được |
+
+**Vì sao không dùng ngưỡng đếm.** Cách sửa đầu tiên là đòi `mất ≥ số chuỗi`. Nó bắt
+được E1 (26 < 735) nhưng **lọt ở E2**: bản bắc cầu mất 306, vẫn vượt ngưỡng 302. Phép
+kiểm chỉ đúng ở một môi trường là phép kiểm chưa đúng.
+
+**Bản chốt kiểm `min(bucket)` của từng chuỗi.** Bản đúng làm dòng đầu của *mọi* chuỗi
+biến mất nên `min(bucket)` ở N2 luôn lớn hơn ở N0; bản bắc cầu giữ nguyên dòng đầu từ
+chuỗi thứ hai trở đi nên hai giá trị bằng nhau — lộ ra bất kể môi trường có bao nhiêu
+lỗ hổng. Đo trên sản phẩm thật: **0/735, 0/302, 0/498 chuỗi vi phạm.**
+
+`tests/test_check_gd4.py` phải sửa theo: thế giới giả lập bản đầu cho E1/E2 mất 0 dòng
+ở N2, tức **mã hoá sẵn đúng cái lỗi**. Nay ma trận giả lập mang `series_id` và `bucket`
+thật, ca phá mô phỏng bắc cầu bằng `_ma_tran(..., bac_cau=True)`, và có thêm một ca
+xanh khẳng định *"mất đúng một dòng mỗi chuỗi vẫn ĐẠT"*. Tổng **17 kiểu phá, 19 test**.
 
 ---
 

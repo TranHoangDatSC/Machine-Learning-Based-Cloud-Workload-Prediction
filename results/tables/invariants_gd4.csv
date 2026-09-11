@@ -1,0 +1,10 @@
+env,bat_bien,lech_toi_da,nguong,dat
+E1,naive_N0_vs_N1,2.842170943040401e-14,1e-09,True
+E1,ma6_N0_vs_N1,4.263256414560601e-14,1e-09,True
+E1,naive_N0_vs_N2,0.0,0.0,True
+E2,naive_N0_vs_N1,2.842170943040401e-14,1e-09,True
+E2,ma6_N0_vs_N1,4.263256414560601e-14,1e-09,True
+E2,naive_N0_vs_N2,0.0,0.0,True
+E3,naive_N0_vs_N1,1.4210854715202004e-14,1e-09,True
+E3,ma6_N0_vs_N1,4.263256414560601e-14,1e-09,True
+E3,naive_N0_vs_N2,0.0,0.0,True

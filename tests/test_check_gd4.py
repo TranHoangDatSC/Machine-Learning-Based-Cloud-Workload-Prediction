@@ -48,7 +48,10 @@ METRICS = ["mae", "rmse", "smape", "mase", "r2"]
 
 N_CHUOI = {"E1": 4, "E2": 3, "E3": 5}
 NEO = 100           # số dòng hợp lệ mỗi (env, h), dùng chung cho gọn
-MAT_N2_E3 = 2       # E3 mất 2 dòng ở N2 vì sai phân chạm lỗ hổng
+# N2 mất ÍT NHẤT một dòng mỗi chuỗi ở MỌI môi trường — dòng hợp lệ đầu tiên của mỗi
+# chuỗi, vì `z` cần thêm một điểm lịch sử. E3 mất dôi thêm vì còn lỗ hổng sau nội suy.
+# Sửa 2026-09-11 cùng B3: bản đầu cho E1/E2 mất 0, tức mã hoá đúng cái lỗi B3 định bắt.
+MAT_N2 = {"E1": N_CHUOI["E1"], "E2": N_CHUOI["E2"], "E3": N_CHUOI["E3"] + 2}
 
 
 # ------------------------------------------------------------ bản mồi normalize
@@ -69,15 +72,41 @@ def _viet_nguon(goc: Path, noi_dung: str = MOI_NORMALIZE) -> None:
     (d / "normalize.py").write_text(noi_dung, encoding="utf-8")
 
 
+B0 = 4_587_716          # bucket đầu cửa sổ, giống E1 thật cho dễ đọc
+
+
+def _so_dong_moi_chuoi(env: str) -> list[int]:
+    """Chia NEO dòng cho các chuỗi, giống hệt cách `_viet_catalog` chia."""
+    n = N_CHUOI[env]
+    return [NEO // n + (i < NEO % n) for i in range(n)]
+
+
+def _ma_tran(env: str, mode: str, bac_cau: bool = False) -> pd.DataFrame:
+    """Ma trận đặc trưng tí hon, có `series_id` và `bucket` thật.
+
+    N2 bỏ dòng ĐẦU của mỗi chuỗi — `z` cần thêm một điểm lịch sử. `bac_cau=True` mô
+    phỏng lỗi sai phân vắt qua ranh giới chuỗi: chuỗi thứ 2 trở đi **giữ** dòng đầu.
+    """
+    dong = []
+    du = MAT_N2[env] - N_CHUOI[env]          # phần mất dôi ra vì lỗ hổng (E3)
+    for i, cnt in enumerate(_so_dong_moi_chuoi(env)):
+        b = np.arange(B0 + 24, B0 + 24 + cnt)
+        if mode == "N2":
+            if not (bac_cau and i > 0):
+                b = b[1:]                     # mất dòng hợp lệ đầu tiên
+            if i == 0 and du > 0:
+                b = b[:-du]                   # E3 mất thêm vì chạm lỗ hổng
+        dong.append(pd.DataFrame({"series_id": f"{env}_{i}", "bucket": b,
+                                  "x": np.zeros(len(b))}))
+    return pd.concat(dong, ignore_index=True)
+
+
 def _viet_features(feat: Path) -> None:
     feat.mkdir(parents=True, exist_ok=True)
     for env in ENVS:
         for mode in MODES:
             for h in HORIZONS:
-                n = NEO
-                if mode == "N2" and env == "E3":
-                    n -= MAT_N2_E3
-                pd.DataFrame({"x": np.zeros(n)}).to_parquet(
+                _ma_tran(env, mode).to_parquet(
                     feat / f"{env}_{mode}_h{h}.parquet", index=False)
 
 
@@ -96,7 +125,7 @@ def _tham_chieu(p: Path) -> None:
     for env in ENVS:
         so_dong = {}
         for mode in MODES:
-            n = NEO - (MAT_N2_E3 if (mode == "N2" and env == "E3") else 0)
+            n = NEO - (MAT_N2[env] if mode == "N2" else 0)
             so_dong[mode] = {f"h{h}": {"train": n - 30, "val": 15, "test": 15}
                              for h in HORIZONS}
         mt.append({
@@ -259,7 +288,7 @@ def test_thieu_module_normalize_thi_bao_TRUOT_khi_B_da_nop(the_gioi):
 
 def test_pha_N1_lech_N0_thi_B2_do(the_gioi):
     """z-score không được sinh thêm NaN khi `sd > 0`."""
-    pd.DataFrame({"x": np.zeros(NEO - 7)}).to_parquet(
+    _ma_tran("E1", "N0").iloc[:-7].to_parquet(
         the_gioi["feat"] / "E1_N1_h6.parquet", index=False)
     ma, out = chay(the_gioi)
     assert ma != 0
@@ -269,20 +298,34 @@ def test_pha_N1_lech_N0_thi_B2_do(the_gioi):
 def test_pha_N0_lech_neo_catalog_thi_B1_do(the_gioi):
     """Thêm chế độ mà đổi cả số dòng N0 nghĩa là đường sinh đặc trưng đã đổi."""
     for mode in MODES:
-        pd.DataFrame({"x": np.zeros(NEO + 5)}).to_parquet(
+        pd.concat([_ma_tran("E1", "N0")] * 2, ignore_index=True).iloc[:NEO + 5].to_parquet(
             the_gioi["feat"] / f"E2_{mode}_h1.parquet", index=False)
     ma, out = chay(the_gioi)
     assert ma != 0
     assert "B1" in out
 
 
-def test_pha_N2_mat_dong_o_E1_thi_B3_do(the_gioi):
-    """E1 mất dòng ở N2 nghĩa là sai phân bắc cầu qua ranh giới chuỗi."""
-    pd.DataFrame({"x": np.zeros(NEO - 3)}).to_parquet(
+def test_pha_N2_mat_qua_it_dong_thi_B3_do(the_gioi):
+    """Sai phân bắc cầu qua ranh giới chuỗi -> N2 mất quá ít dòng.
+
+    Bắc cầu thì `z` ở đầu chuỗi thứ hai trở đi lấy được giá trị cuối của chuỗi trước
+    nên không NaN, và chỉ chuỗi đầu tiên mất dòng. Bản ĐÚNG mất ít nhất một dòng mỗi
+    chuỗi — xem chứng minh ở B3 của `check_gd4.py`.
+
+    Bản đầu của test này phá theo chiều **ngược**: nó cho E1 mất dòng rồi đòi B3 đỏ.
+    Khi ấy một bản hiện thực đúng sẽ trượt còn bản bắc cầu thì qua.
+    """
+    _ma_tran("E1", "N2", bac_cau=True).to_parquet(
         the_gioi["feat"] / "E1_N2_h1.parquet", index=False)
     ma, out = chay(the_gioi)
     assert ma != 0
     assert "B3" in out
+
+
+def test_N2_mat_dung_mot_dong_moi_chuoi_van_DAT(the_gioi):
+    """Mất đúng `n_chuỗi` dòng là trường hợp ĐÚNG phổ biến nhất — không được báo đỏ."""
+    ma, out = chay(the_gioi)
+    assert ma == 0, f"mất đúng một dòng mỗi chuỗi mà báo trượt:\n{out}"
 
 
 def test_pha_baseline_khac_nhau_giua_ba_che_do_thi_B10_do(the_gioi):
