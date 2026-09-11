@@ -428,8 +428,9 @@ sai ở 27 ô còn lại. Chỉ có phép kiểm loại C (đáp án giải tíc
 - [x] A duyệt lưới siêu tham số và mức 50 cây của RF — **QĐ-015**: khai báo lưới đã
       dùng, **không chạy lại**; nới lưới sau khi đã thấy ML thua là cùng họ với điều
       mục 17 cam kết không làm. Hạn chế vào Limitations
-- [ ] GĐ4 — Thí nghiệm B, ba chế độ chuẩn hoá (mục 14). **Chưa mở**: còn thiếu
-      `gate-gd4.md`, `brief-gd4-b.md`, `scripts/reference_gd4.py` và QĐ-016
+- [ ] GĐ4 — Thí nghiệm B, ba chế độ chuẩn hoá (mục 14). **Cổng đã MỞ 2026-09-11**:
+      QĐ-016 chốt năm quy ước, `gate-gd4.md` + `brief-gd4-b.md` + `reference_gd4.py`
+      đã có. Còn thiếu `check_gd4.py`, A làm trước khi B nộp
 
 ## File sinh ra
 

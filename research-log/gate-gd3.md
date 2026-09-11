@@ -155,31 +155,37 @@ hoặc nó dùng luật dòng hợp lệ khác, hoặc nó lặng lẽ lấp gi�
 
 Chạy theo thứ tự. Trượt mục nào thì dừng.
 
+> **Đã kiểm hết, 2026-09-11.** Các ô dưới đây tick theo kết quả ở mục 5; bằng chứng
+> máy chạy được là `python scripts/check_gd3.py` thoát 0 và `pytest tests/` 277 passed.
+
 ### 3.1 Sản phẩm có đủ không
 
-- [ ] `src/cwp/models/baselines.py` — ba baseline của mục 11
-- [ ] `src/cwp/evaluation/metrics.py` — MAE, RMSE, SMAPE, MASE, R² theo QĐ-013
-- [ ] `src/cwp/evaluation/splits.py` — chia theo bucket, purge dòng vắt ranh giới,
+- [x] `src/cwp/models/baselines.py` — ba baseline của mục 11
+- [x] `src/cwp/evaluation/metrics.py` — MAE, RMSE, SMAPE, MASE, R² theo QĐ-013
+- [x] `src/cwp/evaluation/splits.py` — chia theo bucket, purge dòng vắt ranh giới,
       rolling-origin 5 fold
-- [ ] `tests/` — test cho cả ba module trên, và test **biết đỏ** (phá code kiểm ngược)
-- [ ] `runs/` — mỗi lần chạy một thư mục, kèm snapshot config
-- [ ] `results/tables/` — bảng kết quả, có cả bản gộp và bản tách theo tầng burstiness
-- [ ] Log GĐ3 trong `research-log/`
+- [x] `tests/` — test cho cả ba module trên, và test **biết đỏ**: `scripts/pha_gd3.py`
+      phá 5 kiểu, cả 5 bị bắt, mã nguồn về nguyên trạng
+- [x] `runs/` — 5 thư mục, mỗi thư mục kèm snapshot config và `meta.json`
+- [x] `results/tables/` — 9 bảng, có cả bản gộp và bản tách theo tầng (`tang_gd3.csv`)
+- [x] Log GĐ3 trong `research-log/` — `2026-09-10-gd3-thi-nghiem-a.md`
 
 ### 3.2 Bộ máy đánh giá khớp neo — khớp **tuyệt đối**
 
-- [ ] 27 con số ở mục 2.2 (3 env × 3 h × 3 tập)
-- [ ] Tổng ba tập nhỏ hơn tổng dòng hợp lệ đúng `n_chuỗi × 2 × h`
-- [ ] 9 mẫu số MASE và 9 giá trị MASE của naive ở mục 2.4
-- [ ] Ngưỡng và số chuỗi mỗi tầng ở mục 2.5
-- [ ] Tỉ lệ dòng bỏ của seasonal naive ở mục 2.6
+- [x] 27 con số ở mục 2.2 — lệch `(0, 0, 0)` cả chín tổ hợp
+- [x] Tổng ba tập nhỏ hơn tổng dòng hợp lệ đúng `n_chuỗi × 2 × h` — E1/E2 khớp đúng
+      bằng; E3 mất ít hơn 3 đơn vị ở `h = 1` vì NaN gần ranh giới, nằm trong cận của B1
+- [x] 9 mẫu số MASE và 9 giá trị MASE của naive ở mục 2.4
+- [x] Ngưỡng và số chuỗi mỗi tầng ở mục 2.5
+- [x] Tỉ lệ dòng bỏ của seasonal naive ở mục 2.6
 
 ### 3.3 Ba baseline khớp neo — khớp **tuyệt đối**
 
-- [ ] 27 con số MAE ở mục 2.3
-- [ ] RMSE, SMAPE, MASE, R² khớp `reference_gd3.json`
-- [ ] Gộp bằng **trung vị theo chuỗi** kèm IQR, không phải trung bình, không phải
-      gộp mọi dòng vào một dãy (QĐ-013 điểm 5)
+- [x] 27 con số MAE ở mục 2.3
+- [x] RMSE, SMAPE, MASE, R² khớp `reference_gd3.json` — 45/45 chỉ số p50, **sau khi
+      sửa lỗi R² ở tham chiếu của A** (mục 5.1)
+- [x] Gộp bằng **trung vị theo chuỗi** kèm IQR — `pha_gd3.py` P4 đổi sang trung bình
+      thì hai test đỏ và B5 báo 40 dòng vi phạm `p25 ≤ p50 ≤ p75`
 
 ### 3.4 Rò rỉ — phần nặng nhất của cổng này
 
@@ -202,15 +208,30 @@ fold train phải **kết thúc trước** khi fold val bắt đầu, và cũng 
 **L4 — Đặc trưng vẫn là 19 cột của mục 8.** Không thêm `lag_288`, không thêm CV,
 không thêm gì. `check_gd2.py` đã ghim schema; GĐ3 không được nới ra.
 
+**Kết quả bốn phép kiểm, 2026-09-11:**
+
+- [x] **L1** — 18 test `test_L1_*`/`test_L3_*` xanh ở cả ba horizon, và B chạy lại
+      trực tiếp trên 9 ma trận thật: `max(t+h)` của train = 1.611, của vùng khớp cuối
+      = 1.956, `min(t)` của test = 1.957
+- [x] **L2** — 55 lần chạm test trên 45 tổ hợp; chênh 10 lần đều giải thích được, xem
+      mục 5.6. Không lần nào test được dùng để **chọn** gì
+- [x] **L3** — biên 5 fold in ra là `1612, 1681, 1750, 1819, 1888, 1957`, không fold
+      nào chạm `[1957, 2304)`
+- [x] **L4** — B7 của `check_gd3.py` xác nhận 9 ma trận đặc trưng đúng 22 cột
+
 ### 3.5 Điều kiện qua cổng — và một áp lực mới
 
 `research-plan.md`: *"trả lời được 'ML có vượt naive không, ở horizon nào' kèm kiểm
 định thống kê. Nếu ML không vượt ở `h=1` thì **đó là finding**, ghi lại và đi tiếp,
 không được ép model."*
 
-- [ ] Có bảng so mọi model với naive, ba môi trường × ba horizon
-- [ ] Có kiểm định Wilcoxon cho chênh lệch giữa các model (mục 15)
-- [ ] **Nếu ML thua naive ở đâu đó, điều đó được BÁO CÁO, không bị giấu**
+- [x] Có bảng so mọi model với naive, ba môi trường × ba horizon —
+      `ml_vs_naive_gd3.csv`, 63 dòng
+- [x] Có kiểm định Wilcoxon cho chênh lệch giữa các model (mục 15) —
+      `wilcoxon_gd3.csv`, 252 cặp, Holm–Bonferroni trong từng `(env, h)`
+- [x] **Nếu ML thua naive ở đâu đó, điều đó được BÁO CÁO, không bị giấu** — E1 báo
+      thẳng *"KHÔNG CÓ"* ở cả ba horizon, và bảng phân tầng báo thẳng rằng ở tầng
+      bursty nhất **mọi** model đều thua naive
 
 > **Cái bẫy của GĐ3 khác cái bẫy của GĐ2.** GĐ2 sợ rò rỉ đặc trưng. GĐ3 sợ **áp lực
 > để có kết quả đẹp**. Nhìn bảng ở mục 2.3 thì thấy ngay: ở h=1, naive cho MAE 0,4077

@@ -1081,3 +1081,131 @@ thay thế bảng cũ.
    sửa nên lệch 30 ô (toàn bộ `svr` ở `h = 6` và `h = 12`).
 3. Phần Limitations của paper nêu: lưới hẹp, chốt ở biên trên, `rf` 50 cây.
 4. GĐ5 có thể thêm một mục kiểm độ vững về lưới, nếu còn thời gian.
+
+---
+
+## QĐ-016 — Năm quy ước của GĐ4 mà mục 14 chưa nói rõ
+
+**Ngày:** 2026-09-11 · **Người quyết:** A · **Trạng thái:** Có hiệu lực
+
+**Bối cảnh.** Mục 14 đặc tả ba chế độ chuẩn hoá bằng lời và `giai-thich-chuan-hoa.md`
+giảng rất kỹ *vì sao* cần chúng, nhưng cả hai đều thiếu định nghĩa đủ chặt để hai bản
+hiện thực độc lập ra cùng con số. Đúng cái bẫy QĐ-010 gặp ở GĐ2 và QĐ-013 gặp ở GĐ3 —
+mỗi bên "đúng" theo cách hiểu của mình rồi số lệch nhau mà không ai sai.
+
+Chốt trước, **trước khi có dòng code GĐ4 nào**, để cổng có neo.
+
+### 1. `mu` và `sd` của N1 lấy từ **cửa sổ train của chính chuỗi đích**
+
+Mục 14 viết *"thống kê chuẩn hoá của N1 chỉ được tính trên cửa sổ train"* — nhưng
+không nói **train của ai**. Ở TN-B, chuỗi được chấm nằm ở môi trường **đích**, còn
+model học ở môi trường **nguồn**. Hai cách hiểu đều đọc xuôi mục 14:
+
+| Phương án | Nghĩa | Vấn đề |
+|---|---|---|
+| Thống kê của chuỗi **đích** | Máy đích tự chuẩn hoá bằng lịch sử của chính nó | Không còn là zero-shot thuần |
+| Thống kê của môi trường **nguồn** | Transfer thuần tuý | Thất bại vì lệch thang — một lý do tầm thường |
+
+**Quyết định: dùng `mu`, `sd` của chính chuỗi đích, tính trên bucket `[0, 1612)` của
+chuỗi đó.**
+
+Ba lý do:
+
+1. **Đó là thứ có thật khi triển khai.** Một máy mới trong datacenter đích luôn có
+   lịch sử của chính nó; giả định "không biết gì về máy đích" là giả định không ai
+   gặp trong vận hành.
+2. **Nó vẫn không nhìn vào test.** Cửa sổ `[0, 1612)` là quá khứ so với
+   `[1957, 2304)`, đúng nguyên tắc chống rò rỉ đã áp ở QĐ-013 điểm 1.
+3. **Nó tách đúng thứ cần tách.** Câu hỏi của RQ3 là *"hình dạng biến động có
+   transfer không"*, và để hỏi được câu đó thì mức tải phải bị loại **ở cả hai đầu**.
+   Dùng thống kê nguồn áp lên chuỗi đích thì mức tải của đích vẫn còn nguyên.
+
+**Hệ quả bắt buộc cho cách phát biểu.** RQ3 không được phát biểu là *"zero-shot
+transfer"*. Phát biểu đúng là: *"động lực học có transfer được không, khi mỗi chuỗi
+đích được chuẩn hoá bằng lịch sử của chính nó"*. Ghi vào Discussion và Limitations.
+
+N2 không có vấn đề này: sai phân `y_{t+h} − y_t` không cần thống kê nào.
+
+### 2. Đặc trưng **được biến đổi theo** target, trừ bốn đặc trưng lịch
+
+19 đặc trưng đều dẫn xuất từ `y`. Nếu chỉ chuẩn hoá **target** mà giữ `lag_*`,
+`roll_*`, `diff_1` ở thang gốc thì **mức tải vẫn vào model qua đặc trưng**, và N1
+không bỏ được đúng cái nó sinh ra để bỏ.
+
+**Quyết định: biến đổi chuỗi `y` TRƯỚC, rồi sinh lại 19 đặc trưng từ chuỗi đã biến
+đổi.** Bốn đặc trưng lịch (`hour_sin`, `hour_cos`, `dow_sin`, `dow_cos`) **giữ
+nguyên** — chúng đã nằm trong `[−1, 1]` và không mang thang tải.
+
+Vì sao sinh lại chứ không nhân `mu`/`sd` vào cột có sẵn: với N1 hai cách tương đương
+(z-score là affine nên `roll_mean` của z bằng z của `roll_mean`), nhưng với **N2 thì
+không** — `roll_std` của chuỗi sai phân khác hẳn `roll_std` của chuỗi gốc. Dùng một
+đường đi duy nhất cho cả ba chế độ thì không phải nhớ ngoại lệ.
+
+**Hệ quả:** `data/features/` nhân ba, thành `{env}_{mode}_h{h}.parquet`. Luật dòng hợp
+lệ của mục 8 giữ nguyên, áp trên chuỗi đã biến đổi. **Số dòng của N0 phải khớp tuyệt
+đối chín neo của GĐ2/GĐ3** — nếu lệch thì đường sinh đặc trưng đã đổi, dừng truy nguyên.
+
+### 3. Siêu tham số **dùng lại** của GĐ3, không dò lại
+
+Mục 9 đòi chọn siêu tham số trên validation. GĐ3 đã làm đúng thế cho từng môi trường.
+
+**Quyết định: GĐ4 dùng lại siêu tham số đã chốt ở GĐ3 theo từng môi trường NGUỒN,
+không chạy lại rolling-origin.**
+
+Đo được từ GĐ3, nơi dò siêu tham số chiếm **82%** tổng thời gian máy:
+
+| | ước tính cho cả 5 model ML |
+|---|---|
+| Dùng lại siêu tham số GĐ3 | **≈ 5,9 giờ** |
+| Dò lại cho từng chế độ | **≈ 32,9 giờ** |
+
+Đây là quyết định **khai báo trước**, không phải lối tắt phát hiện giữa chừng. Hạn chế
+đi kèm phải nêu trong Limitations: siêu tham số được chọn dưới chế độ **N0**, nên với
+N1 và N2 nó có thể không còn tối ưu — cộng thêm cảnh báo ở `gate-gd3.md` mục 5.5 rằng
+vùng validation của E1 dễ hơn test hẳn, nên E1-làm-nguồn thừa hưởng chỗ yếu đó.
+
+### 4. Ba baseline là **mốc cố định của môi trường đích**, giống nhau ở cả ba chế độ
+
+Ba baseline không huấn luyện nên "transfer" không có nghĩa với chúng. Chúng có mặt
+trong bảng TN-B để làm **mốc**: một model transfer chỉ đáng quan tâm khi nó hơn được
+baseline chạy ngay tại môi trường đích.
+
+**Quyết định: tính ba baseline một lần trên tập test của môi trường đích, ở thang CPU%
+gốc, và lặp lại cùng con số đó ở cả ba bảng N0/N1/N2.** Con số này **chính là** bảng
+baseline của GĐ3 — không tính lại.
+
+Riêng `naive` dưới N2 có một mơ hồ phải đóng: `Δ̂ = 0` (ra đúng persistence) hay
+`Δ̂ = Δ_t` (thành model drift)? **Chốt `Δ̂ = 0`**, vì đó là thứ làm N2 so được với N0.
+
+### 5. Ba bất biến làm phép kiểm bắt buộc
+
+`giai-thich-chuan-hoa.md` mục 4 nêu một. Thực ra có **ba**, đều suy ra từ tính affine
+và đều chạy được **trước khi có bất kỳ model nào**:
+
+| Bất biến | Vì sao đúng |
+|---|---|
+| `naive` ở N0 ≡ `naive` ở N1, sau khi map ngược | z-score là affine, persistence bất biến dưới affine |
+| **`ma6` ở N0 ≡ `ma6` ở N1** | trung bình của z là z của trung bình — cũng affine |
+| **`naive` ở N2 với `Δ̂ = 0` ≡ `naive` ở N0** | `ŷ = y_t + 0 = y_t` |
+
+Cả ba phải **trùng đến ít nhất 9 chữ số thập phân**. Lệch thì code sai ở đúng một
+trong ba chỗ mục 5 của tài liệu chuẩn hoá liệt kê: quên map ngược, dùng thống kê toàn
+chuỗi thay vì cửa sổ train, hoặc áp `mu`/`sd` của chuỗi này lên chuỗi khác.
+
+Đây là chỗ **rẻ nhất** để bắt lỗi chuẩn hoá — chỗ `research-plan.md` gọi là *"dễ sai
+nhất toàn dự án"* — nên chúng vào `tests/test_normalize.py` **trước** khi chạy model.
+
+### Tập đánh giá, nói cho hết
+
+Mọi con số TN-B đo trên **đúng tập test của môi trường đích**, `[1957, 2304)`, với
+cùng luật purge của QĐ-013 điểm 2. Nhờ vậy bảng TN-B đặt cạnh bảng TN-A đọc được ngay:
+cùng chuỗi, cùng dòng, cùng chỉ số.
+
+**Hệ quả.**
+
+1. `scripts/reference_gd4.py` hiện thực năm quy ước này và sinh
+   `results/tables/reference_gd4.json` — neo của cổng GĐ4.
+2. `docs/protocol.md` mục 14 nhận mục con trỏ về đây.
+3. `config/split.yaml` đã khai `normalize_modes: [N0, N1, N2]` và
+   `fit_stats_on: train_only`; QĐ này nói rõ *train của ai*.
+4. `research-log/gate-gd4.md` và `research-log/brief-gd4-b.md` neo vào đây.

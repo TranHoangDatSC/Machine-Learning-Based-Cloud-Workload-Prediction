@@ -115,10 +115,12 @@ nếu để B tự hiểu thì hai bản hiện thực đều "đúng đặc t�
 
 - [x] Sửa sáu chỗ sai trong tài liệu GĐ3 — 2026-09-11, xem mục "Đính chính" bên dưới
 - [x] Tick checklist GĐ3 ở `docs/research-plan.md`, đóng khối GĐ3
-- [ ] A: chốt các điểm mơ hồ của mục 14 (ba chế độ chuẩn hoá N0/N1/N2) thành **QĐ-016**
-      — **chặn GĐ4**, danh sách điểm phải chốt đã soạn sẵn ở mục "Chuẩn bị GĐ4" bên dưới
-- [ ] A: dựng `gate-gd4.md`, `brief-gd4-b.md`, `scripts/reference_gd4.py` trước khi B
-      bắt đầu — đúng nhịp đã chạy ba lần; làm **sau** QĐ-016 vì thước đo phụ thuộc nó
+- [x] A: chốt các điểm mơ hồ của mục 14 thành **QĐ-016** — 2026-09-11, năm quy ước
+- [x] A: dựng `gate-gd4.md`, `brief-gd4-b.md`, `scripts/reference_gd4.py` — 2026-09-11.
+      Thước đo đã chạy, ra `results/tables/reference_gd4.json`
+- [ ] A: viết `scripts/check_gd4.py` + `tests/test_check_gd4.py` trước khi B nộp —
+      `gate-gd4.md` mục 4 ghi rõ là chưa có
+- [ ] B: làm `brief-gd4-b.md` từ Bước 0, **không còn gì chặn**
 - [ ] GĐ5: cân nhắc kiểm độ vững về lưới siêu tham số, nếu còn thời gian
 
 ## Đính chính 2026-09-11 — sáu chỗ sai trong tài liệu GĐ3

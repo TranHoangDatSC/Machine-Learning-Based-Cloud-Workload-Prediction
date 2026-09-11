@@ -564,6 +564,25 @@ Sáu cặp: E1→E2, E2→E1, E1→E3, E3→E1, E2→E3, E3→E2.
 **Thống kê chuẩn hoá của N1 chỉ được tính trên cửa sổ train của chuỗi đó.** Dùng
 thống kê toàn chuỗi là rò rỉ dữ liệu.
 
+> **Năm quy ước chốt ở QĐ-016, bổ sung 2026-09-11.** Câu trên chưa đủ chặt để hai bản
+> hiện thực độc lập ra cùng con số.
+>
+> 1. **`mu`, `sd` lấy trên cửa sổ train của chính chuỗi ĐÍCH**, bucket `[0, 1612)` của
+>    chuỗi đó — không phải thống kê của môi trường nguồn. Hệ quả: RQ3 **không** được
+>    phát biểu là *"zero-shot"*, mà là *"động lực học có transfer không, khi mỗi chuỗi
+>    đích được chuẩn hoá bằng lịch sử của chính nó"*.
+> 2. **Biến đổi `y` trước, rồi sinh lại 19 đặc trưng** từ chuỗi đã biến đổi; bốn đặc
+>    trưng lịch giữ nguyên. Chỉ chuẩn hoá target mà giữ `lag_*` thô thì mức tải vẫn
+>    vào model qua đặc trưng, và N1 hỏng **âm thầm**.
+> 3. **Siêu tham số dùng lại của GĐ3** theo từng môi trường nguồn, không dò lại.
+> 4. **Ba baseline là mốc cố định của môi trường đích**, giống nhau ở cả ba chế độ;
+>    `naive` dưới N2 là `Δ̂ = 0`.
+> 5. **Ba bất biến** (naive N0 ≡ naive N1, ma6 N0 ≡ ma6 N1, naive N2 với `Δ̂ = 0` ≡
+>    naive N0) là phép kiểm bắt buộc, trùng tới ít nhất 9 chữ số thập phân.
+>
+> Mọi con số TN-B đo trên **đúng tập test của môi trường đích**, `[1957, 2304)`, cùng
+> luật purge của QĐ-013 điểm 2.
+
 Khi báo cáo, mọi dự đoán phải **đưa ngược về thang CPU% gốc** rồi mới tính chỉ số,
 để ba chế độ so sánh được với nhau.
 
@@ -580,6 +599,23 @@ MAE = **4,35** — tốt hơn 6,2 lần.
 > **Số cũ đo trên 833 chuỗi, sửa 2026-09-10 theo QĐ-012 điểm 6.** Bản trước ghi
 > 28,64 / 63,4% / 5,76, đo trước khi QĐ-009 đóng băng mẫu 500 máy. Lập luận không đổi,
 > và mạnh hơn một chút. Bảng đối chiếu đầy đủ ở QĐ-012.
+
+> **Hai con số 26,90 và 4,35 đo trên CƠ SỞ KHÁC với GĐ4 — ghi chú 2026-09-11.**
+> Chúng lấy hằng số trên **toàn** cửa sổ 8 ngày của E1 và chấm trên **mọi dòng hợp lệ**
+> của E3. Cơ sở đó hợp lý cho một minh hoạ viết trước khi có QĐ-013, nhưng GĐ4 thì
+> chấm trên **tập test** của môi trường đích và lấy hằng số trên **cửa sổ train** của
+> nguồn (QĐ-016). Trên cơ sở GĐ4, cùng phép đo cho:
+>
+> | | hằng số | MAE hằng số | naive tại E3 | tệ hơn |
+> |---|---:|---:|---:|---:|
+> | cơ sở mục 14 (cũ) | 13,635 | **26,9049** | 4,3466 | 6,19× |
+> | cơ sở GĐ4 (QĐ-016) | 13,480 | **28,2356** | 4,2955 | 6,57× |
+>
+> `scripts/reference_gd4.py` in ra cả hai để không ai phải đoán vì sao hai con số
+> không khớp. **Lập luận không đổi, và mạnh hơn một chút ở cơ sở GĐ4.** Khi viết paper,
+> trích con số nào cũng được — miễn **nói rõ cơ sở**, vì đây đúng cái bẫy
+> `tu-bai-cu-den-bai-nay.md` mục 3 phân tích: hai con số trông so được nhưng đo hai
+> thứ khác nhau.
 
 Nghĩa là nếu chạy N0 thô và thu được MAE khoảng 27, con số đó **không nói lên điều gì**
 về chất lượng model — một hằng số cũng đạt được. Kết luận "cross-environment
