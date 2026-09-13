@@ -1461,3 +1461,123 @@ lần naive. Dự đoán này **có thể sai**. Nếu sai thì đó chính là 
    nhận ghi chú trỏ về đây.
 4. Thời gian máy ước tính: **D1 khoảng 2–2,5 giờ, D2 khoảng 1 giờ**. Đo từ lần chạy thử
    đường chéo N0: `rf` + `xgb` + `svr` ở `h = 1` cho cả ba môi trường mất 13,7 phút.
+
+---
+
+## QĐ-018 — N1 khi chuỗi nguồn đứng yên trong cửa sổ train: phân tích độ nhạy
+
+**Ngày:** 2026-09-13 · **Người quyết:** A · **Trạng thái:** Có hiệu lực — **khai trước khi
+chạy**. Đây là **hậu kiểm**: vấn đề được phát hiện sau khi có kết quả QĐ-017.
+
+**Bối cảnh.** `research-log/2026-09-13-qd017-ket-qua.md` phát hiện 1. Có 10 máy E3 với
+CPU trung bình 0,00% trong `[0, 1612)`, sang validation mới chạy. `sd` train của chúng
+nhỏ tới 0,0029, nên z-score trong vùng khớp `[0, 1957)` lên tới 30.200 và làm hỏng mọi
+model N1 train trên E3. Chẩn đoán hậu kiểm: bỏ 10 chuỗi khỏi tập train thì `xgb` E3→E1
+ở N1, h=12 từ 60,6 lần naive về 1,59 lần.
+
+Không phải lỗi code: `mu`/`sd` đúng QĐ-016 điểm 1. Lỗi nằm ở chỗ **z-score theo cửa sổ
+train không xác định được một cách có ý nghĩa cho chuỗi không biến động trong train**.
+
+### 1. Luật loại — lấy từ bất đẳng thức Samuelson, không chọn ngưỡng
+
+Với mỗi chuỗi: `n` = số điểm hữu hạn trong `[0, 1612)`; `mu`, `sd` đúng QĐ-016 (`ddof = 1`);
+`z_t = (y_t − mu) / sd` với mọi `t` hữu hạn trong `[0, 1957)`.
+
+**Chuỗi bị loại khỏi TẬP HUẤN LUYỆN ở N1 khi `max |z_t| > (n − 1) / √n`.**
+
+Vì sao đúng giới hạn này. Bất đẳng thức Samuelson: trong **bất kỳ** mẫu `n` điểm nào, mọi
+điểm đều thoả `|x − x̄| / s ≤ (n − 1)/√n`. Với `n = 1612` thì giới hạn ≈ 40,1. Nên:
+
+- Trong cửa sổ train, **không chuỗi nào vượt được** giới hạn, vì đó là định lý.
+- Một điểm ở validation vượt giới hạn thì mang giá trị mà **chính cửa sổ train của chuỗi
+  không thể sinh ra**, dù phân phối có đuôi dày tới đâu. z-score của nó không còn là
+  "lệch bao nhiêu độ lệch chuẩn" theo nghĩa nào đo được từ train.
+
+Vùng xét là `[0, 1957)` vì đó là vùng khớp của model cuối cùng (QĐ-014 điểm 1). **Không
+chạm test.** Luật không có tham số tự do nào.
+
+**Tập chấm giữ nguyên.** Chuỗi bị loại vẫn được chấm như mọi chuỗi khác, để phép so ghép
+cặp với bản gốc dùng đúng cùng tập chuỗi và cùng dòng test.
+
+**Minh bạch — đếm trước khi khai, không phải kết quả model:**
+
+| | chuỗi | vi phạm trong chính cửa sổ train | **bị loại** |
+|---|---:|---:|---:|
+| E1 | 735 | 0 | **2** — `E1_1167` (209,4), `E1_703` (84,5) |
+| E2 | 302 | 0 | **1** — `E2_2013-8_402` (64,9) |
+| E3 | 498 | 0 | **10** — max \|z\| từ 83,9 tới 30.196,5 |
+| E1a | 368 | 0 | **1** — `E1_703` |
+| E1g | 73 | 0 | **0** |
+
+Cột giữa bằng 0 ở mọi nơi, đúng như định lý. Đó là phép kiểm rằng giới hạn được hiện thực
+đúng. **10 chuỗi E3 trùng đúng 10 chuỗi của phép chẩn đoán |z| > 50.** Trùng vì khoảng
+cách lớn — chuỗi nhẹ nhất vẫn gấp đôi giới hạn — chứ luật không được chọn cho khớp. Người
+đọc vẫn cần biết luật được đặt ra **sau khi** đã thấy 10 chuỗi đó.
+
+### 2. Phạm vi chạy
+
+Chỉ **N1**, lịch = co, 5 model ML, `h ∈ {1, 6, 12}`, siêu tham số như cũ. Một model khớp
+một lần cho mỗi `(nguồn, h, model)`, dự đoán cho mọi đích của nguồn đó:
+
+| Nguồn | Đích |
+|---|---|
+| E1 | E1, E2, E3 |
+| E2 | E2, E1, E3 |
+| E3 | E3, E1, E2 |
+| E1a | E1a, E1g |
+| E1g | E1g, E1a |
+
+**75 lần khớp, 195 lần chạm test.** Mẫu con SVR rút lại trên tập dòng đã loại. Không
+tránh được, và khai ra đây.
+
+E1g không loại chuỗi nào, nên được chạy lại **làm phép kiểm tất định**: số của nó phải
+trùng bản QĐ-017.
+
+### 3. Phân tích — cùng phép kiểm QĐ-017, chỉ thay dòng N1
+
+Bản độ nhạy thay **mọi dòng N1** trong ba bảng theo chuỗi bằng số của QĐ-018:
+`per_series_gd4.csv` (lịch = co), `qd017_d1_chuoi.csv`, `qd017_d2_chuoi.csv`. Dòng N0,
+N2 giữ nguyên. Sau đó chạy lại **đúng** T-D1a, T-D1b, T-D1c, T-D2 bằng hàm của
+`phan_tich_qd017.py`, và chấm lại P1, P3, P5, P7. P2, P4, P6 không dính N1 nên không đổi.
+
+### 4. Báo cáo — gán trước bản nào dùng cho câu nào
+
+- **Bản QĐ-017 là hồ sơ chính thức** và giữ nguyên.
+- Mọi phát biểu **N1 có E3 làm nguồn** trong paper dùng **bản QĐ-018**, dán nhãn *"phân
+  tích độ nhạy hậu kiểm; loại khỏi tập huấn luyện chuỗi đứng yên theo giới hạn Samuelson"*,
+  và nêu con số bản gốc ở Limitations.
+- Dự đoán nào **đổi chấm** giữa hai bản thì báo cả hai, kèm câu *"kết luận N1 phụ thuộc
+  cách xử lý máy đứng yên"*.
+- Không chọn bản theo kết quả. Không thử luật loại nào khác.
+
+### 5. Dự đoán
+
+| # | Dự đoán | Bản gốc |
+|---|---|---|
+| S1 | T-D1a E3: N1 tệ hơn N0 ở **≤ 7/15** phép | 13/15 |
+| S2 | T-D1b E3→E1 và E3→E2 ở N1: trung vị `L` **< 1,5** cả hai | 2,773 · 3,787 |
+| S3 | T-D1b E1→E3 và E2→E3 ở N1: trung vị `L` **≥ 0,95** cả hai | 0,775 · 0,786 |
+| S4 | P5 dưới bản độ nhạy vẫn **đúng** (Alibaba→Bitbrains tốn hơn ≥ 20/30) | 30/30 |
+| S5 | P1 và P3 **giữ nguyên chấm** | đúng · đúng |
+
+Không dự đoán cho P7: E1a chỉ loại 1 chuỗi, không có cơ sở đoán hướng.
+
+**S1 không hoàn toàn độc lập:** chẩn đoán đã thấy `lr` và `xgb` E3→E3 ở h=12 hồi phục khi
+bỏ 10 chuỗi. S2 chỉ độc lập một phần: đã thấy `xgb` E3→E1 h=12. Các ô còn lại —
+`ridge`, `rf`, `svr`, mọi `h ≠ 12`, và E3→E2 — chưa ai nhìn.
+
+### 6. Rào chắn
+
+1. Thứ tự: commit QĐ-018 → code, test, script phân tích → commit → chạy.
+2. **Chặn trước khi phân tích** (`check_qd018.py`):
+   - E1g làm nguồn trùng bản QĐ-017, lệch MAE tối đa ≤ 1e−9
+   - `n_dong` theo chuỗi trùng bản gốc ở mọi tổ hợp
+   - số dòng train dùng = số dòng train gốc trừ đúng số dòng của chuỗi bị loại
+
+   Trượt thì dừng.
+3. Hạn chế khai trước: N0 và N2 **không** loại chuỗi, vì chúng không chia cho `sd`. Nên
+   T-D1a bản độ nhạy so model N1 train trên 488 chuỗi E3 với model N0 train trên 498.
+
+**Hệ quả.** `config/qd018_loai_n1.csv` (đóng băng); `scripts/loai_n1_qd018.py`,
+`run_qd018.py`, `check_qd018.py`, `phan_tich_qd018.py`; `tests/test_qd018.py`. Thời gian
+máy ước tính 1,5–2 giờ, theo khối N1 của D1 và D2.
