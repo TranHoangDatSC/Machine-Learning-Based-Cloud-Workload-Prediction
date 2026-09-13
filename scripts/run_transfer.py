@@ -69,8 +69,17 @@ HORIZONS = (1, 6, 12)
 LICH = ("co", "khong")
 CAL_COLS = ["hour_sin", "hour_cos", "dow_sin", "dow_cos"]
 TEN_BANG = "transfer_gd4.csv"
+TEN_CHUOI = "per_series_gd4.csv"
 COT = ["nguon", "dich", "mode", "lich", "h", "model", "metric",
        "p25", "p50", "p75", "iqr", "n_chuoi", "n_loai", "n_dong_test"]
+
+# Chỉ số theo TỪNG CHUỖI — bắt buộc cho Wilcoxon ghép cặp ở Bước 5 (mục 15).
+# Bản đầu của script chỉ ghi số gộp, và bảng gộp **không kiểm định được**: bài học
+# GĐ3 là hiệu hai trung vị với trung vị của hiệu ngược dấu nhau ở 8 cặp.
+# Baseline không có ở đây — chúng là mốc cố định của đích, per-series lấy thẳng từ
+# `per_series_gd3.csv` (cùng môi trường, cùng cửa sổ test), đúng QĐ-016 điểm 4.
+COT_CHUOI = ["nguon", "dich", "mode", "lich", "h", "model", "series_id",
+             "n_dong"] + list(METRIC_NAMES)
 
 
 # --------------------------------------------------------------------- nạp
@@ -200,11 +209,16 @@ def main() -> int:
     tang = {e: bt[bt["env"] == e].set_index("series_id")["tang"] for e in ENVS}
     n_chuoi_tong = {e: int(tang[e].shape[0]) for e in ENVS}
 
+    # `--resume` phải biết tới TÊN MODEL. Bản đầu chỉ kiểm
+    # `(nguồn, đích, chế độ, lịch, h)`, nên sau khi `lr` chạy xong thì mọi tổ hợp đều
+    # "đã có" và `--models xgb --resume` bỏ qua sạch — chạy 0,0 phút, chạm test 0 lần,
+    # trông như đã xong. Đó là kiểu hỏng tệ nhất: nó **im lặng** và **trông giống
+    # thành công**. Đã xảy ra thật ngày 2026-09-12.
     p_out = tab / TEN_BANG
-    da_co = set()
+    da_co: set[tuple] = set()
     if a.resume and p_out.exists():
         cu = pd.read_csv(p_out)
-        da_co = set(map(tuple, cu[["nguon", "dich", "mode", "lich", "h"]]
+        da_co = set(map(tuple, cu[["nguon", "dich", "mode", "lich", "h", "model"]]
                         .drop_duplicates().to_numpy()))
 
     run_dir = ROOT / "runs" / (datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -222,6 +236,7 @@ def main() -> int:
     t0 = time.time()
     cham_test = []
     dong_moi: list[dict] = []
+    chuoi_moi: list[pd.DataFrame] = []
 
     # Model chỉ phụ thuộc (nguồn, mode, lịch, h) -> khớp một lần, dùng cho mọi đích.
     nguon_can = sorted({n for n, _ in caps})
@@ -231,9 +246,23 @@ def main() -> int:
             for lich in lichs:
                 cot = cot_dac_trung(lich)
                 for h in hs:
-                    can_lam = [(d) for d in dich_cua_nguon
-                               if (nguon, d, mode, lich, h) not in da_co]
-                    if not can_lam:
+                    # Thiếu model nào ở đích nào — tính riêng từng đích.
+                    thieu = {d: [m for m in models
+                                 if (nguon, d, mode, lich, h, m) not in da_co]
+                             for d in dich_cua_nguon}
+                    thieu_bl = [d for d in dich_cua_nguon
+                                if any((nguon, d, mode, lich, h, b) not in da_co
+                                       for b in BASELINE_NAMES)]
+                    can_khop = sorted({m for v in thieu.values() for m in v})
+                    can_lam = [d for d in dich_cua_nguon if thieu[d]]
+                    if not can_khop and not thieu_bl:
+                        continue
+
+                    if not can_khop:
+                        for dich in thieu_bl:
+                            dong_moi += dong_baseline(bl, nguon, dich, mode, lich, h)
+                        ghi(p_out, dong_moi)
+                        dong_moi = []
                         continue
 
                     Xs = doc_ma_tran(nguon, mode, h, feat_dir)
@@ -246,14 +275,14 @@ def main() -> int:
                     print(f"{nguon}→{','.join(can_lam)} {mode} lịch={lich} h={h}: "
                           f"train {len(y_tr):,} dòng")
 
-                    for ten in models:
+                    for ten in can_khop:
                         ts = doc_sieu_tham_so(chosen, nguon, h, ten)
                         mo_hinh, n_dung, giay = khop_mot_model(
                             ten, X_tr, y_tr, ts, tang_tr)
                         print(f"   {ten:6} {json.dumps(ts, separators=(',', ':')):32}"
                               f" n_tr={n_dung:>9,}  khớp {giay:6.1f}s", flush=True)
 
-                        for dich in can_lam:
+                        for dich in [d for d in can_lam if ten in thieu[d]]:
                             Xd = doc_ma_tran(dich, mode, h, feat_dir)
                             off_d = offset(Xd["bucket"].to_numpy(), b0[dich])
                             te = split_masks(off_d, h)["test"]
@@ -272,6 +301,15 @@ def main() -> int:
                             ps = per_series_metrics(sid, y_that, yhat_cpu,
                                                     d=d_mase[dich])
                             g = gop(ps, n_chuoi_tong=n_chuoi_tong[dich])
+
+                            ct = ps.reset_index() if ps.index.name else ps.copy()
+                            ct.insert(0, "model", ten)
+                            ct.insert(0, "h", h)
+                            ct.insert(0, "lich", lich)
+                            ct.insert(0, "mode", mode)
+                            ct.insert(0, "dich", dich)
+                            ct.insert(0, "nguon", nguon)
+                            chuoi_moi.append(ct)
                             for _, r in g.iterrows():
                                 dong_moi.append({
                                     "nguon": nguon, "dich": dich, "mode": mode,
@@ -282,15 +320,17 @@ def main() -> int:
                                     "n_dong_test": int(len(T)),
                                 })
 
-                    for dich in can_lam:
+                    for dich in thieu_bl:
                         dong_moi += dong_baseline(bl, nguon, dich, mode, lich, h)
 
                     # Ghi ngay sau mỗi (nguồn, mode, lịch, h) để dừng giữa chừng
                     # không mất việc đã làm.
                     ghi(p_out, dong_moi)
-                    dong_moi = []
+                    ghi_chuoi(tab / TEN_CHUOI, chuoi_moi)
+                    dong_moi, chuoi_moi = [], []
 
     ghi(p_out, dong_moi)
+    ghi_chuoi(tab / TEN_CHUOI, chuoi_moi)
     giay = time.time() - t0
     _meta(run_dir, tab, caps, modes, lichs, hs, models, cham_test, giay)
     print(f"\nXong {giay/60:.1f} phút. Chạm test {len(cham_test)} lần.")
@@ -306,6 +346,22 @@ def ghi(p: Path, dong: list[dict]) -> None:
     if p.exists():
         cu = pd.read_csv(p)
         khoa = ["nguon", "dich", "mode", "lich", "h", "model", "metric"]
+        bo = cu.set_index(khoa).index.isin(df.set_index(khoa).index)
+        df = pd.concat([cu[~bo], df], ignore_index=True)
+    df.to_csv(p, index=False)
+
+
+def ghi_chuoi(p: Path, khung: list[pd.DataFrame]) -> None:
+    """Nối thêm per-series, thay dòng cũ của cùng khoá thay vì nhân đôi."""
+    if not khung:
+        return
+    df = pd.concat(khung, ignore_index=True)
+    if "series_id" not in df.columns:
+        raise SystemExit("per_series_metrics không trả `series_id` — xem lại metrics.py")
+    df = df[[c for c in COT_CHUOI if c in df.columns]]
+    khoa = ["nguon", "dich", "mode", "lich", "h", "model", "series_id"]
+    if p.exists():
+        cu = pd.read_csv(p)
         bo = cu.set_index(khoa).index.isin(df.set_index(khoa).index)
         df = pd.concat([cu[~bo], df], ignore_index=True)
     df.to_csv(p, index=False)
@@ -338,7 +394,7 @@ def _meta(run_dir, tab, caps, modes, lichs, hs, models, cham, giay) -> None:
     }
     (run_dir / "meta.json").write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-    for t in (TEN_BANG,):
+    for t in (TEN_BANG, TEN_CHUOI):
         if (tab / t).exists():
             shutil.copy2(tab / t, run_dir / t)
 
