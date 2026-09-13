@@ -1,0 +1,8 @@
+ma,du_doan,so_do,ket_qua
+P1,"E1, E2: N1 tốt hơn N0 ở ≥ 8/15 phép, mỗi môi trường","E1 8/15, E2 8/15",đúng
+P2,E3: N2 tệ hơn N0 ở ≥ 8/15 phép,9/15,đúng
+P3,"E1↔E2 ở N1: trung vị L trong [0,95; 1,10], cả hai chiều","E1->E2 1.005, E2->E1 1.042",đúng
+P4,"Bitbrains↔Alibaba ở N2: trung vị L trong [0,95; 1,25], cả 4 cặp","E1->E3 1.019, E3->E1 1.098, E2->E3 1.008, E3->E2 1.098",đúng
+P5,N1: Alibaba→Bitbrains tốn hơn ở ≥ 20/30 phép,30/30,đúng
+P6,N2: không chiều nào thắng quá 20/30 phép,"xuôi tốn hơn 3, ngược tốn hơn 26",sai
+P7,"D2 ở N1: tái hiện (gộp→đơn lẻ tốn hơn ≥ 10/15, 0 phép ngược lại)","gộp→đơn lẻ tốn hơn 7/15, đơn lẻ→gộp tốn hơn 6/15 → không kết luận",sai
