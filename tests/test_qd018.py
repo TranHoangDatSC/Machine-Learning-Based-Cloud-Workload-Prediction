@@ -115,6 +115,17 @@ def test_thay_n1_chi_thay_dong_n1():
     assert len(x) == 6
 
 
+def test_tach_moi_khong_cho_may_gia_lot_vao_d1():
+    """Ca 2026-09-14: E1a→E1a lọt vào bảng đường chéo D1 vì chỉ lọc nguồn == đích."""
+    moi = pd.concat([_bang("N1", [1.0, 1.0], "E1", "E1"), _bang("N1", [1.0, 1.0], "E3", "E1"),
+                     _bang("N1", [1.0, 1.0], "E1a", "E1a"), _bang("N1", [1.0, 1.0], "E1g", "E1a")],
+                    ignore_index=True)
+    cheo, chuyen, d2 = pq.tach_moi(moi)
+    assert set(zip(cheo.nguon, cheo.dich)) == {("E1", "E1")}
+    assert set(zip(chuyen.nguon, chuyen.dich)) == {("E3", "E1")}
+    assert set(zip(d2.nguon, d2.dich)) == {("E1a", "E1a"), ("E1g", "E1a")}
+
+
 def test_thay_n1_giu_to_hop_moi_khong_co():
     goc = pd.concat([_bang("N1", [9.0, 9.0]), _bang("N1", [7.0, 7.0], dich="E2")],
                     ignore_index=True)

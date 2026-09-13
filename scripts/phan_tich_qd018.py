@@ -49,6 +49,20 @@ def thay_n1(goc: pd.DataFrame, moi: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([con, m[cot]], ignore_index=True)
 
 
+def tach_moi(moi: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Chia dòng QĐ-018 cho ba bảng: đường chéo D1, transfer GĐ4, D2.
+
+    Sửa 2026-09-14. Bản chạy đầu chỉ lọc `nguồn == đích` / `nguồn != đích` mà không lọc
+    môi trường, nên dòng E1a, E1g lọt vào bảng D1 và thêm 30 dòng rác vào T-D1a, T-D1b.
+    Họ Holm tách theo môi trường nên con số đã khai không đổi — đã đối chiếu từng ô.
+    """
+    goc = moi[moi["nguon"].isin(["E1", "E2", "E3"]) & moi["dich"].isin(["E1", "E2", "E3"])]
+    cheo = goc[goc["nguon"] == goc["dich"]]
+    chuyen = goc[goc["nguon"] != goc["dich"]]
+    d2 = moi[moi["nguon"].isin(["E1a", "E1g"])]
+    return cheo, chuyen, d2
+
+
 def cham_s(a, b, dd: pd.DataFrame, dd_goc: pd.DataFrame) -> pd.DataFrame:
     """S1–S5 của QĐ-018 điểm 5."""
     def tv(ng, di):
@@ -116,9 +130,10 @@ def main() -> int:
     d1 = pd.read_csv(tab / "qd017_d1_chuoi.csv").query("nguon == dich")
     d2 = pd.read_csv(tab / "qd017_d2_chuoi.csv")
 
-    cheo = thay_n1(d1, moi[moi["nguon"] == moi["dich"]])
-    chuyen = thay_n1(g4, moi[moi["nguon"] != moi["dich"]])
-    d2s = thay_n1(d2, moi[moi["nguon"].isin(["E1a", "E1g"])])
+    m_cheo, m_chuyen, m_d2 = tach_moi(moi)
+    cheo = thay_n1(d1, m_cheo)
+    chuyen = thay_n1(g4, m_chuyen)
+    d2s = thay_n1(d2, m_d2)
 
     a = pt.t_d1a(cheo)
     L = pt.ghep_L(chuyen, cheo)
