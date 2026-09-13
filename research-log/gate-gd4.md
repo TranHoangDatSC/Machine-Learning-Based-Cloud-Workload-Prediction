@@ -318,17 +318,141 @@ Sau khi thêm hai phép kiểm: **8/8 bản phá bị bắt**, và `tests/test_c
 
 ## 5. Kết quả cổng
 
-Điền khi nghiệm thu.
+Nghiệm thu **2026-09-14**, máy `DESKTOP-J03IDG1`. `python scripts/check_gd4.py` **ĐẠT**,
+tiến độ 7/7. `pytest tests/` **359 passed, 1 skipped**.
+
+**Ghi chú quy trình.** GĐ4 do **một phiên đóng cả hai vai** A và B, vì B bận. Tính độc lập
+được bù bằng ba thứ, ghi ở `2026-09-11-gd4-buoc-3-khac-phuc.md`:
+
+- đối chiếu bản mồi `normalize.py` của A **mà không đọc mã**, khớp tới 1e−12
+- 8 bản phá trên dữ liệu thật
+- ba bất biến đúng vì toán học
+
+Phần còn hở: B3, B11, B12 do cùng phiên viết. Việc tồn mang sang GĐ5.
 
 | Mục | Kết quả | Ghi chú |
 |---|---|---|
-| 3.1 Sản phẩm | | |
-| 3.2 Bước chuẩn hoá | | |
-| 3.3 Rò rỉ T1–T4 | | |
-| 3.4 Điều kiện qua cổng | | |
+| 3.1 Sản phẩm | **ĐẠT** | Đủ 7 mục: `normalize.py`, `test_normalize.py` (19 test, 3 bất biến + 1 ca có NaN), 27 ma trận, `transfer_gd4.csv` 4.320 dòng = 108 tổ hợp, biến thể lịch có/không, `runs/`, log. Thêm ngoài danh sách: `per_series_gd4.csv`, 5 bảng kiểm định, 9 hình; QĐ-017 và QĐ-018 cùng sản phẩm của chúng |
+| 3.2 Bước chuẩn hoá | **ĐẠT, kèm một hạn chế thiết kế** | Bất biến lệch tối đa 4,3e−14 / 4,3e−14 / **0**; `mu`, `sd` khớp tham chiếu; **0 chuỗi `sd = 0`**; 27/27 số dòng, N0 khớp tuyệt đối neo GĐ2; chỉ số tính sau map ngược; `mu`/`sd` của chuỗi đích (C1, C2, B11). Hạn chế: `sd` **gần** 0 thì N1 hỏng — xem 5.2 |
+| 3.3 Rò rỉ T1–T4 | **ĐẠT** | T1 = C2 và test T1 của `test_normalize.py`. T2: `run_transfer.py` chỉ `fit` trên ma trận nguồn, đích chỉ `predict`. T3: **816 lần chạm trên 540 tổ hợp**, giải thích được — xem 5.3. T4: đúng 19 đặc trưng, `build_features.py` assert schema |
+| 3.4 Điều kiện qua cổng | **ĐẠT 3/4 gạch đầu; gạch đầu thứ nhất KHÔNG ĐẠT theo câu chữ, và câu chữ sai tiền đề** | Xem 5.1. Ba gạch còn lại: báo cả N0/N1/N2; trả lời được thành phần nào transfer (5.4); QĐ-004 đã xét và quyết thành QĐ-017 |
 
-**Kết luận:**
-**Ngày duyệt:**
+**Kết luận: ĐẠT, có ghi chú.** Không chặn GĐ5. Gạch đầu thứ nhất của 3.4 **không được sửa
+câu chữ** sau khi thấy kết quả; nó được ghi trượt, kèm lý do và bằng chứng thay thế ở 5.1.
+
+**Ngày duyệt:** 2026-09-14
+
+### 5.1 Gạch đầu "N0 thất bại nặng ở bốn cặp" — không đạt, và không nên đạt
+
+Trung vị qua 5 model của MAE p50, N0, lịch = co, `h = 1`, đặt cạnh mốc hằng số ở mục 2.5:
+
+| Cặp | MAE N0 | naive tại đích | hằng số mức tải | đọc |
+|---|---:|---:|---:|---|
+| E1→E3 | 4,299 | 4,2955 | 28,2356 | bằng naive |
+| E2→E3 | 4,388 | 4,2955 | 33,3844 | bằng naive |
+| **E3→E1** | **1,236** | 0,4077 | 35,9767 | **3,0 lần naive** |
+| **E3→E2** | **1,171** | 0,4140 | 35,8373 | **2,8 lần naive** |
+
+Thất bại nặng ở **2/4 cặp**, cả hai theo chiều Alibaba→Bitbrains. **Không cặp nào tiến gần
+mốc hằng số.**
+
+Vì sao gạch đầu này sai tiền đề — QĐ-017 điểm 2:
+
+1. Nó suy từ **hằng số**, trong khi model thấy `lag_1 = y[t−1]`. Mức tải của đích đi vào
+   model qua đặc trưng, nên không có lý do gì để N0 bị kéo về mốc hằng số.
+2. Nó dùng *"N0 không thất bại"* làm dấu hiệu rò rỉ `mu`/`sd`, mà rò rỉ đó chỉ nằm trong
+   **N1**. Nó không thể làm N0 đẹp lên.
+
+Mục đích thật của gạch đầu — **bắt rò rỉ ở bước chuẩn hoá** — được thoả bằng bằng chứng
+khác: C2 (đổi `y ≥ 1612` không đổi `mu`/`sd`); B11 (giải ngược `mu`/`sd` từ ma trận); bản
+phá Q1 (`mu`/`sd` toàn chuỗi) bị bắt; đối chiếu bản mồi độc lập khớp 1e−12. Riêng chiều
+Bitbrains→Alibaba, `2026-09-13-gd4-buoc-4-6.md` phát hiện 4 còn loại trừ rò rỉ trực tiếp:
+cái giá N0 là 1,06–1,07, **lớn hơn 1**. Rò rỉ sẽ đẩy nó xuống dưới 1.
+
+### 5.2 Hạn chế thiết kế của N1 — máy đứng yên trong cửa sổ train
+
+10 máy E3 (2% quần thể) có CPU 0,00% trong `[0, 1612)` rồi chạy ở validation. `sd` train
+nhỏ tới 0,0029, z-score trong vùng khớp lên tới 30.200, và **mọi model N1 train trên E3
+hỏng**: `xgb` E3→E1 N1 h=12 bằng 60,6 lần naive.
+
+Cổng không bắt được vì nó kiểm đúng điều QĐ-016 định nghĩa — và QĐ-016 được hiện thực đúng.
+Cái sai nằm ở chính định nghĩa.
+
+Xử lý theo QĐ-018: loại khỏi **tập train** N1 các chuỗi vượt giới hạn Samuelson, giữ
+nguyên tập chấm, chạy lại mọi tổ hợp N1. Kết quả: 5/5 dự đoán đúng; E3→Bitbrains N1 `L`
+từ 2,77/3,79 xuống 1,33/1,24. Theo QĐ-018 điểm 4: phát biểu N1 có E3 làm nguồn dùng bản
+độ nhạy; bản gốc nêu ở Limitations.
+
+**Hệ quả cho bảng GĐ4 gốc:** con số *"xgb N1 66 lần naive"*, cơ chế *"cây ngoại suy
+phẳng"*, và hậu kiểm N2 vs N1 đều **rút lại hoặc treo** — xem
+`2026-09-13-qd017-ket-qua.md` phát hiện 1.
+
+### 5.3 Test chạm 816 lần trên 540 tổ hợp — giải thích từng phần
+
+Tổ hợp ML của `transfer_gd4.csv`: 6 cặp × 3 chế độ × 2 lịch × 3 h × 5 model = **540**.
+Cộng dồn `so_lan_cham_test` của 14 thư mục `runs/*_transfer_gd4/`:
+
+| Phần | Lần chạm | Vì sao |
+|---|---:|---|
+| `--all --models lr,ridge` | 216 | lần chạy chính |
+| `--all --models xgb,rf,svr --resume` | 320 | lần chạy chính; 4 tổ hợp đã chạy ở ba lần thử ngay trước |
+| ba lần thử `xgb`, `rf`, `svr` trên E2→E1 N0 | 4 | kiểm resume sau khi sửa lỗi bỏ qua im lặng |
+| ba lần thử `lr` | 6 | chạy thử đường ống; một lần sinh ra lỗi sơ bộ #1 của log 09-13 |
+| **`--all --lich co`** | **270** | **chạy lại tất định** để có per-series cho Wilcoxon |
+| bốn lần `--resume` bị lỗi bỏ qua im lặng | 0 | lỗi đã sửa |
+| **Tổng** | **816** | |
+
+Không có "chạy nhiều lần rồi chọn lần tốt nhất" (mục 17). Lần chạy lại 270 tổ hợp cho số
+**trùng tới 7,1e−15**, nên không có gì để chọn. Các lần thử đều trên tổ hợp mà lần chạy
+chính cũng chạm, với cùng model và cùng siêu tham số.
+
+Ngoài `transfer_gd4.csv`, GĐ4 còn chạm test ở:
+
+| Lần chạy | Lần chạm | Ghi chú |
+|---|---:|---|
+| QĐ-017 D1 | 135 | 45 trong đó là đường chéo N0, chạm lại test GĐ3 bằng đúng model GĐ3 — dùng làm phép tái lập R3 |
+| QĐ-017 D2 | 180 | |
+| QĐ-018 | 195 | |
+| hai lần chạy thử đường ống | 27 + 30 | Chỉ N0 đường chéo (đã biết từ GĐ3) và E1g N1 (trùng QĐ-017 tới 1,4e−14). Thư mục `runs/` của chúng **đã xoá** vì ghi bảng ra thư mục nháp; số lần chạm ghi lại ở `2026-09-13-qd017-khai-truoc.md` và `2026-09-13-qd018-khai-truoc.md` |
+
+### 5.4 Trả lời RQ3 — thành phần nào transfer được
+
+Trung vị `L` = MAE transfer / MAE model cùng loại train ngay trên đích, **cùng chế độ**.
+N1 là bản độ nhạy QĐ-018. Nguồn: `qd017_t_d1b.csv`, `qd018_t_d1b.csv`.
+
+| | N0 | N1 | N2 |
+|---|---:|---:|---:|
+| **E1 → E2** | 1,001 | 1,000 | 0,997 |
+| **E2 → E1** | 1,064 | 1,063 | 1,015 |
+| E1 → E3 | 1,059 | 1,032 | 1,019 |
+| E2 → E3 | 1,070 | 1,044 | 1,008 |
+| E3 → E1 | 2,516 | 1,332 | 1,098 |
+| E3 → E2 | 2,819 | 1,235 | 1,098 |
+
+**Kết quả chính (QĐ-017 điểm 1: E1 ↔ E2).** E1→E2 không mất gì ở cả ba chế độ. E2→E1
+mất khoảng 6% ở N0 và N1, 1,5% ở N2. Chuẩn hoá giúp dự đoán **trong** môi trường Bitbrains
+(P1), không giúp transfer (P3).
+
+**Phân tích bổ sung (VM ↔ máy vật lý, lệch đơn vị quan sát — QĐ-004).** Mất mát co dần khi
+bỏ mức tải rồi bỏ biên độ: Alibaba→Bitbrains ~2,7 → ~1,3 → 1,10. Hướng bất đối xứng giữ ở
+cả ba chế độ (30/30, 28/30, 26/30). D2 "không kết luận", nên **không gán được** bất đối
+xứng cho hiệu ứng tổng hợp, và cũng không gán được cho khác biệt môi trường.
+
+### 5.5 Hạn chế phải vào Limitations — tổng hợp của GĐ4
+
+1. Siêu tham số chọn ở N0, dùng lại cho N1 và N2 (QĐ-016 điểm 3); ở mép lưới 9/9 (QĐ-015).
+2. N1 không phải zero-shot: dùng lịch sử train của chuỗi đích (QĐ-016 điểm 1).
+3. N1 với máy đứng yên — 5.2; kết quả phụ thuộc cách xử lý.
+4. GĐ3 dựng ma trận `float32`, GĐ4 `float64` — lệch tới 0,5% ở `lr`, `ridge` (QĐ-017
+   điểm 3). Mọi `L` ở 5.4 tính trong cùng đường code GĐ4 nên không dính.
+5. `svr` của GĐ4 rút mẫu con riêng từng horizon, **lệch QĐ-014 điểm 2**. Ở h=6, 12, MAE
+   lệch trung vị 1,6% so với mẫu con dùng chung.
+6. Per-series chỉ có cho lịch = co; ablation lịch chỉ đọc được bằng số gộp.
+7. n = 300–700 chuỗi mỗi phép — hiệu ứng rất nhỏ vẫn có ý nghĩa; luôn đọc kèm độ lớn `L`.
+8. D2: một hạt giống, một `k`, và gộp 5 VM mượt hơn cả E3.
+9. Đơn vị quan sát lệch giữa Bitbrains và Alibaba (QĐ-004) — nhiễu lớn nhất, không gỡ
+   được bằng dữ liệu hiện có.
+10. GĐ4 do một phiên đóng hai vai; B3/B11/B12 chưa được viết lại độc lập.
 
 ---
 

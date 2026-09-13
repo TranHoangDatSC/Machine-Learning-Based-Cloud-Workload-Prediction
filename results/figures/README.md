@@ -48,6 +48,32 @@ python scripts/fig_burstiness.py --env all # 08–11  + gd2_burstiness.pdf
 Số ở đầu tên tệp để thư mục tự sắp đúng thứ tự, và để dẫn hình trong bài không phải
 nhớ tên dài.
 
+## `bo_sung/` — cùng số liệu, dạng hình quen thuộc
+
+Thêm 2026-09-14 theo đề nghị của A: các hình ECDF, heatmap tỉ số log2 đúng nhưng khó
+viết thành bài. Thư mục này **không có kết quả mới** — trình bày lại số của GĐ2–GĐ4
+bằng histogram, boxplot, heatmap ghi số và phân cụm.
+
+```bash
+python scripts/fig_bo_sung.py              # 13 hình + bo-sung_hinh-quen-thuoc.pdf
+python scripts/fig_bo_sung.py --phan gd4   # một phần: gd2 | gd3 | gd4 | cum
+```
+
+| Tệp | Dạng | Thay cho / bổ sung | Nội dung |
+|---|---|---|---|
+| `B01–B03_histogram-cpu-E*.png` | histogram | ECDF `gd2/01` | Phân phối CPU% từng môi trường, trục tung chung 0–100% |
+| `B04_histogram-cv.png` | histogram | ECDF `gd2/08` | CV của từng chuỗi |
+| `B05–B07_boxplot-ti-so-naive-E*.png` | boxplot | `gd3/07–09` | MAE model / MAE naive theo chuỗi, 3 horizon |
+| `B08_heatmap-ti-so-naive.png` | heatmap ghi số | `gd3/07–09` | Trung vị tỉ số trên — model × môi trường × horizon |
+| `B09_heatmap-mat-mat-transfer.png` | heatmap ghi số | `gd4/01–06` | **Bảng RQ3 cuối** `gate-gd4.md` mục 5.4 — N1 là bản QĐ-018 |
+| `B10_boxplot-mat-mat-transfer.png` | boxplot | mới | Phân phối L theo chuỗi — độ phân tán mà B09 che |
+| `B11_pca-theo-moi-truong.png` | scatter PCA | mới, **mô tả** | Bản đồ chuỗi theo 4 đặc trưng trên cửa sổ train |
+| `B12_kmeans-bang-cheo.png` | heatmap ghi số | mới, **mô tả** | k-means 3 cụm × môi trường |
+| `B13_pca-may-gia.png` | scatter PCA | mới, **mô tả** | Máy giả E1g nằm đâu trên bản đồ |
+
+**Phân cụm (B11–B13) là mô tả**: không khai trước, không phải kiểm định, không dùng làm
+bằng chứng. k = 3 bằng số môi trường, không dò; `random_state = 42`.
+
 ## Chọn hình vào bài báo là việc của A
 
 `docs/research-plan.md` GĐ2: *"A duyệt hình, chọn 2–3 hình đưa vào paper."* Thư mục
