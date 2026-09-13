@@ -417,6 +417,21 @@ Ngoài `transfer_gd4.csv`, GĐ4 còn chạm test ở:
 
 ### 5.4 Trả lời RQ3 — thành phần nào transfer được
 
+> **Đính chính 2026-09-14 — QĐ-019. Cột N2 dưới đây KHÔNG đọc được ở h = 6, 12.**
+>
+> Target N2 của mọi ma trận GĐ4 là `y_{t+h} − y_{t+h−1}` thay vì `y_{t+h} − y_t` như
+> protocol mục 14. Map ngược `y_t + Δ̂` chỉ đúng khi h = 1, nên ở h = 6, 12 mọi model N2
+> bị kéo về gần dự báo ngây thơ. Hệ quả:
+>
+> - các con số N2 là trung vị gộp cả ba horizon, nên **cả cột N2 bị nhiễm**
+> - câu *"Alibaba→Bitbrains ~2,7 → ~1,3 → 1,10"* và *"26/30 ở N2"* bị treo
+> - ở **h = 1** (không bị ảnh hưởng), Alibaba→Bitbrains N2 là **1,43 và 1,59** — cao hơn N1
+>   ở cùng horizon (1,10)
+>
+> Cột N0, N1 đúng. Bảng cuối sau khi chạy lại nằm ở `results/tables/qd019_bang_cuoi_L.csv`.
+> Lỗi và phạm vi: `2026-09-14-loi-target-n2.md`. Kết luận "ĐẠT" của cổng giữ nguyên: cổng
+> kiểm bước chuẩn hoá theo đúng QĐ-016, và chính QĐ-016 mâu thuẫn giữa điểm 2 và mục 14.
+
 Trung vị `L` = MAE transfer / MAE model cùng loại train ngay trên đích, **cùng chế độ**.
 N1 là bản độ nhạy QĐ-018. Nguồn: `qd017_t_d1b.csv`, `qd018_t_d1b.csv`.
 

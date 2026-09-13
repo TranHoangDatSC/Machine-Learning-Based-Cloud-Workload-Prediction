@@ -10,6 +10,7 @@ data/raw/**/*.parquet
 data/interim/**
 data/processed/**
 data/features/**
+data/features_qd019/**
 !data/**/.gitkeep
 paper/samples/**
 

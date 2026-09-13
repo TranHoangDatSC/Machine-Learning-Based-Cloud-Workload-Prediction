@@ -227,9 +227,19 @@ def _heatmap(ax, M, hang, cot, tran=2.0, nd=2):
 
 # ================================================================ GĐ4
 
-def bang_L_cuoi() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """`L` theo chuỗi cho 6 cặp × 3 chế độ; N1 là bản độ nhạy QĐ-018 (QĐ-018 điểm 4)."""
+def bang_L_cuoi() -> tuple[pd.DataFrame, pd.DataFrame, str]:
+    """`L` theo chuỗi cho 6 cặp × 3 chế độ, và nhãn cột N2.
+
+    N1 là bản QĐ-018. N2 ở h = 6, 12 của GĐ4 và QĐ-017 **sai định nghĩa target**
+    (QĐ-019): khi đã có `qd019_t_d1b.csv` thì dùng bảng cuối của QĐ-019; khi chưa có thì
+    cột N2 **chỉ lấy h = 1** — nơi hai định nghĩa trùng nhau — và nhãn ghi rõ điều đó.
+    """
     import phan_tich_qd017 as pt
+    if (TAB / "qd019_t_d1b.csv").exists():
+        import phan_tich_qd019 as p9
+        bc = p9.bang_cuoi()
+        return (pt.ghep_L(bc["chuyen"], bc["cheo"]), pd.read_csv(TAB / "qd019_t_d1b.csv"),
+                "N2 — sai phân")
     import phan_tich_qd018 as pq
     g4 = pd.read_csv(TAB / "per_series_gd4.csv")
     g4 = g4[g4["lich"] == "co"]
@@ -239,29 +249,31 @@ def bang_L_cuoi() -> tuple[pd.DataFrame, pd.DataFrame]:
     L = pt.ghep_L(pq.thay_n1(g4, m_chuyen), pq.thay_n1(d1, m_cheo))
     b = pd.concat([pd.read_csv(TAB / "qd017_t_d1b.csv").query("mode != 'N1'"),
                    pd.read_csv(TAB / "qd018_t_d1b.csv").query("mode == 'N1'")])
-    return L, b
+    bo = lambda d: d[~((d["mode"] == "N2") & (d["h"] != 1))]  # noqa: E731
+    return bo(L), bo(b), "N2 — sai phân (h = 1)"
 
 
 CAP_THU_TU = [("E1", "E2"), ("E2", "E1"), ("E1", "E3"), ("E2", "E3"), ("E3", "E1"), ("E3", "E2")]
 
 
 def panels_gd4() -> tuple[list[Panel], dict]:
-    L, b = bang_L_cuoi()
+    L, b, nhan_n2 = bang_L_cuoi()
     ps, cap = [], {}
 
     def ve_hm(ax):
         M = np.array([[float(b[(b.nguon == n) & (b.dich == d) & (b["mode"] == md)]["L_p50"].median())
                        for md in ("N0", "N1", "N2")] for n, d in CAP_THU_TU])
         _heatmap(ax, M, [f"{n} → {d}" for n, d in CAP_THU_TU],
-                 ["N0 — CPU% thô", "N1 — z-score", "N2 — sai phân"], tran=2.0, nd=3)
+                 ["N0 — CPU% thô", "N1 — z-score", nhan_n2], tran=2.0, nd=3)
         ax.axhline(1.5, color=NEN, linewidth=3)
     ps.append(Panel("B09_heatmap-mat-mat-transfer", "Mất mát do transfer L — cặp môi trường × chế độ chuẩn hoá",
                     (6.4, 4.4), ve_hm))
     cap["B09_heatmap-mat-mat-transfer"] = (
         "L = MAE khi train ở nguồn rồi dự đoán đích, chia MAE của cùng model train ngay trên đích, "
         "cùng chế độ. L = 1: transfer không mất gì; 1,3: tệ hơn 30%. Mỗi ô là trung vị qua 5 model "
-        "× 3 horizon — đúng bảng gate-gd4.md mục 5.4. Hai hàng trên (E1 ↔ E2) là kết quả chính; "
-        "bốn hàng dưới là phân tích bổ sung. Cột N1 là bản độ nhạy QĐ-018.")
+        "× 3 horizon. Hai hàng trên (E1 ↔ E2) là kết quả chính; bốn hàng dưới là phân tích bổ sung. "
+        "Cột N1 là bản độ nhạy QĐ-018. Cột N2: bảng cuối QĐ-019 nếu đã chạy, nếu chưa thì chỉ h = 1 "
+        "vì N2 ở h = 6, 12 của GĐ4 sai định nghĩa target.")
 
     s = (L.groupby(["nguon", "dich", "mode", "series_id"])["L"].median().reset_index())
 
@@ -282,7 +294,7 @@ def panels_gd4() -> tuple[list[Panel], dict]:
         truc_ti_so(ax, 0.5, 10)
         khung(ax, "chính (trái vạch) · bổ sung (phải vạch)", "L theo chuỗi (log)")
         ax.legend(handles=[Patch(facecolor=THU_TU[j], label=t) for j, t in
-                           enumerate(["N0 — CPU% thô", "N1 — z-score", "N2 — sai phân"])],
+                           enumerate(["N0 — CPU% thô", "N1 — z-score", nhan_n2])],
                   loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=3, frameon=False,
                   fontsize=8.2, labelcolor=MUC_PHU)
     ps.append(Panel("B10_boxplot-mat-mat-transfer", "Phân phối L theo chuỗi — cặp môi trường × chế độ",
