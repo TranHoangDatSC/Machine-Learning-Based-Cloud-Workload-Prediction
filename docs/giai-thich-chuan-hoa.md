@@ -149,6 +149,12 @@ hoá tập train. Kết quả sẽ đẹp bất thường và toàn bộ thí ng
 lên. Dấu hiệu nhận biết: nếu N0 **không** thất bại nặng ở cặp Bitbrains và Alibaba
 thì gần như chắc chắn có rò rỉ ở đâu đó — dừng lại truy nguyên, đừng đi tiếp.
 
+> **Đính chính 2026-09-13 — QĐ-017 điểm 2.** Dấu hiệu nhận biết ở đoạn trên **không
+> dùng được**. Rò rỉ `mu`/`sd` nằm trong N1, nên nó không làm con số của N0 thay đổi.
+> Còn N0 không thất bại theo chiều Bitbrains → Alibaba vì model thấy `lag_1`, không phải
+> vì rò rỉ. Cách bắt đúng loại rò rỉ này là giải ngược `mu`/`sd` từ ma trận đặc trưng
+> (B11 của `check_gd4.py`).
+
 ---
 
 ## 6. Câu hỏi kiểm tra hiểu bài

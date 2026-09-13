@@ -242,6 +242,12 @@ Phần đóng góp mới. Nặng nhất sau GĐ1.
 **Điều kiện qua cổng:** N0 phải thất bại nặng ở cặp Bitbrains và Alibaba. Nếu N0
 không thất bại thì gần như chắc chắn có rò rỉ dữ liệu — dừng lại truy nguyên.
 
+> **Đính chính 2026-09-13 — QĐ-017 điểm 2.** Điều kiện trên sai tiền đề, vì hai lý do.
+> Nó suy từ một **hằng số**, trong khi model thấy `lag_1`. Và rò rỉ `mu`/`sd` chỉ nằm
+> trong N1, nên không thể làm N0 đẹp lên. Rò rỉ đã được loại trừ bằng cách khác (B11,
+> bản phá Q1, đối chiếu bản mồi). Kết quả thật: N0 không thất bại theo chiều
+> Bitbrains → Alibaba.
+
 ---
 
 ## Giai đoạn 5 — Phân tích và viết

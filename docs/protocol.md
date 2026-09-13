@@ -555,6 +555,16 @@ Sáu cặp: E1→E2, E2→E1, E1→E3, E3→E1, E2→E3, E3→E2.
 
 Đây là phần quan trọng nhất. Chạy cả ba, báo cáo cả ba như một ablation.
 
+> **Đính chính 2026-09-13 — QĐ-017.** Hai điều về bảng dưới đây.
+>
+> 1. Cột N0 ghi *"dự kiến thất bại nặng ở cặp Bitbrains và Alibaba"*. Dự kiến đó sai:
+>    model thấy `lag_1` nên mức tải của đích đi vào qua đặc trưng. Kết quả thật là N0
+>    thất bại theo chiều Alibaba → Bitbrains, **không** thất bại theo chiều ngược lại.
+>    Lý do đầy đủ ở QĐ-017 điểm 2.
+> 2. **Phạm vi tuyên bố:** kết quả chính của RQ3 là **E1 ↔ E2**. Bốn cặp Bitbrains ↔
+>    Alibaba là phân tích bổ sung, vì lệch đơn vị quan sát (QĐ-004). Thước đo *"thành
+>    phần nào transfer được"* là mất mát transfer **cùng chế độ** (QĐ-017 điểm 4).
+
 | Chế độ | Target | Câu hỏi nó trả lời |
 |---|---|---|
 | **N0 — Thô** | CPU% nguyên bản | Đối chứng. Dự kiến thất bại nặng ở cặp Bitbrains và Alibaba |

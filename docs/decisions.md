@@ -114,6 +114,12 @@ chọn cách khác: hạ mức tuyên bố trong bài, chỉ so E1 với E2 ở 
 **Điểm kiểm tra:** A xem lại điều kiện 1 và 2 ngay khi có bảng kết quả GĐ4 đầu tiên,
 không đợi đến lúc viết bài.
 
+> **Kết quả điểm kiểm tra — 2026-09-13, xem QĐ-017.** Điều kiện 1 kích hoạt một phần,
+> điều kiện 2 có dấu hiệu. Phương án `container_usage.csv` **không khả thi**: tệp nặng
+> hàng trăm GB, và dòng *"1,5 đến 2 tuần"* ở trên được ước lượng mà không có kích thước
+> tệp. A chọn nhánh **hạ mức tuyên bố**, kèm hai thí nghiệm bổ sung dùng dữ liệu đang
+> có (QĐ-017 điểm 4 và 5).
+
 ---
 
 ## QĐ-005 — RQ3 phải tách mức tải khỏi động lực học
@@ -1232,3 +1238,226 @@ C **tách khỏi `tests/`** ra `scripts/_moi_normalize_gd4.py`, có banner cản
 đầu. Ở GĐ3, bản mồi `metrics.py` nằm ngay trong `tests/test_check_gd3.py`.
 
 Nhờ đó loại A của GĐ4 lấy lại **đầy đủ** sức mạnh mà GĐ1 và GĐ2 từng có.
+
+---
+
+## QĐ-017 — Hạ mức tuyên bố RQ3, và hai thí nghiệm bổ sung khai trước
+
+**Ngày:** 2026-09-13 · **Người quyết:** A · **Trạng thái:** Có hiệu lực — **khai trước khi
+có dòng code nào của D1, D2**
+
+**Bối cảnh.** Ba việc cùng lúc, đều ghi ở `research-log/2026-09-13-gd4-buoc-4-6.md` và
+`research-log/2026-09-13-ra-soat-toan-du-an.md`:
+
+1. QĐ-004 điều kiện 1 kích hoạt một phần, điều kiện 2 có dấu hiệu: bất đối xứng
+   Bitbrains ↔ Alibaba trùng đúng mẫu mà **riêng hiệu ứng tổng hợp** đã dự báo được.
+2. Phương án dự phòng `container_usage.csv` **không khả thi**: tệp nặng hàng trăm GB,
+   và container cũng không phải VM nên kể cả tải về cũng không so ngang cấp được.
+3. Rà soát tìm ra ba chỗ đọc sai. Tiền đề *"N0 phải thất bại nặng"* sai từ GĐ0. Q3 dùng
+   mốc naive nên phóng đại bất đối xứng. Mẫu số của *"cái giá transfer"* lấy từ N0 nên
+   ở N1, N2 nó trộn hai hiệu ứng.
+
+Tuần 3 trên 12. Còn đủ thời gian cho thí nghiệm dùng dữ liệu đang có, không đủ cho tải
+dữ liệu mới.
+
+### 1. Hạ mức tuyên bố — nhánh "hạ mức" đã khai sẵn ở QĐ-004
+
+| | Trước | Từ nay |
+|---|---|---|
+| Kết quả chính của RQ3 | cả 6 cặp | **E1 ↔ E2** — cùng đơn vị quan sát VM |
+| Bitbrains ↔ Alibaba | kết quả chính | **phân tích bổ sung**, câu nào cũng kèm *"VM ↔ máy vật lý"* |
+| Thước đo "thành phần nào transfer được" | cái giá chia cho MAE trong môi trường ở **N0** | **mất mát transfer cùng chế độ**, từ D1 bên dưới |
+| Bảng Q1–Q3 của GĐ4 | kết quả | **vẫn báo cáo nguyên**, kèm đính chính của rà soát 09-13 |
+
+Mục 17 cấm bỏ môi trường **vì kết quả xấu**. Ở đây không bỏ gì: E3 vẫn nằm trong mọi
+bảng, chỉ chuyển sang phần bổ sung, và lý do là **đơn vị quan sát** — lý do QĐ-004 đã
+khai từ 2026-08-30, trước khi có kết quả nào.
+
+**Cấm viết** trong paper:
+
+- *"zero-shot"* (QĐ-016 điểm 1)
+- *"Alibaba dễ dự đoán hơn Bitbrains"*, hay mọi câu gán khác biệt cho **datacenter**
+  (QĐ-004)
+- *"N0 thất bại cho thấy..."* — N0 **không** thất bại theo chiều Bitbrains → Alibaba
+- *"transfer gần như không mất gì"*, nếu mẫu số không cùng chế độ
+
+**Không kết quả nào của D1, D2 đưa Bitbrains ↔ Alibaba trở lại phần chính.** Khai ra để
+khỏi có ngã rẽ chọn sau khi thấy số: D2 chỉ quyết định **câu chữ** của phần bổ sung.
+
+### 2. Đính chính tiền đề "N0 phải thất bại nặng"
+
+Tiền đề này có ở ba nơi: `research-plan.md` GĐ4, protocol mục 14, và
+`giai-thich-chuan-hoa.md` mục 5. Nó sai vì **hai lý do**:
+
+1. **Nó suy từ một hằng số.** Model của dự án thấy `lag_1 = y[t−1]`, nên mức tải của
+   chuỗi đích **đi thẳng vào model qua đặc trưng**. E1 → E3 ở N0 cho MAE 4,3, không phải
+   28,24.
+2. **Nó không bắt được đúng thứ nó định bắt.** Rò rỉ `mu`/`sd` chỉ nằm trong **N1**.
+   Nó không thể làm con số của N0 đẹp lên, nên *"N0 không thất bại"* không nói gì về
+   rò rỉ ở N1.
+
+Rò rỉ ở N1 đã được loại trừ bằng cách khác: B11, bản phá Q1, và đối chiếu bản mồi độc
+lập tới 1e−12. Ba nơi kia nhận **ghi chú đính chính** trỏ về đây, không sửa chữ gốc.
+Điều kiện gạch đầu ở `gate-gd4.md` mục 3.4 **giữ nguyên câu chữ**, A ghi lý do khi
+nghiệm thu Bước 7.
+
+### 3. Hai chỗ lệch giữa đường code GĐ3 và GĐ4 — phát hiện khi thiết kế D1
+
+Đọc `run_experiments.py` (GĐ3) và `run_transfer.py` (GĐ4) cạnh nhau:
+
+| | GĐ3 | GĐ4 |
+|---|---|---|
+| Kiểu ma trận đặc trưng | `float32` | `float64` |
+| Mẫu con SVR | rút **một lần** từ `h = 1`, dùng chung ba horizon (QĐ-014 điểm 2) | rút **riêng từng horizon** |
+
+Hệ quả:
+
+- `svr` của GĐ4 ở `h = 6, 12` **lệch QĐ-014 điểm 2**. Ở `h = 1` hai bên rút cùng một
+  mẫu. Hạn chế, ghi vào Limitations.
+- *"Cái giá transfer"* của GĐ4 chia MAE transfer (GĐ4) cho MAE trong môi trường (GĐ3),
+  tức **hai đường code khác nhau**.
+
+D1 xoá được chỗ lệch thứ hai: mọi mẫu số đi đúng đường code của GĐ4.
+
+### 4. D1 — đường chéo: train và test cùng môi trường, qua đường code GĐ4
+
+**Câu hỏi.** Ở chế độ `k`, bao nhiêu phần sai số là do **transfer**, bao nhiêu là do
+**chính phép chuẩn hoá**?
+
+**Thiết kế.**
+
+- Ba cặp `E1→E1`, `E2→E2`, `E3→E3` × **N0, N1, N2** × `h ∈ {1, 6, 12}` × 5 model ML ×
+  lịch = co. Tổng **135 lần khớp**, 135 lần chạm test.
+- Đúng mọi luật của `run_transfer.py`: train `[0, 1957)` đã purge, siêu tham số GĐ3
+  theo môi trường, map ngược về CPU%, chấm trên test `[1957, 2304)`.
+- N0 có mặt vì hai lý do. Nó là mẫu số cùng đường code, và nó là **phép kiểm tái lập**
+  (điểm 6).
+
+**Đại lượng.** Với mỗi chuỗi đích `s`:
+
+```text
+L_k(A→B, s) = MAE(A→B, chế độ k, s) / MAE(B→B, chế độ k, s)
+```
+
+Đây là **mất mát transfer thuần**: tử và mẫu cùng chế độ, cùng đích, cùng chuỗi, cùng
+dòng test, cùng đường code. Chỉ khác nhau ở chỗ model học trên đâu.
+
+**Phép kiểm** — cùng quy tắc GĐ3, GĐ4: hướng lấy từ trung vị của hiệu, `alpha = 0,05`.
+
+| Mã | Câu hỏi | Phép kiểm | Họ Holm |
+|---|---|---|---|
+| T-D1a | Trong môi trường, N1 / N2 có tốt hơn N0 không | Wilcoxon ghép cặp theo chuỗi | mỗi `(env, h)`: 10 phép |
+| T-D1b | Transfer có mất gì không, ở từng chế độ | Wilcoxon `MAE(A→B,k)` vs `MAE(B→B,k)` | mỗi `(nguồn, đích, h)`: 15 phép |
+| T-D1c | Bất đối xứng, khi mẫu số cùng chế độ | Mann–Whitney trên `L_k`, chiều xuôi vs ngược | cả 135 phép |
+
+T-D1c **thay** `scripts/hau_kiem_q3_gd4.py`, vốn còn dùng mẫu số N0. Chiều xuôi giữ như
+GĐ4: E1→E3, E2→E3, E1→E2.
+
+**Dự đoán** — viết trước khi chạy. Trung vị lấy qua 5 model và 3 horizon.
+
+| # | Dự đoán | Cơ sở |
+|---|---|---|
+| P1 | T-D1a: ở **E1, E2**, N1 tốt hơn N0 ở đa số phép | cái giá E1↔E2 ở N1 là 0,80 < 1 |
+| P2 | T-D1a: ở **E3**, N2 **tệ hơn** N0 ở đa số phép | cái giá Bitbrains→E3 tăng từ 1,06 (N0) lên 1,14 (N2) |
+| P3 | T-D1b: E1 ↔ E2 ở N1, trung vị `L` trong **[0,95; 1,10]** | con số 0,80 phần lớn là công của chuẩn hoá, không phải của transfer |
+| P4 | T-D1b: Bitbrains ↔ Alibaba ở N2, trung vị `L` cả hai chiều trong **[0,95; 1,25]** | cái giá N2 hai chiều 1,02–1,15 |
+| P5 | T-D1c ở N1: Alibaba→Bitbrains tốn hơn ở **≥ 20/30** phép | mẫu số N1 của Bitbrains nhỏ đi thì `L` chiều đó còn lớn hơn |
+| P6 | T-D1c ở N2: **không chiều nào** thắng quá 20/30 phép | hậu kiểm 09-13: 14 xuôi · 11 ngược · 5 không khác |
+
+Không có dự đoán cho N0 ở T-D1c: mẫu số N0 của GĐ4 chỉ khác GĐ3 ở `svr` và kiểu số,
+nên kết quả gần như đã biết. Báo cáo, không tính là kiểm dự đoán.
+
+### 5. D2 — "máy giả": gộp VM trong cùng một datacenter
+
+**Câu hỏi.** Riêng việc **gộp nhiều VM thành một chuỗi** có đủ sinh ra bất đối xứng như
+Bitbrains ↔ Alibaba không, khi mọi thứ khác giữ nguyên: cùng datacenter, cùng giai
+đoạn, cùng loại workload?
+
+**Cơ sở khả thi** (đo 2026-09-13, chỉ đo độ mượt, chưa chạy transfer nào): gộp 5 VM E1
+ngẫu nhiên cho ACF lag 1 = 0,924, so với 0,667 của VM đơn lẻ và 0,861 của E3.
+
+**Thiết kế — chốt tuyệt đối, không thử phương án khác sau khi thấy số.**
+
+1. **Chia rời hai nửa.** Sắp 735 `series_id` của E1 theo thứ tự chuỗi ký tự, rồi
+   `numpy.random.default_rng(42).permutation`. **368** chuỗi đầu của hoán vị thành
+   **E1a** (VM đơn lẻ, giữ nguyên). **367** chuỗi còn lại chia lần lượt thành
+   **73 nhóm × 5** theo đúng thứ tự hoán vị, thành **E1g**. Thừa 2 chuỗi, bỏ và ghi tên.
+   Hai nửa **không chung VM nào**, như một cặp transfer thật.
+2. **Luật gộp.** `y_g[t]` = **trung bình** `y` của 5 thành viên, **chỉ khi cả 5 đều hữu
+   hạn**, còn lại `NaN`. Trung bình chứ không tổng, để giữ thang `[0, 100]`. Không lấy
+   trung bình phần còn lại khi thiếu thành viên: làm vậy mức tải nhảy bậc mỗi lần một
+   VM vắng mặt, sinh ra biến động giả.
+3. Danh sách nhóm đóng băng ở `config/qd017_gop.csv`, như QĐ-009 đã làm với E3.
+4. **Đường ống giữ nguyên.** Sinh đặc trưng, ba chế độ, luật dòng hợp lệ, `mu`/`sd` trên
+   `[0, 1612)`, luật purge: tất cả như GĐ4. Tầng CV để lấy mẫu con SVR tính lại
+   **trong** E1a và **trong** E1g, cùng công thức `fig_burstiness.py`.
+5. **Siêu tham số: của E1 ở GĐ3**, cho cả E1a lẫn E1g. Không dò lại.
+6. Bốn cặp `E1a→E1a`, `E1a→E1g`, `E1g→E1g`, `E1g→E1a` × N0, N1, N2 × 3 horizon × 5
+   model × lịch = co. Tổng **90 lần khớp**, 180 lần chạm test.
+
+**Phép kiểm chính — T-D2.** `L_k` như D1, mẫu số là đường chéo cùng chế độ. Mann–Whitney
+`L_k(E1a→E1g)` vs `L_k(E1g→E1a)` cho mỗi `(chế độ, h, model)`, tổng 45 phép, Holm trên
+cả 45. Chiều *"gộp → đơn lẻ"* tương ứng *"Alibaba → Bitbrains"*.
+
+**Luật đọc** — chế độ quyết định là **N1**, vì N1 bỏ mức tải mà giữ biên độ tương đối.
+Ở N0, mức tải của E1g (~13) lệch E1a (~2,7) nên phép thử lẫn mức tải. N2 bỏ luôn biên độ.
+
+| Kết quả ở N1, trên 15 phép | Kết luận | Câu chữ cho phần bổ sung |
+|---|---|---|
+| gộp→đơn lẻ tốn hơn ở **≥ 10/15**, và **0** phép ngược lại | **tái hiện** | *"Bất đối xứng giữa máy vật lý Alibaba và VM Bitbrains tái hiện được chỉ bằng gộp VM trong cùng một datacenter; dữ liệu không cho phép gán nó cho khác biệt giữa hai môi trường."* |
+| gộp→đơn lẻ tốn hơn ở **≤ 3/15** | **không tái hiện** | *"Gộp VM đơn thuần không tái hiện bất đối xứng. Phần còn lại có thể đến từ mức tải, loại workload hoặc môi trường; nghiên cứu này không tách được thêm."* |
+| ở giữa | **không kết luận** | báo nguyên số, không chọn câu nào trong hai câu trên |
+
+N0 và N2 báo cáo cạnh N1 dưới dạng mô tả, không đổi kết luận.
+
+**Dự đoán P7: tái hiện.** Cơ chế dự đoán: chuỗi mượt có z-score đuôi hẹp, VM bursty có
+z-score đuôi dày. `rf` và `xgb` không ngoại suy được ra ngoài dải đã học, nên model học
+trên chuỗi mượt sẽ kẹt khi gặp z lớn của VM, đúng như `xgb` N1 E3→Bitbrains lên tới 66
+lần naive. Dự đoán này **có thể sai**. Nếu sai thì đó chính là thông tin paper cần.
+
+**Hạn chế đã thấy trước:**
+
+- Gộp 5 VM mượt **hơn** E3 (0,92 so với 0,86). Hướng thì so được, độ lớn thì không.
+- Một hạt giống, một `k`. Không chạy thêm hạt giống hay `k` nào khác, vì QĐ này không
+  khai phép kiểm độ nhạy.
+- Siêu tham số E1 dò trên 1,4 triệu dòng, áp cho E1g khoảng 115 nghìn dòng.
+- Máy vật lý Alibaba gộp container **cùng một máy**, còn máy giả gộp VM **ngẫu nhiên**.
+  Đồng biến thời gian giữa các thành viên khác nhau.
+
+### 6. Rào chắn — mục 17 áp nguyên
+
+1. **Thứ tự bắt buộc:** QĐ này được commit → code và test → **script phân tích viết và
+   commit trước khi có kết quả** → mới chạy. Dấu thời gian git là bằng chứng.
+2. **Phép kiểm tái lập, chạy trước khi đọc số:** MAE theo chuỗi ở đường chéo N0 so với
+   `per_series_gd3.csv`. Trượt bất kỳ dòng nào thì **dừng**, không phân tích D1, D2.
+
+   | Model | Ngưỡng lệch tương đối | Số đo 2026-09-13, N0 đã biết từ GĐ3 |
+   |---|---|---|
+   | `rf`, `xgb`, mọi `h` | **tối đa ≤ 1e−9** | tối đa 2,8e−14 (h=1) |
+   | `lr`, `ridge` mọi `h`; `svr` `h = 1` | **tối đa ≤ 2e−2 và trung vị ≤ 2e−3** | tối đa 5,4e−3, trung vị ≤ 5,5e−4 |
+   | mọi model, mọi `h` | `n_dong` **trùng tuyệt đối** từng chuỗi | 0 chuỗi lệch |
+
+   `svr` ở `h = 6, 12` chỉ báo độ lệch, vì mẫu con khác nhau theo thiết kế (điểm 3).
+
+   **Vì sao hai mức.** Bản nháp khai một ngưỡng 1e−3 cho mọi model, và đó là **đoán**.
+   Chạy thử đường chéo N0 (kết quả đã công bố ở GĐ3, không phải số mới) cho `lr` E1 lệch
+   5,4e−3. Truy nguyên: ma trận GĐ3 và GĐ4 trùng tuyệt đối. Khớp `lr` bằng `float32` tái
+   lập GĐ3 tới 1e−15, còn bằng `float64` thì lệch 5,4e−3. Cây quyết định ép `float32`
+   bên trong nên trùng tuyệt đối. Model tuyến tính và SVR thì không, vì `StandardScaler`
+   giữ kiểu số đầu vào. Ngưỡng đặt khoảng 4 lần trên số đo, **trước khi commit QĐ này
+   và trước khi D1 chạy**.
+3. Mỗi tổ hợp chạy **một lần**. Nếu tìm ra lỗi code sau khi chạy: sửa, ghi log **trước**
+   khi chạy lại, chạy lại **toàn bộ** tập đã khai, và báo cáo cả hai lần kèm lý do.
+4. Không đổi ngưỡng, phép kiểm, `k`, hạt giống hay luật đọc sau khi thấy số. Mọi phân
+   tích ngoài bảng này dán nhãn **hậu kiểm**.
+
+**Hệ quả.**
+
+1. Sản phẩm mới: `config/qd017_gop.csv`; `data/processed/E1a.parquet`, `E1g.parquet` và
+   ma trận đặc trưng tương ứng; `scripts/build_qd017.py`, `run_qd017.py`,
+   `check_qd017.py`, `phan_tich_qd017.py`; `tests/test_qd017.py`.
+2. Không sửa tệp sản phẩm nào của GĐ3, GĐ4. Bảng GĐ4 giữ nguyên.
+3. QĐ-004, protocol mục 14, `research-plan.md` GĐ4 và `giai-thich-chuan-hoa.md` mục 5
+   nhận ghi chú trỏ về đây.
+4. Thời gian máy ước tính: **D1 khoảng 2–2,5 giờ, D2 khoảng 1 giờ**. Đo từ lần chạy thử
+   đường chéo N0: `rf` + `xgb` + `svr` ở `h = 1` cho cả ba môi trường mất 13,7 phút.
