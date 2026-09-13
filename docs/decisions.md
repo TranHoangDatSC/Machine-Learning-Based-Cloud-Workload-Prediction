@@ -1581,3 +1581,106 @@ bỏ 10 chuỗi. S2 chỉ độc lập một phần: đã thấy `xgb` E3→E1 h
 **Hệ quả.** `config/qd018_loai_n1.csv` (đóng băng); `scripts/loai_n1_qd018.py`,
 `run_qd018.py`, `check_qd018.py`, `phan_tich_qd018.py`; `tests/test_qd018.py`. Thời gian
 máy ước tính 1,5–2 giờ, theo khối N1 của D1 và D2.
+
+---
+
+## QĐ-019 — Sửa target N2 ở h > 1 cho đúng protocol mục 14, chạy lại toàn bộ phần bị ảnh hưởng
+
+**Ngày:** 2026-09-14 · **Người quyết:** A · **Trạng thái:** Có hiệu lực — **khai trước khi
+sửa code và trước khi chạy lại**
+
+**Bối cảnh.** `research-log/2026-09-14-loi-target-n2.md`. Target N2 trong mọi ma trận GĐ4 là
+`z_{t+h} = y_{t+h} − y_{t+h−1}`, trong khi protocol mục 14 và QĐ-016 định nghĩa
+`y_{t+h} − y_t`. Map ngược `ŷ_{t+h} = y_t + Δ̂` chỉ đúng với định nghĩa sau. Ở h > 1, mọi
+model N2 bị kéo về gần dự báo ngây thơ.
+
+**Đây là sửa lỗi hiện thực, không phải phân tích độ nhạy.** Khác QĐ-018: bản sửa **thay
+thế** bản lỗi làm kết quả chính thức. Bản lỗi được giữ trong log và nêu ở phần tái lập
+của bài báo.
+
+### 1. Định nghĩa đúng
+
+- **Đặc trưng: giữ nguyên.** 19 đặc trưng sinh từ chuỗi sai phân một bước
+  `z_t = y_t − y_{t−1}` (QĐ-016 điểm 2).
+- **Target: `Δ^{(h)}_t = y_{t+h} − y_t`**, tính thẳng từ chuỗi CPU% gốc.
+- **Map ngược: giữ nguyên** `ŷ_{t+h} = y_t + Δ̂`.
+- **Dòng hợp lệ:** `z` sạch `NaN` trên `[t−24, t]` (tức `y` sạch trên `[t−25, t]`), **và**
+  `y_{t+h}` hữu hạn.
+
+Hệ quả kiểm được **trước khi chạy model**:
+
+- Tập dòng mới là **tập cha** của tập dòng cũ. Luật cũ đòi thêm `y_{t+h−1}`.
+- Ở **h = 1** hai định nghĩa trùng nhau. Ma trận mới phải **trùng tuyệt đối** ma trận cũ,
+  kể cả target.
+- Trên các dòng chung, 19 cột đặc trưng mới **trùng tuyệt đối** cột cũ.
+
+### 2. Phạm vi chạy lại
+
+Chỉ **N2, h ∈ {6, 12}**, lịch = co, 5 model ML, siêu tham số như cũ. Một model khớp một
+lần cho mỗi `(nguồn, h, model)`, dự đoán cho mọi đích — cùng 13 cặp của QĐ-018:
+
+| Nguồn | Đích |
+|---|---|
+| E1 | E1, E2, E3 |
+| E2 | E2, E1, E3 |
+| E3 | E3, E1, E2 |
+| E1a | E1a, E1g |
+| E1g | E1g, E1a |
+
+**50 lần khớp, 130 lần chạm test.** Thêm **E1g → E1g, E1a ở h = 1** làm **phép kiểm tất
+định** (5 lần khớp, 10 lần chạm): đầu vào trùng tuyệt đối nên số phải trùng QĐ-017.
+
+**Không chạy lại** N2 h > 1 với lịch = khong của `transfer_gd4.csv`. Các dòng đó bị **loại
+khỏi bài báo**, và ablation đặc trưng lịch chỉ báo cáo ở N0.
+
+Ma trận mới ghi vào `data/features_qd019/`, **không ghi đè** `data/features/`, để
+`check_gd4.py` và mọi sản phẩm GĐ4 giữ nguyên trạng thái đã nghiệm thu.
+
+### 3. Phân tích — bảng cuối cùng của RQ3
+
+Ba bảng theo chuỗi (`per_series_gd4.csv` lịch = co, `qd017_d1_chuoi.csv`,
+`qd017_d2_chuoi.csv`) được thay theo thứ tự:
+
+1. dòng N1 bằng QĐ-018
+2. dòng N2 ở h ∈ {6, 12} bằng QĐ-019
+
+Rồi chạy lại **đúng** T-D1a, T-D1b, T-D1c, T-D2 bằng hàm của `phan_tich_qd017.py`, và chấm
+lại P1–P7 theo luật cũ. Bảng so sánh ghi bản lỗi cạnh bản sửa cho mọi con số N2.
+
+### 4. Dự đoán
+
+| # | Dự đoán | Bản lỗi |
+|---|---|---|
+| U1 | E3 trong môi trường: trung vị qua 5 model của `MAE N2 / MAE naive` **< 0,98** ở cả h = 6 và h = 12 | 0,997 · 1,011 |
+| U2 | Ở h = 6, 12, trung vị `MAE N2 / MAE naive` của cả ba môi trường **rời khỏi dải [0,98; 1,02]** ít nhất ở một horizon mỗi môi trường | E3 dính trong dải |
+
+U1 và U2 kiểm rằng bản sửa **gỡ được triệu chứng**, không phải kết quả khoa học. Không dự
+đoán hướng cho P2, P4, P6 hay T-D2: số mới quyết định, và mọi dự đoán nào đổi chấm được
+báo cáo cả hai bản.
+
+### 5. Rào chắn
+
+1. Thứ tự: commit QĐ-019 → code, test, check, phân tích → commit → chạy.
+2. **Chặn trước khi chạy model** — `check_qd019.py` nhóm K, trên cả 5 môi trường × 3 horizon:
+   - K1: target == `y_{t+h} − y_t` tính lại từ `data/processed/`, lệch **0**
+   - K2: h = 1 trùng tuyệt đối ma trận cũ
+   - K3: dòng cũ ⊆ dòng mới, và 19 cột đặc trưng trùng tuyệt đối trên dòng chung
+   - K4: số dòng mới khớp luật dòng hợp lệ đếm độc lập
+
+   Trượt thì không chạy.
+3. **Chặn trước khi phân tích:**
+   - đủ khoá
+   - E1g h = 1 trùng QĐ-017, lệch MAE ≤ 1e−9
+   - `n_dong` theo chuỗi **không nhỏ hơn** bản lỗi
+4. Không đổi phép kiểm, ngưỡng hay luật đọc. Không chạy lại phần nào ngoài phạm vi điểm 2.
+
+**Hệ quả.**
+
+- Sản phẩm mới: `scripts/build_qd019.py`, `run_qd019.py`, `check_qd019.py`,
+  `phan_tich_qd019.py`; `tests/test_qd019.py`; `data/features_qd019/`.
+- `gate-gd4.md` mục 5.4 nhận **đính chính**, không sửa chữ gốc.
+- Bài báo dùng bảng cuối của điểm 3.
+- Thời gian máy ước tính 1,5–2 giờ.
+- **Thêm vào danh sách phép kiểm bắt buộc cho mọi biến đổi target sau này:** so target với
+  chuỗi gốc bằng một đường tính độc lập. Bất biến kiểu `Δ̂ = 0` không đủ, vì nó đúng với
+  cả định nghĩa sai.
