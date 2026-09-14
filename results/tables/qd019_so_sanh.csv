@@ -1,0 +1,34 @@
+bang,nhom,chi_so,ban_loi,ban_sua
+T-D1b,E1->E2 N2 h6,trung vị L_p50,0.9880607673508728,0.9504042259345814
+T-D1b,E1->E2 N2 h12,trung vị L_p50,0.987842661495528,0.8943734243893622
+T-D1b,E1->E3 N2 h6,trung vị L_p50,1.024581351476329,1.0163332170394015
+T-D1b,E1->E3 N2 h12,trung vị L_p50,0.9959990939824755,0.995560137796879
+T-D1b,E2->E1 N2 h6,trung vị L_p50,1.0311711703027575,1.1091462236642098
+T-D1b,E2->E1 N2 h12,trung vị L_p50,1.0114685545236608,1.2136240435524097
+T-D1b,E2->E3 N2 h6,trung vị L_p50,1.0007562485715478,1.0479981810383967
+T-D1b,E2->E3 N2 h12,trung vị L_p50,1.0068408510348934,1.0087647893342042
+T-D1b,E3->E1 N2 h6,trung vị L_p50,1.0941091435414196,1.8201451226452212
+T-D1b,E3->E1 N2 h12,trung vị L_p50,1.079001757468724,1.7362128311376415
+T-D1b,E3->E2 N2 h6,trung vị L_p50,1.1299090707550214,1.8336408818835692
+T-D1b,E3->E2 N2 h12,trung vị L_p50,1.0849618249010868,1.618414097492574
+T-D1a,E1 N2_vs_N0,Nk tốt hơn N0,11.0,10.0
+T-D1a,E1 N2_vs_N0,Nk tệ hơn N0,1.0,2.0
+T-D1a,E1 N2_vs_N0,không khác,3.0,3.0
+T-D1a,E2 N2_vs_N0,Nk tốt hơn N0,9.0,7.0
+T-D1a,E2 N2_vs_N0,Nk tệ hơn N0,4.0,5.0
+T-D1a,E2 N2_vs_N0,không khác,2.0,3.0
+T-D1a,E3 N2_vs_N0,Nk tốt hơn N0,3.0,3.0
+T-D1a,E3 N2_vs_N0,Nk tệ hơn N0,9.0,3.0
+T-D1a,E3 N2_vs_N0,không khác,3.0,9.0
+T-D1c,E1->E2 N2,xuôi tốn hơn,3.0,4.0
+T-D1c,E1->E2 N2,ngược tốn hơn,11.0,9.0
+T-D1c,E1->E2 N2,không khác,1.0,2.0
+T-D1c,E1->E3 N2,xuôi tốn hơn,1.0,2.0
+T-D1c,E1->E3 N2,ngược tốn hơn,13.0,13.0
+T-D1c,E1->E3 N2,không khác,1.0,0.0
+T-D1c,E2->E3 N2,xuôi tốn hơn,2.0,2.0
+T-D1c,E2->E3 N2,ngược tốn hơn,13.0,13.0
+T-D1c,E2->E3 N2,không khác,0.0,0.0
+T-D2,E1a->E1g N2,xuôi tốn hơn,0.0,2.0
+T-D2,E1a->E1g N2,ngược tốn hơn,10.0,13.0
+T-D2,E1a->E1g N2,không khác,5.0,0.0

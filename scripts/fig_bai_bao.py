@@ -87,7 +87,7 @@ def hinh_quy_trinh():
     mui(75, 39.5, 75, 35.4)
 
     hop(2, 17, 46, 18, "TN-A: trong từng môi trường\n(RQ1, RQ2)",
-        "8 mô hình × 3 môi trường × 3 horizon\nWilcoxon ghép cặp theo chuỗi, hiệu chỉnh Holm\nML có vượt dự báo ngây thơ không?", VUA)
+        "8 mô hình × 3 môi trường × 3 horizon\nWilcoxon ghép cặp theo chuỗi, hiệu chỉnh Holm\nML có vượt dự báo naive không?", VUA)
     hop(52, 17, 46, 18, "TN-B: giữa các môi trường\n(RQ3)",
         "6 cặp × 3 chế độ N0 / N1 / N2\nmất mát L so với mô hình train ngay trên đích\nthành phần nào của tín hiệu chuyển giao được?", VUA)
 

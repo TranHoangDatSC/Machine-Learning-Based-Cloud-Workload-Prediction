@@ -429,6 +429,21 @@ Ngoài `transfer_gd4.csv`, GĐ4 còn chạm test ở:
 >   ở cùng horizon (1,10)
 >
 > Cột N0, N1 đúng. Bảng cuối sau khi chạy lại nằm ở `results/tables/qd019_bang_cuoi_L.csv`.
+>
+> **Bảng cuối — 2026-09-14, sau QĐ-019.** Trung vị L qua 5 model × 3 horizon:
+>
+> | | N0 | N1 | N2 (đã sửa) |
+> |---|---:|---:|---:|
+> | E1 → E2 | 1,001 | 1,000 | 0,986 |
+> | E2 → E1 | 1,064 | 1,063 | 1,086 |
+> | E1 → E3 | 1,059 | 1,032 | 1,032 |
+> | E2 → E3 | 1,070 | 1,044 | 1,048 |
+> | E3 → E1 | 2,516 | **1,332** | 1,588 |
+> | E3 → E2 | 2,819 | **1,235** | 1,618 |
+>
+> Kết luận đúng: ở chiều Alibaba→Bitbrains, **N1 tốt nhất ở cả ba horizon**; N2 nằm giữa
+> N0 và N1. Hướng bất đối xứng giữ ở cả ba chế độ (30/30, 28/30, 26/30). Chi tiết:
+> `2026-09-14-qd019-ket-qua.md`.
 > Lỗi và phạm vi: `2026-09-14-loi-target-n2.md`. Kết luận "ĐẠT" của cổng giữ nguyên: cổng
 > kiểm bước chuẩn hoá theo đúng QĐ-016, và chính QĐ-016 mâu thuẫn giữa điểm 2 và mục 14.
 
