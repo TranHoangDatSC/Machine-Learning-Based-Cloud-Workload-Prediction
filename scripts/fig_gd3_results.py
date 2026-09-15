@@ -61,11 +61,16 @@ ALPHA = 0.05
 
 # Thứ tự đọc bảng: ba baseline trước, rồi năm model ML (protocol mục 11).
 THU_TU = ["naive", "ma6", "seasonal", "lr", "ridge", "rf", "xgb", "svr"]
+# Màu (skill dataviz, đã chạy validator 2026-09-15): năm model ML lấy năm slot đầu của
+# bảng phân loại tham chiếu theo đúng thứ tự, qua kiểm cặp liền kề (CVD ΔE ≥ 9,1, mắt
+# thường ≥ 19,6). Ba baseline dùng mực xám trung tính, không chiếm slot màu, và có nét
+# đứt ở hình đường. Bảng cũ (#3a7ca5, #5fa8d3, …) trượt hai phép kiểm chroma và mắt thường.
 MAU = {
-    "naive": "#0b0b0b", "ma6": "#6b6a66", "seasonal": "#a8a6a0",
-    "lr": "#3a7ca5", "ridge": "#5fa8d3", "rf": "#2a9d8f",
-    "xgb": "#e76f51", "svr": "#9b5de5",
+    "naive": "#0b0b0b", "ma6": "#52514e", "seasonal": "#898781",
+    "lr": "#2a78d6", "ridge": "#eb6834", "rf": "#1baf7a",
+    "xgb": "#eda100", "svr": "#e87ba4",
 }
+MAU_ENV = ["#2a78d6", "#eb6834", "#1baf7a"]
 
 
 def _goi(p: Path) -> str:
@@ -261,8 +266,8 @@ def _panel_cham_chan(tang_bang: pd.DataFrame):
             ax.bar(x + i * 0.27 - 0.27,
                    [g["ti_le_cham_chan_p50"].get(t, np.nan) for t in TEN_TANG],
                    width=0.27, label=env,
-                   color=["#0b0b0b", "#5fa8d3", "#e76f51"][i])
-        ax.axhline(1.0, color="#b00020", lw=1.0, ls="--")
+                   color=MAU_ENV[i])
+        ax.axhline(1.0, color="#52514e", lw=1.0, ls="--")
         ax.set_xticks(x)
         ax.set_xticklabels([f"CV {t}" for t in TEN_TANG])
         ax.set_ylabel("tỉ lệ chạm chần (trung vị)")

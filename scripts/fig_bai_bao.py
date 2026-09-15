@@ -74,8 +74,8 @@ def hinh_quy_trinh():
     cot = [0.8 + i * (rong + cach) for i in range(4)]
     hop(cot[0], 44, rong, 18, "1. Dữ liệu thô", "Bitbrains fastStorage\nBitbrains Rnd 2013-8\nAlibaba v2018")
     hop(cot[1], 44, rong, 18, "2. Tiền xử lý", "lưới 5 phút\ncửa sổ 8 ngày\nnội suy lỗ ≤ 10 phút\nlọc → 1.535 chuỗi")
-    hop(cot[2], 44, rong, 18, "3. Đặc trưng", "19 đặc trưng quá khứ\nluật dòng hợp lệ\nchia thời gian\n70 / 15 / 15")
-    hop(cot[3], 44, rong, 18, "4. Mô hình", "3 baseline + 5 ML\nh = 5, 30, 60 phút\nsiêu tham số chọn\ntrên validation")
+    hop(cot[2], 44, rong, 18, "3. Đặc trưng", "19 đặc trưng quá khứ\nchia theo thời gian\nhuấn luyện, kiểm định,\nkiểm tra")
+    hop(cot[3], 44, rong, 18, "4. Mô hình", "3 mô hình cơ sở\n5 mô hình học máy\ndự đoán trước\n5, 30, 60 phút")
     for i in range(3):
         mui(cot[i] + rong + 0.4, 53, cot[i + 1] - 0.4, 53)
 
@@ -86,14 +86,14 @@ def hinh_quy_trinh():
     mui(25, 39.5, 25, 35.4)
     mui(75, 39.5, 75, 35.4)
 
-    hop(2, 17, 46, 18, "TN-A: trong từng môi trường\n(RQ1, RQ2)",
-        "8 mô hình × 3 môi trường × 3 horizon\nWilcoxon ghép cặp theo chuỗi, hiệu chỉnh Holm\nML có vượt dự báo naive không?", VUA)
-    hop(52, 17, 46, 18, "TN-B: giữa các môi trường\n(RQ3)",
-        "6 cặp × 3 chế độ N0 / N1 / N2\nmất mát L so với mô hình train ngay trên đích\nthành phần nào của tín hiệu chuyển giao được?", VUA)
+    hop(2, 17, 46, 18, "Thí nghiệm 1: trong từng môi trường\n(câu hỏi 1 và 2)",
+        "8 mô hình × 3 môi trường × 3 tầm dự báo\nso với dự báo naïve trên từng máy\nkiểm định thống kê có hiệu chỉnh", VUA)
+    hop(52, 17, 46, 18, "Thí nghiệm 2: giữa các môi trường\n(câu hỏi 3)",
+        "6 cặp môi trường × 3 cách chuẩn hoá\nso với mô hình học ngay tại đích\nphần nào của tín hiệu dùng lại được?", VUA)
 
-    hop(2, 1.5, 96, 11, "Kiểm soát xuyên suốt",
-        "cổng nghiệm thu mỗi giai đoạn · ba bất biến toán học của phép chuẩn hoá\n"
-        "khai trước giả thuyết và luật đọc trước khi chạy · kiểm tra rò rỉ dữ liệu",
+    hop(2, 1.5, 96, 11, "Kiểm tra xuyên suốt",
+        "chống rò rỉ dữ liệu · tính chất toán học của phép chuẩn hoá\n"
+        "đối chiếu giá trị cần dự đoán với dữ liệu gốc",
         nen="#f0efec", vien="#898781")
     luu(fig, "hinh1_quy-trinh.png")
 

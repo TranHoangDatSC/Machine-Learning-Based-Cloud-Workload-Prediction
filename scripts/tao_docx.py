@@ -1,7 +1,7 @@
 """Sinh bản Word của bản thảo từ Markdown, dùng CHÍNH template HJS của tạp chí.
 
     python scripts/tao_docx.py
-    python scripts/tao_docx.py --vao paper/ban-thao-v2.md --ra paper/ban-thao-v2.docx
+    python scripts/tao_docx.py --vao paper/ban-thao-v3.md --ra paper/ban-thao-v3.docx
 
 Không cần pandoc hay python-docx: `.docx` là một tệp zip chứa XML. Script mở
 `paper/sample/HJS@Template-OTH.docx`, **giữ nguyên** styles, numbering, header, lề trang,
@@ -258,8 +258,8 @@ def sua_header(xml: str, moi: str, giu_so: bool) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--vao", default="paper/ban-thao-v2.md")
-    ap.add_argument("--ra", default="paper/ban-thao-v2.docx")
+    ap.add_argument("--vao", default="paper/ban-thao-v3.md")
+    ap.add_argument("--ra", default="paper/ban-thao-v3.docx")
     a = ap.parse_args()
     vao, ra = ROOT / a.vao, ROOT / a.ra
 

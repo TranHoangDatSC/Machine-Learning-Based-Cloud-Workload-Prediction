@@ -124,9 +124,9 @@ def panels_gd2() -> tuple[list[Panel], dict]:
             tv = float(np.median(y[e]))
             ax.axvline(tv, color=MUC, linewidth=1.0, linestyle=(0, (4, 3)))
             ax.text(tv + 1.5, 92, f"trung vị {so_vn(tv)}%", fontsize=8.5, color=MUC)
-            khung(ax, "CPU (%) — mỗi cột rộng 2 điểm phần trăm", "% số điểm dữ liệu")
+            khung(ax, "CPU (%): mỗi cột rộng 2 điểm phần trăm", "% số điểm dữ liệu")
         ten = f"B0{i}_histogram-cpu-{e}"
-        ps.append(Panel(ten, f"Phân phối CPU% sau tiền xử lý — {TEN_ENV[e]}", (7.2, 4.0), ve))
+        ps.append(Panel(ten, f"Phân phối CPU% sau tiền xử lý: {TEN_ENV[e]}", (7.2, 4.0), ve))
         cap[ten] = ("Histogram mọi điểm 5 phút của mọi chuỗi trong cửa sổ 8 ngày. Trục tung cố "
                     "định 0–100% ở cả ba hình để so trực tiếp. Bitbrains dồn gần hết vào vài cột "
                     "đầu, Alibaba trải rộng hơn: đó là lệch mức tải mà QĐ-005 và chế độ N1 xử lý. "
@@ -181,12 +181,12 @@ def panels_gd3() -> tuple[list[Panel], dict]:
             ax.set_xticklabels(mods)
             ax.axvline(1.5, color=LUOI, linewidth=1.0)
             truc_ti_so(ax, *gioi_han_truc(tat_ca))
-            khung(ax, "baseline (trái vạch) · model ML (phải vạch)", "MAE model / MAE naive (log)")
+            khung(ax, "baseline (trái vạch) · model ML (phải vạch)", "MAE model / MAE naïve (log)")
             ax.legend(handles=[Patch(facecolor=THU_TU[j], label=TEN_H[h]) for j, h in enumerate(HS)],
                       loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=3, frameon=False,
                       fontsize=8.2, labelcolor=MUC_PHU)
         ten = f"B0{i}_boxplot-ti-so-naive-{e}"
-        ps.append(Panel(ten, f"Tỉ số MAE so với naive theo từng chuỗi — {TEN_ENV[e]}", (8.2, 4.4), ve))
+        ps.append(Panel(ten, f"Tỉ số MAE so với naïve theo từng chuỗi: {TEN_ENV[e]}", (8.2, 4.4), ve))
         cap[ten] = ("Mỗi hộp là phân phối theo chuỗi của MAE model chia MAE naive trên cùng chuỗi, "
                     "tập test. Vạch đậm giữa hộp là trung vị; hộp là p25–p75; râu là p5–p95; "
                     "không vẽ điểm ngoại lai. Đường đứt ở 1: dưới đường là tốt hơn naive.")
@@ -199,9 +199,9 @@ def panels_gd3() -> tuple[list[Panel], dict]:
         for k in (3, 6):
             ax.axvline(k - 0.5, color=NEN, linewidth=3)
         ax.axhline(1.5, color=NEN, linewidth=3)
-    ps.append(Panel("B08_heatmap-ti-so-naive", "Trung vị tỉ số MAE / naive — model × môi trường × horizon",
+    ps.append(Panel("B08_heatmap-ti-so-naive", "Trung vị tỉ số MAE / naïve: model × môi trường × horizon",
                     (8.2, 4.6), ve_hm))
-    cap["B08_heatmap-ti-so-naive"] = ("Mỗi ô là trung vị của tỉ số theo chuỗi — đúng vạch giữa hộp "
+    cap["B08_heatmap-ti-so-naive"] = ("Mỗi ô là trung vị của tỉ số theo chuỗi, đúng vạch giữa hộp "
                                       "ở ba hình boxplot trước. Xanh: tốt hơn naive; đỏ: tệ hơn; xám: "
                                       "ngang. Màu cắt ở 0,5 và 2, số ghi trong ô là số thật. Kiểm "
                                       "định Wilcoxon nằm ở wilcoxon_gd3.csv, hình này không thay nó.")
@@ -239,7 +239,7 @@ def bang_L_cuoi() -> tuple[pd.DataFrame, pd.DataFrame, str]:
         import phan_tich_qd019 as p9
         bc = p9.bang_cuoi()
         return (pt.ghep_L(bc["chuyen"], bc["cheo"]), pd.read_csv(TAB / "qd019_t_d1b.csv"),
-                "N2 — sai phân")
+                "N2: sai phân")
     import phan_tich_qd018 as pq
     g4 = pd.read_csv(TAB / "per_series_gd4.csv")
     g4 = g4[g4["lich"] == "co"]
@@ -250,7 +250,7 @@ def bang_L_cuoi() -> tuple[pd.DataFrame, pd.DataFrame, str]:
     b = pd.concat([pd.read_csv(TAB / "qd017_t_d1b.csv").query("mode != 'N1'"),
                    pd.read_csv(TAB / "qd018_t_d1b.csv").query("mode == 'N1'")])
     bo = lambda d: d[~((d["mode"] == "N2") & (d["h"] != 1))]  # noqa: E731
-    return bo(L), bo(b), "N2 — sai phân (h = 1)"
+    return bo(L), bo(b), "N2: sai phân (h = 1)"
 
 
 CAP_THU_TU = [("E1", "E2"), ("E2", "E1"), ("E1", "E3"), ("E2", "E3"), ("E3", "E1"), ("E3", "E2")]
@@ -264,9 +264,9 @@ def panels_gd4() -> tuple[list[Panel], dict]:
         M = np.array([[float(b[(b.nguon == n) & (b.dich == d) & (b["mode"] == md)]["L_p50"].median())
                        for md in ("N0", "N1", "N2")] for n, d in CAP_THU_TU])
         _heatmap(ax, M, [f"{n} → {d}" for n, d in CAP_THU_TU],
-                 ["N0 — CPU% thô", "N1 — z-score", nhan_n2], tran=2.0, nd=3)
+                 ["N0: dữ liệu thô", "N1: z-score", nhan_n2], tran=2.0, nd=3)
         ax.axhline(1.5, color=NEN, linewidth=3)
-    ps.append(Panel("B09_heatmap-mat-mat-transfer", "Mất mát do transfer L — cặp môi trường × chế độ chuẩn hoá",
+    ps.append(Panel("B09_heatmap-mat-mat-transfer", "Mất mát do transfer L: cặp môi trường × chế độ chuẩn hoá",
                     (6.4, 4.4), ve_hm))
     cap["B09_heatmap-mat-mat-transfer"] = (
         "L = MAE khi train ở nguồn rồi dự đoán đích, chia MAE của cùng model train ngay trên đích, "
@@ -292,12 +292,12 @@ def panels_gd4() -> tuple[list[Panel], dict]:
         ax.set_xticklabels([f"{n}→{d}" for n, d in CAP_THU_TU])
         ax.axvline(1.5, color=LUOI, linewidth=1.0)
         truc_ti_so(ax, 0.5, 10)
-        khung(ax, "chính (trái vạch) · bổ sung (phải vạch)", "L theo chuỗi (log)")
+        khung(ax, "hai tập máy ảo (trái vạch), giữa máy ảo và máy vật lý (phải vạch)", "L theo chuỗi (log)")
         ax.legend(handles=[Patch(facecolor=THU_TU[j], label=t) for j, t in
-                           enumerate(["N0 — CPU% thô", "N1 — z-score", nhan_n2])],
+                           enumerate(["N0: dữ liệu thô", "N1: z-score", nhan_n2])],
                   loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=3, frameon=False,
                   fontsize=8.2, labelcolor=MUC_PHU)
-    ps.append(Panel("B10_boxplot-mat-mat-transfer", "Phân phối L theo chuỗi — cặp môi trường × chế độ",
+    ps.append(Panel("B10_boxplot-mat-mat-transfer", "Phân phối L theo chuỗi: cặp môi trường × chế độ",
                     (8.2, 4.4), ve_box))
     cap["B10_boxplot-mat-mat-transfer"] = (
         "Mỗi chuỗi đích một giá trị: trung vị L của chuỗi đó qua 5 model × 3 horizon. Hộp p25–p75, "
@@ -364,7 +364,7 @@ def panels_cum() -> tuple[list[Panel], dict]:
         khung(ax, f"thành phần chính 1 ({so_vn(100 * ev[0], 0)}% phương sai)",
               f"thành phần chính 2 ({so_vn(100 * ev[1], 0)}%)", luoi_y=False)
         chu_giai_duoi(ax, ncol=3)
-    ps.append(Panel("B11_pca-theo-moi-truong", "Bản đồ chuỗi theo 4 đặc trưng mô tả — tô màu theo môi trường",
+    ps.append(Panel("B11_pca-theo-moi-truong", "Bản đồ chuỗi theo 4 đặc trưng mô tả: tô màu theo môi trường",
                     (7.2, 5.0), ve_env))
     cap["B11_pca-theo-moi-truong"] = (
         "Mỗi điểm là một chuỗi. Bốn đặc trưng tính trên cửa sổ train: log mức tải, log CV, ACF lag 1, "
@@ -406,7 +406,7 @@ def panels_cum() -> tuple[list[Panel], dict]:
                     fontweight="bold", ha="center", va="center",
                     bbox=dict(facecolor=NEN, edgecolor="none", alpha=0.85, pad=1.5))
         ax.scatter(gia.pc1, gia.pc2, s=26, color=MUC, marker="D", edgecolors=NEN, linewidths=0.5,
-                   label="E1g — máy giả, gộp 5 VM của E1")
+                   label="E1g: máy giả, gộp 5 VM của E1")
         khung(ax, f"thành phần chính 1 ({so_vn(100 * ev[0], 0)}%)", f"thành phần chính 2 ({so_vn(100 * ev[1], 0)}%)",
               luoi_y=False)
         chu_giai_duoi(ax, ncol=2)
@@ -450,7 +450,7 @@ def main() -> int:
         print(f"{k}: {len(p)} hình")
     anh, pdf = xuat_bo_hinh(ps, RA, "bo-sung_hinh-quen-thuoc.pdf" if a.phan == "all"
                             else f"bo-sung_{a.phan}.pdf",
-                            tieu_de="Hình bổ sung — dạng quen thuộc",
+                            tieu_de="Hình bổ sung: dạng quen thuộc",
                             phu="Trình bày lại số liệu GĐ2–GĐ4 bằng histogram, boxplot, heatmap có "
                                 "ghi số và phân cụm. Không có kết quả mới.",
                             dien_giai=HUONG_DAN, chu_thich=cap)
