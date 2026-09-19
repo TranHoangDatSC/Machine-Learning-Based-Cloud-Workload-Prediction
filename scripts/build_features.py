@@ -70,7 +70,7 @@ def bien_doi_bang(df: pd.DataFrame, mode: str) -> pd.DataFrame:
     Sắp xếp rồi reshape thành `(số chuỗi, 2304)` nên ranh giới chuỗi là ranh giới
     hàng — sai phân của N2 không thể bắc cầu từ đuôi chuỗi này sang đầu chuỗi kia.
     """
-    if mode == "N0":
+    if mode in (None, "N0"):  # None: đường GĐ2/GĐ3 không chuẩn hoá, tên tệp {env}_h{h}
         return df
 
     d = df.sort_values(["series_id", "bucket"], kind="mergesort").reset_index(drop=True)
@@ -117,7 +117,7 @@ def sinh_mot_moi_truong(env: str, horizons: list[int], proc_dir: Path,
             X.to_parquet(dich, index=False)
 
             # Neo GĐ1 chỉ ràng buộc N0. N1/N2 so với N0 ở bảng tổng kết.
-            neo = neo_catalog(cat, env, h) if mode == "N0" else None
+            neo = neo_catalog(cat, env, h) if mode in (None, "N0") else None
             bao_cao.append({
                 "env": env,
                 "mode": mode,
@@ -157,7 +157,7 @@ def in_bang(bao_cao: list[dict], co_neo: bool) -> int:
         goc = n0.get((r["env"], r["h"]))
         so_n0 = "-" if goc is None or r["mode"] == "N0" else (
             "bằng" if r["dong"] == goc else f"{r['dong'] - goc:+,}")
-        print(f"{r['env']:<4} {r['mode']:>5} {r['h']:>3} {r['dong']:>12,} "
+        print(f"{r['env']:<4} {r['mode'] or '-':>5} {r['h']:>3} {r['dong']:>12,} "
               f"{neo_s:>12} {dau:>8} {so_n0:>8} {r['mb']:>7.1f}")
 
     print("=" * 74)
