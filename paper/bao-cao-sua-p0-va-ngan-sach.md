@@ -4,6 +4,8 @@ Ngày: 20/09/2026. Máy chạy: 12 nhân CPU, không có GPU NVIDIA.
 
 Tài liệu thiết kế: `dinh-huong-v5-va-thiet-ke-thuc-nghiem.md`. Báo cáo này ghi phần đã sửa, số đo thực tế và ngân sách đề nghị. **Chưa khởi chạy thí nghiệm dài nào.**
 
+> **Cập nhật 23/09/2026.** Ba lựa chọn đã chốt và phần mã đã hoàn thiện, bàn giao. Ngân sách ở mục 5 dưới đây là bản ngày 20/09; bản mới hơn, tính theo phạm vi đã chốt và có thêm phần độ nhạy, K = 0 và Random Forest, nằm ở `CWP-Cloud-Notebooks/HUONG_DAN_CHAY_V5.md`. Quy ước thực nghiệm khoá ở `CWP-Cloud-Notebooks/PROTOCOL_V5.md`.
+
 ---
 
 ## 1. Phần đã sửa

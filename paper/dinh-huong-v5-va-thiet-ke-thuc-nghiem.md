@@ -2,7 +2,12 @@
 
 Ngày lập: 20/09/2026. Tài liệu chuẩn bị cho bản thảo v5, viết sau khi đọc toàn văn hai công trình trong `paper/`, mã nguồn `CWP-Cloud-Notebooks`, kết quả gốc và báo cáo rà soát `ra-soat-v4-truoc-khi-nop-VJCS.md`.
 
-**Cập nhật 20/09/2026:** sáu điểm ở mục 12 đã được chốt, các lỗi P0 đã sửa và đã chạy thử để đo chi phí. Phần đã sửa, kết quả kiểm tra và ngân sách nằm ở `bao-cao-sua-p0-va-ngan-sach.md`. Tài liệu này giữ vai trò thiết kế; con số đo được nằm ở báo cáo kia.
+**Cập nhật 23/09/2026:** ba lựa chọn cuối đã chốt (lưới XGBoost hai ứng viên, GRU chạy trên Colab, có chạy đối chứng K = 0). Phần mã đã hoàn thiện và bàn giao. Hai tài liệu thay thế tài liệu này ở phần vận hành:
+
+- `CWP-Cloud-Notebooks/PROTOCOL_V5.md` — protocol có phiên bản, khoá trước lượt xác nhận: quần thể, khung thời gian, mô hình, lưới, hạt giống, tập dòng đánh giá chung, họ kiểm định, cách xử lý trường hợp lỗi.
+- `CWP-Cloud-Notebooks/HUONG_DAN_CHAY_V5.md` — hướng dẫn chạy tuần tự trên PowerShell, mười khối, kèm ngân sách.
+
+Tài liệu này giữ vai trò lập luận và định hướng. Chỗ nào lệch với hai tài liệu kia thì **hai tài liệu kia là bản đúng**.
 
 ---
 
@@ -42,7 +47,7 @@ Hai bài đã đọc toàn văn từ bản PDF trong `paper/`. Bản Rossi là a
 |---|---|---|---|
 | Câu hỏi | Học máy có cần thiết cho dự báo mức dùng tài nguyên không (§1) | Dự báo kèm bất định và khả năng chuyển giao giữa các miền dữ liệu (§1) | Lợi thế của mô hình so với dự báo naïve phụ thuộc thế nào vào chuẩn hoá, hàm mất mát và tiêu chí đánh giá, và có ổn định theo thời gian không |
 | Nguồn dữ liệu | Google 2019 cho phần dự báo; Alibaba 2018, Azure, Google, Bitbrains cho phần đo tính bền (Bảng 1, §3.1) | Google 2011 và 2019, Alibaba 2018 và 2020, gộp thành 12 bộ (§4.1) | Bitbrains fastStorage, Bitbrains Rnd, Alibaba 2018 |
-| Đơn vị dự báo | Một task của một job; huấn luyện một mô hình cho mỗi job, dùng chuỗi của một task ngẫu nhiên (§2.1) | **Chuỗi trung bình của toàn bộ máy trong một cụm**: "For each cluster, we create a time series dataset that includes the average CPU and average memory usage for all the machines with a 5-minute interval" (§4.1.1) | Từng máy ảo và từng máy vật lý, 1.535 chuỗi |
+| Đơn vị dự báo | Một task của một job; huấn luyện một mô hình cho mỗi job, dùng chuỗi của một task ngẫu nhiên (§2.1) | **Chuỗi trung bình của toàn bộ máy trong một cụm**: "For each cluster, we create a time series dataset that includes the average CPU and average memory usage for all the machines with a 5-minute interval" (§4.1.1) | Từng máy ảo và từng máy vật lý, 1.497 chuỗi sau khi lọc theo phần train |
 | Cách tổng hợp | Không gộp; nhưng phần đo tính bền dùng chỉ số ARD của từng chuỗi (§3.1) | Gộp trung bình theo cụm trước khi huấn luyện | Không gộp; chỉ số tính riêng từng máy rồi lấy trung vị trên tập máy |
 | Chân trời dự báo | Một bước, tức t+1 (§2.1) | Một mức duy nhất, 10 phút (§4.3) | 5, 30 và 60 phút |
 | Mô hình | LSTM một lớp 50 đơn vị (§2.1) | LSTM có lớp tích chập, LSTMD, HBNN (§3) | Naïve, seasonal naïve, trung bình trượt, Ridge, XGBoost, DLinear, GRU, SVR |
@@ -145,7 +150,7 @@ Ba thí nghiệm chính và một phân tích thăm dò. Mọi thí nghiệm dù
 | Chỉ số | MAE chính; RMSE và MASE báo kèm; thêm bảng chi phí bất đối xứng ở mục phân tích |
 | Tiêu chí diễn giải | Một mô hình được coi là vượt naïve khi Wilcoxon ghép cặp có p sau hiệu chỉnh Holm dưới 0,05 và trung vị hiệu ghép cặp âm. Kèm tỉ lệ máy thắng và khoảng tin cậy bootstrap của tỉ số trung vị |
 
-Lưới yếu tố áp cho Ridge và XGBoost, là hai họ mô hình đổi được hàm mất mát mà không đổi kiến trúc. DLinear và GRU chạy ở hàm mất mát tuyệt đối với chuẩn hoá theo từng chuỗi, đúng cách dùng phổ biến của hai mô hình đó, và được đánh dấu là cấu hình mặc định chứ không phải một ô của lưới. SVR giữ nguyên hàm ε-insensitive, thêm một phép kiểm độ nhạy cỡ mẫu con 10.000 so với 30.000 dòng.
+Lưới hai hàm mất mát **chỉ gồm cặp `xgb` và `xgb_mae`**: cùng kiến trúc, cùng lưới hai ứng viên `max_depth` 4 và 8 với 300 cây, khác đúng tham số `objective`. Ridge giữ hàm mất mát bình phương kèm phạt L2, SVR giữ ε-insensitive; hai mô hình đó không phải hai ô tương đương của lưới. DLinear và GRU dùng hàm mất mát tuyệt đối và **chuẩn hoá N1 theo thống kê phần train của từng máy**, đúng như các mô hình bảng, không phải chuẩn hoá theo từng cửa sổ.
 
 ### 5.2 TN-B: độ ổn định theo thời gian
 
@@ -195,10 +200,10 @@ Ghi rõ trong bài: đây là phân tích thăm dò, không phải một phươn
 | Naïve y(t+h) = y(t) | Mốc chính | Là đối tượng của cả ba câu hỏi |
 | Seasonal naïve y(t+h−288) | Mốc khai thác chu kỳ ngày | Công thức hiện tại sai thời điểm; bản sửa giảm MAE từ 12% đến 34% và ở E2 h = 6 còn thấp hơn naïve |
 | Trung bình trượt gồm y(t) | Mốc làm trơn | Bản hiện tại bỏ điểm hiện tại nên yếu hơn mức đáng có |
-| Ridge | Mốc dưới của nhóm học máy, đổi được hàm mất mát qua hồi quy phân vị 0,5 | Rẻ, dùng để kiểm lưới hai yếu tố |
+| Ridge | Mốc dưới của nhóm học máy, **giữ nguyên hàm mất mát bình phương kèm phạt L2** | Rẻ; không phải một ô của lưới hai hàm mất mát |
 | XGBoost | Mô hình cây chính, đổi hàm mất mát bằng `reg:absoluteerror` | Đã có trong pipeline, chi phí đo được 0,15 giờ cho mỗi tổ hợp môi trường và chân trời |
 | DLinear | Mô hình chuỗi thời gian tuyến tính trên cửa sổ, chuẩn hoá theo từng chuỗi | Trả lời trực tiếp yêu cầu của thầy về mô hình hiện đại, và là mốc mạnh trong dòng nghiên cứu phản biện Transformer |
-| GRU | Đại diện mạng hồi tiếp, phạm vi hẹp | Christofidi chỉ thử LSTM trên Google, nên cần một mạng hồi tiếp chạy trên dữ liệu theo từng máy. Đo được 1.220 giây mỗi epoch với cửa sổ 288 bước trên chính môi trường nhỏ nhất, tức không đưa vào lưới chính được; giữ ở phạm vi hẹp, xem báo cáo ngân sách |
+| GRU | Đại diện mạng hồi tiếp, **bốn tổ hợp trên Colab** | Christofidi chỉ thử LSTM trên Google, nên cần một mạng hồi tiếp chạy trên dữ liệu theo từng máy. Đo được 1.220 giây mỗi epoch bằng CPU nên không vào lưới chính; phạm vi chốt trước: E1 và E2, tầm 1 và 12, chế độ N1, hạt giống 42 |
 | SVR | Chứng cứ về ảnh hưởng của hàm mất mát | Là mô hình duy nhất trong v4 có MAE trung vị thấp hơn naïve ở cả sáu ô máy ảo, và cũng là mô hình duy nhất dùng hàm ε-insensitive |
 | Random Forest | Chỉ giữ ở phụ lục để nối với v4 | Chiếm 7,35 giờ trong tổng 9,99 giờ của Thí nghiệm 1, tức 74% chi phí, mà không trả lời câu hỏi nào của v5 |
 
@@ -314,9 +319,7 @@ Bỏ Random Forest khỏi phần chính cắt được phần lớn chi phí c�
 
 ## 10. Kế hoạch viết v5
 
-Theo yêu cầu: viết tiếng Anh trên mẫu HJS trước để duyệt, bản VJCS làm sau.
-
-Mẫu `paper/sample/HJS@Template-OTH.docx` quy định: khổ giấy 20,5 × 28,5 cm, font Cambria 10pt cho thân bài và 9pt cho phần tóm tắt, tên bài viết hoa, chú thích bảng đặt phía trên bảng, chú thích hình đặt phía dưới hình, tài liệu tham khảo đánh số theo thứ tự trích dẫn.
+Đích nộp là VJCS. **Chưa định dạng theo mẫu nào**: bản v5 viết ở dạng nội dung dễ sửa trước, chuyển sang mẫu của nơi nộp sau khi nội dung đã ổn. Chưa viết kết luận khi chưa có kết quả.
 
 `paper/SKILL.md` áp cho bản tiếng Anh qua mục 18: dấu thập phân là dấu chấm, dấu phân cách hàng nghìn là dấu phẩy, đơn vị cách số một khoảng trắng, khoảng giá trị dùng gạch ngang en không có khoảng trắng, không dùng dạng rút gọn, dùng "we", không dùng số trích dẫn làm chủ ngữ, tóm tắt không chứa trích dẫn và công thức, tránh nhóm từ bị lạm dụng trong văn AI và các khuôn câu tương ứng. Cấm tuyệt đối gạch ngang em.
 
@@ -339,7 +342,7 @@ Tài liệu tham khảo: mở từng nguồn đối chiếu trước khi đưa v
 
 ## 11. Đánh giá trung thực về đóng góp
 
-**Điểm mạnh của phương án.** Cả hai bài trước đều bỏ trống đúng chỗ mà đề tài đang đứng: Christofidi kết luận dự báo naïve đủ tốt nhưng chỉ chạy dự báo trên bốn job của Google, còn với Bitbrains và Alibaba thì chỉ đo tính bền của dữ liệu; Rossi làm chuyển giao nghiêm túc nhưng trên chuỗi trung bình của cụm và không có mốc naïve. Một đối chứng theo từng máy, có mốc naïve, có kiểm định ghép cặp, trên 1.535 chuỗi và ba chân trời dự báo, là phần thực nghiệm chưa ai công bố ở dạng đó.
+**Điểm mạnh của phương án.** Cả hai bài trước đều bỏ trống đúng chỗ mà đề tài đang đứng: Christofidi kết luận dự báo naïve đủ tốt nhưng chỉ chạy dự báo trên bốn job của Google, còn với Bitbrains và Alibaba thì chỉ đo tính bền của dữ liệu; Rossi làm chuyển giao nghiêm túc nhưng trên chuỗi trung bình của cụm và không có mốc naïve. Một đối chứng theo từng máy, có mốc naïve, có kiểm định ghép cặp, trên 1.497 chuỗi và ba chân trời dự báo, là phần thực nghiệm chưa ai công bố ở dạng đó.
 
 **Điểm yếu.** Đóng góp thuộc loại đo đạc và thiết kế đánh giá, không có phương pháp mới. Phản biện có thể xếp bài vào nhóm khảo sát tham số. Ba yếu tố khảo sát là chuẩn hoá, hàm mất mát và chỉ số, đều đã được biết trong tài liệu dự báo chuỗi thời gian nói chung; phần mới nằm ở chỗ đo chúng trên bài toán tải đám mây theo từng máy, chứ không ở bản thân ý tưởng.
 
